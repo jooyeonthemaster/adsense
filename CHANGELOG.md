@@ -1,5 +1,38 @@
 # CHANGELOG - 애드센스 마케팅 상품 접수 시스템
 
+## 2025-11-03 - [FIX] 상품 가격 설정 오류 수정
+
+**Changed Files**:
+- app/admin/clients/[id]/pricing/page.tsx (Before: 100 lines → After: 82 lines)
+- app/api/admin/clients/[id]/pricing/route.ts (Before: 63 lines → After: 66 lines)
+
+**Changes**:
+- 하드코딩된 상품 데이터를 실제 데이터베이스 조회로 변경
+  - `FIXED_PRODUCTS` (하드코딩 객체 배열) → `FIXED_PRODUCT_SLUGS` (slug만 저장)
+  - 실제 `product_categories` 테이블에서 UUID 포함한 전체 데이터 조회
+  - `category_id`가 올바른 UUID로 전달되도록 수정
+
+- API 에러 로깅 개선
+  - 디버그 로그 추가: 저장할 데이터 구조 출력
+  - 에러 상세 정보 JSON 출력
+  - 에러 메시지에 실제 DB 에러 메시지 포함
+
+**Reason**:
+- 기존 코드는 `id: 'place-traffic'` 같은 문자열을 사용했지만 DB는 UUID 필요
+- 외래 키 제약 조건 위반으로 상품 가격 저장 실패
+- 환경마다 UUID가 달라지므로 하드코딩 불가능
+
+**Tried But Failed Approaches**:
+- ❌ 하드코딩된 FIXED_PRODUCTS: slug를 id로 사용하여 UUID 불일치
+
+**Impact**:
+- ✅ 상품 가격 설정이 정상적으로 작동
+- ✅ 데이터베이스 무결성 유지 (올바른 UUID 참조)
+- ✅ 환경 간 이식성 향상 (하드코딩 제거)
+- ✅ 에러 디버깅 용이성 개선
+
+---
+
 ## 2025-11-03 - [RESPONSIVE] AS 요청 관리 페이지 모바일 최적화
 
 **Changed Files**:

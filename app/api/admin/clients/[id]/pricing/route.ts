@@ -38,6 +38,8 @@ export async function POST(
         is_visible: p.is_visible,
       }));
 
+    console.log('[DEBUG] Price records to insert:', JSON.stringify(priceRecords, null, 2));
+
     if (priceRecords.length > 0) {
       const { error } = await supabase
         .from('client_product_prices')
@@ -45,8 +47,9 @@ export async function POST(
 
       if (error) {
         console.error('Error inserting prices:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         return NextResponse.json(
-          { error: '가격 설정 중 오류가 발생했습니다.' },
+          { error: `가격 설정 중 오류가 발생했습니다: ${error.message}` },
           { status: 500 }
         );
       }

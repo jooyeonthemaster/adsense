@@ -3,47 +3,25 @@ import { requireAuth } from '@/lib/auth';
 import { notFound } from 'next/navigation';
 import { PricingForm } from './pricing-form';
 
-// [UPDATED 2025-11-02] 4가지 고정 상품만 사용
-const FIXED_PRODUCTS = [
-  {
-    id: 'place-traffic',
-    slug: 'place-traffic',
-    name: '플레이스 유입',
-    description: '네이버 플레이스 유입 접수 서비스',
-    is_active: true,
-    created_at: '2024-01-01T00:00:00Z',
-  },
-  {
-    id: 'receipt-review',
-    slug: 'receipt-review',
-    name: '영수증 리뷰',
-    description: '영수증 기반 리뷰 작성 서비스',
-    is_active: true,
-    created_at: '2024-01-01T00:00:00Z',
-  },
-  {
-    id: 'kakaomap-review',
-    slug: 'kakaomap-review',
-    name: '카카오맵 리뷰',
-    description: '카카오맵 리뷰 작성 서비스',
-    is_active: true,
-    created_at: '2024-01-01T00:00:00Z',
-  },
-  {
-    id: 'blog-distribution',
-    slug: 'blog-distribution',
-    name: '블로그 배포',
-    description: '블로그 콘텐츠 배포 서비스',
-    is_active: true,
-    created_at: '2024-01-01T00:00:00Z',
-  },
+// [UPDATED 2025-11-02] 4가지 고정 상품의 slug 목록
+const FIXED_PRODUCT_SLUGS = [
+  'place-traffic',
+  'receipt-review',
+  'kakaomap-review',
+  'blog-distribution',
 ];
 
 async function getClientWithPricing(clientId: string) {
   const supabase = await createClient();
 
-  const [clientResult, pricesResult] = await Promise.all([
+  const [clientResult, categoriesResult, pricesResult] = await Promise.all([
     supabase.from('clients').select('*').eq('id', clientId).single(),
+    // 데이터베이스에서 실제 product_categories 조회 (UUID 포함)
+    supabase
+      .from('product_categories')
+      .select('*')
+      .in('slug', FIXED_PRODUCT_SLUGS)
+      .eq('is_active', true),
     supabase
       .from('client_product_prices')
       .select('*, product_categories(*)')
@@ -54,15 +32,19 @@ async function getClientWithPricing(clientId: string) {
     return null;
   }
 
-  // [UPDATED 2025-11-02] 4가지 고정 상품만 필터링
+  if (categoriesResult.error || !categoriesResult.data) {
+    return null;
+  }
+
+  // 4가지 고정 상품만 필터링
   const filteredPrices = (pricesResult.data || []).filter((price: any) => {
     const slug = price.product_categories?.slug;
-    return FIXED_PRODUCTS.some((p) => p.slug === slug);
+    return FIXED_PRODUCT_SLUGS.includes(slug);
   });
 
   return {
     client: clientResult.data,
-    categories: FIXED_PRODUCTS, // 4가지 고정 상품만 사용
+    categories: categoriesResult.data, // 실제 DB에서 조회한 카테고리 (UUID 포함)
     prices: filteredPrices,
   };
 }
