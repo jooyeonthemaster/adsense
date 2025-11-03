@@ -1,0 +1,111 @@
+/**
+ * ============================================================================
+ * [DISABLED] 동적 제출 API - 비활성화됨 (2025-11-02)
+ * ============================================================================
+ *
+ * 비활성화된 엔드포인트:
+ * - POST /api/submissions/dynamic (동적 폼 제출)
+ *
+ * 이유:
+ * - 4가지 고정 상품만 사용 (place, receipt, kakaomap, blog)
+ * - 각 상품은 전용 API와 테이블이 있음
+ * - dynamic_submissions 테이블 사용 안 함
+ *
+ * 관련 문서: claudedocs/CUSTOM_PRODUCT_ANALYSIS.md
+ * ============================================================================
+ */
+
+/*
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
+import { requireAuth } from '@/lib/auth';
+
+export async function POST(request: NextRequest) {
+  try {
+    const user = await requireAuth(['client']);
+    const supabase = await createClient();
+
+    const body = await request.json();
+    const { category_id, form_data, total_points } = body;
+
+    // Validation
+    if (!category_id || !form_data || total_points === undefined) {
+      return NextResponse.json(
+        { error: '필수 데이터가 누락되었습니다.' },
+        { status: 400 }
+      );
+    }
+
+    // Check if user has enough points
+    if (total_points > (user.points || 0)) {
+      return NextResponse.json(
+        { error: '포인트가 부족합니다.' },
+        { status: 400 }
+      );
+    }
+
+    // Insert submission
+    const { data: submission, error: submissionError } = await supabase
+      .from('dynamic_submissions')
+      .insert({
+        client_id: user.id,
+        category_id,
+        form_data,
+        total_points,
+        status: 'pending',
+      })
+      .select()
+      .single();
+
+    if (submissionError) {
+      console.error('Error creating submission:', submissionError);
+      return NextResponse.json(
+        { error: '접수 생성 중 오류가 발생했습니다.' },
+        { status: 500 }
+      );
+    }
+
+    // Deduct points from client
+    const { error: updateError } = await supabase
+      .from('clients')
+      .update({
+        points: (user.points || 0) - total_points,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', user.id);
+
+    if (updateError) {
+      console.error('Error updating client points:', updateError);
+      // Rollback submission if points deduction fails
+      await supabase.from('dynamic_submissions').delete().eq('id', submission.id);
+
+      return NextResponse.json(
+        { error: '포인트 차감 중 오류가 발생했습니다.' },
+        { status: 500 }
+      );
+    }
+
+    // Record point transaction
+    await supabase.from('point_transactions').insert({
+      client_id: user.id,
+      transaction_type: 'deduct',
+      amount: -total_points,
+      balance_after: (user.points || 0) - total_points,
+      reference_type: 'dynamic_submission',
+      reference_id: submission.id,
+      description: '동적 폼 접수',
+    });
+
+    return NextResponse.json({
+      success: true,
+      submission,
+    });
+  } catch (error) {
+    console.error('Error in POST /api/submissions/dynamic:', error);
+    return NextResponse.json(
+      { error: '접수 처리 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
+  }
+}
+*/
