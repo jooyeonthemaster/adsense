@@ -85,13 +85,25 @@ export function ReceiptSubmissionForm({
         return;
       }
 
+      if (!businessLicenseFile) {
+        setError('사업자등록증 또는 샘플 영수증을 업로드해주세요.');
+        setLoading(false);
+        return;
+      }
+
+      if (photoFiles.length === 0) {
+        setError('사진을 최소 1장 이상 업로드해주세요.');
+        setLoading(false);
+        return;
+      }
+
       if (totalPoints > currentPoints) {
         setError('포인트가 부족합니다.');
         setLoading(false);
         return;
       }
 
-      // Upload business license if provided
+      // Upload business license (required)
       let businessLicenseUrl = null;
       if (businessLicenseFile) {
         const formData = new FormData();
@@ -164,7 +176,7 @@ export function ReceiptSubmissionForm({
     }
   };
 
-  const isFormValid = companyName && naverPlaceUrl && totalCount >= 30;
+  const isFormValid = companyName && naverPlaceUrl && totalCount >= 30 && businessLicenseFile && photoFiles.length > 0;
   const hasEnoughPoints = totalPoints <= currentPoints;
 
   return (
@@ -243,13 +255,13 @@ export function ReceiptSubmissionForm({
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className="text-base sm:text-lg lg:text-xl">파일 업로드</CardTitle>
           <CardDescription className="text-xs sm:text-sm">
-            사업자등록증 또는 샘플 영수증, 사진을 업로드해주세요 (선택사항)
+            사업자등록증 또는 샘플 영수증, 사진을 업로드해주세요 (필수사항)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
           <div className="grid gap-1.5 sm:gap-2">
             <Label htmlFor="business_license" className="text-xs sm:text-sm">
-              사업자등록증 또는 샘플 영수증
+              사업자등록증 또는 샘플 영수증 <span className="text-destructive">*</span>
             </Label>
             <Input
               id="business_license"
@@ -267,7 +279,9 @@ export function ReceiptSubmissionForm({
           </div>
 
           <div className="grid gap-1.5 sm:gap-2">
-            <Label htmlFor="photos" className="text-xs sm:text-sm">사진 (여러 장 선택 가능)</Label>
+            <Label htmlFor="photos" className="text-xs sm:text-sm">
+              사진 (여러 장 선택 가능) <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="photos"
               type="file"

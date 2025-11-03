@@ -129,6 +129,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Create submission
+    // keywords가 유효한 배열인지 확인하고, 아니면 빈 배열로 변환
+    const validKeywords = Array.isArray(keywords) && keywords.length > 0 ? keywords : null;
+
     const { data: submission, error: submissionError } = await supabase
       .from('blog_distribution_submissions')
       .insert({
@@ -140,7 +143,7 @@ export async function POST(request: NextRequest) {
         daily_count,
         total_count,
         total_points,
-        keywords,
+        keywords: validKeywords,
         notes,
         status: 'pending',
       })

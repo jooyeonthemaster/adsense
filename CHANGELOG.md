@@ -1,5 +1,127 @@
 # CHANGELOG - 애드센스 마케팅 상품 접수 시스템
 
+## 2025-11-03 - [UPDATE] 카카오맵 리뷰 접수 스크립트 동의 체크박스 제거
+
+**Changed Files**:
+- app/dashboard/submit/kakaomap/kakaomap-submission-form.tsx (Before: 273 lines → After: 256 lines)
+
+**Changes**:
+
+1. **스크립트 동의 체크박스 UI 제거**:
+   - "제공된 스크립트에 따라 리뷰를 작성하겠습니다" 체크박스 삭제
+   - 필수 입력 항목 (빨간색 *) 제거
+
+2. **검증 로직 제거**:
+   - scriptConfirmed state 제거
+   - scriptConfirmed 체크 검증 로직 제거
+   - isFormValid에서 scriptConfirmed 조건 제거
+
+3. **Import 정리**:
+   - 사용하지 않는 Checkbox 컴포넌트 import 제거
+
+**Reason**:
+- 스크립트 동의가 필수 항목일 필요 없음
+- 리뷰 스크립트는 선택사항이므로 동의 체크박스 불필요
+- 불필요한 필수 입력 항목으로 인한 사용자 불편 제거
+
+**Impact**:
+
+✅ **사용자 경험 개선**:
+- 불필요한 필수 입력 항목 제거
+- 더 간편한 접수 프로세스
+
+✅ **코드 간소화**:
+- 17줄 감소 (273 → 256 lines)
+- 불필요한 state 및 검증 로직 제거
+
+---
+
+## 2025-11-03 - [FIX] 블로그 배포 접수 키워드 배열 처리 오류 수정
+
+**Changed Files**:
+- app/api/submissions/blog/route.ts (Before: 141 lines → After: 143 lines)
+- app/dashboard/submit/blog/blog-submission-form.tsx (Before: 402 lines → After: 402 lines)
+
+**Changes**:
+
+1. **API 키워드 배열 검증 추가 (blog/route.ts)**:
+   - 키워드가 빈 배열이거나 유효하지 않으면 null로 변환
+   - PostgreSQL TEXT[] 타입 호환성 보장
+   - 코드: `const validKeywords = Array.isArray(keywords) && keywords.length > 0 ? keywords : null;`
+
+2. **폼 키워드 데이터 전송 형식 수정 (blog-submission-form.tsx)**:
+   - 쉼표로 구분된 문자열을 배열로 변환하여 API로 전송
+   - 빈 키워드 필터링 (trim 후 길이 0인 항목 제거)
+   - 코드: `keywords.split(',').map((k) => k.trim()).filter((k) => k.length > 0)`
+
+**Reason**:
+- 블로그 배포 접수 시 PostgreSQL 에러 발생: `22P02 - malformed array literal: ""`
+- keywords 필드가 빈 문자열 ""로 전송되어 PostgreSQL TEXT[] 타입과 불일치
+- PostgreSQL은 배열 리터럴이 "{" 또는 차원 정보로 시작해야 함
+
+**Tried But Failed Approaches**:
+- ❌ DB 스키마 변경 고려: keywords를 TEXT 타입으로 변경하면 기존 배열 데이터 손실 우려
+- ❌ API에서만 수정: 프론트엔드에서 빈 문자열 전송 시 여전히 에러 발생 가능
+
+**Impact**:
+
+✅ **블로그 배포 접수 정상화**:
+- PostgreSQL 배열 타입 에러 해결
+- 키워드 없이도 정상 접수 가능 (null 처리)
+
+✅ **데이터 정합성 보장**:
+- 프론트엔드: 문자열 → 배열 변환
+- 백엔드: 배열 검증 → null 또는 유효한 배열만 DB 저장
+
+✅ **사용자 경험 개선**:
+- 접수 실패 없이 정상 제출
+- 키워드 선택사항으로 유연한 접수 가능
+
+---
+
+## 2025-11-03 - [UPDATE] 영수증 접수 파일 업로드 필수화
+
+**Changed Files**:
+- app/dashboard/submit/receipt/receipt-submission-form.tsx (Before: 341 lines → After: 353 lines)
+
+**Changes**:
+
+1. **파일 업로드 필수 입력 전환**:
+   - 사업자등록증 또는 샘플 영수증: 필수 입력 (*)
+   - 사진: 최소 1장 이상 필수 입력 (*)
+   - 설명 텍스트 변경: "(선택사항)" → "(필수사항)"
+
+2. **Validation 강화**:
+   - 사업자등록증 없이 제출 시: "사업자등록증 또는 샘플 영수증을 업로드해주세요." 에러
+   - 사진 없이 제출 시: "사진을 최소 1장 이상 업로드해주세요." 에러
+   - isFormValid에 파일 체크 추가 (제출 버튼 비활성화 조건)
+
+3. **UX 개선**:
+   - 필수 항목 표시 (빨간색 * 추가)
+   - 명확한 에러 메시지
+   - 제출 전 파일 유무 체크
+
+**Reason**:
+- 영수증 리뷰 서비스는 사업자등록증과 사진이 필수적임
+- 파일 없이 접수되면 서비스 진행 불가능
+- 불완전한 접수로 인한 관리자/거래처 간 커뮤니케이션 비용 발생
+
+**Impact**:
+
+✅ **데이터 품질 보장**:
+- 모든 영수증 접수에 필요한 파일 보장
+- 불완전한 접수 원천 차단
+
+✅ **업무 효율 향상**:
+- 파일 누락으로 인한 재요청 없음
+- 접수 즉시 서비스 진행 가능
+
+✅ **사용자 경험**:
+- 명확한 필수 항목 안내
+- 실시간 에러 피드백
+
+---
+
 ## 2025-11-03 - [ADD] 관리자 접수 상세보기 일괄 파일 다운로드 기능 추가
 
 **Changed Files**:

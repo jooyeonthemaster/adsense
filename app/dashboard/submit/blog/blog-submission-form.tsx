@@ -120,6 +120,12 @@ export function BlogSubmissionForm({
       }
 
       // Submit the form
+      // keywords를 쉼표로 구분하여 배열로 변환
+      const keywordsArray = keywords
+        .split(',')
+        .map((k) => k.trim())
+        .filter((k) => k.length > 0);
+
       const response = await fetch('/api/submissions/blog', {
         method: 'POST',
         headers: {
@@ -133,7 +139,7 @@ export function BlogSubmissionForm({
           daily_count: dailyCount,
           total_count: totalCount,
           total_points: totalPoints,
-          keywords,
+          keywords: keywordsArray,
           notes,
         }),
       });

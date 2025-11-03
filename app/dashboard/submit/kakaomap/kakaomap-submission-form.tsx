@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface KakaomapSubmissionFormProps {
@@ -30,7 +29,6 @@ export function KakaomapSubmissionForm({
   const [totalCount, setTotalCount] = useState(10);
   const [totalPoints, setTotalPoints] = useState(0);
   const [script, setScript] = useState('');
-  const [scriptConfirmed, setScriptConfirmed] = useState(false);
   const [notes, setNotes] = useState('');
 
   // Calculate total points when count changes
@@ -54,12 +52,6 @@ export function KakaomapSubmissionForm({
 
       if (totalCount < 10) {
         setError('최소 10타 이상 입력해주세요.');
-        setLoading(false);
-        return;
-      }
-
-      if (!scriptConfirmed) {
-        setError('스크립트를 확인해주세요.');
         setLoading(false);
         return;
       }
@@ -106,7 +98,7 @@ export function KakaomapSubmissionForm({
   };
 
   const isFormValid =
-    companyName && kakaoPlaceUrl && totalCount >= 10 && scriptConfirmed;
+    companyName && kakaoPlaceUrl && totalCount >= 10;
   const hasEnoughPoints = totalPoints <= currentPoints;
 
   return (
@@ -178,24 +170,6 @@ export function KakaomapSubmissionForm({
               disabled={loading}
               className="text-xs sm:text-sm"
             />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="script_confirmed"
-              checked={scriptConfirmed}
-              onCheckedChange={(checked) =>
-                setScriptConfirmed(checked === true)
-              }
-              disabled={loading}
-            />
-            <label
-              htmlFor="script_confirmed"
-              className="text-xs sm:text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              제공된 스크립트에 따라 리뷰를 작성하겠습니다{' '}
-              <span className="text-destructive">*</span>
-            </label>
           </div>
 
           <div className="grid gap-1.5 sm:gap-2">
