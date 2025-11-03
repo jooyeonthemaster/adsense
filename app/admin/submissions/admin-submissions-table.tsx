@@ -21,9 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Download } from 'lucide-react';
+import { Download, Eye } from 'lucide-react';
 import { SubmissionStatus } from '@/types/submission';
 import * as XLSX from 'xlsx';
+import { SubmissionDetailDialog } from './submission-detail-dialog';
 
 interface Submission {
   id: string;
@@ -80,6 +81,13 @@ export function AdminSubmissionsTable() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('date-desc');
+
+  // Detail dialog states
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState<{
+    id: string;
+    type: 'place' | 'receipt' | 'kakaomap' | 'blog';
+  } | null>(null);
 
   useEffect(() => {
     fetchSubmissions();
@@ -481,6 +489,21 @@ export function AdminSubmissionsTable() {
                         </SelectItem>
                       </SelectContent>
                     </Select>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-[10px] sm:text-xs"
+                      onClick={() => {
+                        setSelectedSubmission({
+                          id: submission.id,
+                          type: submission.type,
+                        });
+                        setDetailDialogOpen(true);
+                      }}
+                    >
+                      <Eye className="h-3 w-3 mr-1" />
+                      상세보기
+                    </Button>
                   </div>
 
                   <div className="text-xs text-muted-foreground space-y-1">
@@ -503,6 +526,7 @@ export function AdminSubmissionsTable() {
                     <TableHead className="text-xs lg:text-sm whitespace-nowrap">상세내용</TableHead>
                     <TableHead className="text-right text-xs lg:text-sm whitespace-nowrap">사용 포인트</TableHead>
                     <TableHead className="text-xs lg:text-sm whitespace-nowrap">상태</TableHead>
+                    <TableHead className="text-xs lg:text-sm whitespace-nowrap">상세보기</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -563,6 +587,21 @@ export function AdminSubmissionsTable() {
                           </SelectContent>
                         </Select>
                       </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedSubmission({
+                              id: submission.id,
+                              type: submission.type,
+                            });
+                            setDetailDialogOpen(true);
+                          }}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -571,6 +610,16 @@ export function AdminSubmissionsTable() {
           </>
         )}
       </CardContent>
+
+      {/* 상세보기 다이얼로그 */}
+      {selectedSubmission && (
+        <SubmissionDetailDialog
+          open={detailDialogOpen}
+          onOpenChange={setDetailDialogOpen}
+          submissionId={selectedSubmission.id}
+          submissionType={selectedSubmission.type}
+        />
+      )}
     </Card>
   );
 }

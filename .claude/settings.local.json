@@ -38,7 +38,15 @@
       "Bash(find . -name \"route.ts\" -type f -exec sh -c '\n  if head -20 \"\"$1\"\" | grep -q \"\"^\\*/$\"\"; then\n    echo \"\"Disabling: $1\"\"\n    mv \"\"$1\"\" \"\"$1.disabled\"\"\n  fi\n' sh {} ;)",
       "Bash(git init:*)",
       "Bash(git remote add:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\n[FIX]: Next.js 15 빌드 에러 수정 및 프로젝트 초기 커밋\n\n- Next.js 15 params Promise 타입 업데이트\n- useEffect exhaustive-deps 경고 처리\n- TypeScript 타입 에러 수정\n- 주석 처리된 route 파일 비활성화\n\nFiles: app/admin/*, app/api/*, lib/*, types/*\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(vercel --version:*)",
+      "Bash(vercel:*)",
+      "Bash(sed:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\n[FIX] 상품 가격 설정 오류 수정\n\n- 하드코딩된 FIXED_PRODUCTS를 DB 조회로 변경\n- category_id에 올바른 UUID 전달하도록 수정\n- API 에러 로깅 개선 (디버그 로그 및 상세 에러 메시지)\n\n원인: 기존 코드는 id 필드에 slug 문자열 사용 → DB는 UUID 필요\n해결: product_categories 테이블에서 실제 UUID 포함한 데이터 조회\n\nFiles: app/admin/clients/[id]/pricing/*, app/api/admin/clients/[id]/pricing/*\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(curl:*)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []

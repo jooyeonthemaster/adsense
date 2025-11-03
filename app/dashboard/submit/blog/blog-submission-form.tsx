@@ -145,9 +145,8 @@ export function BlogSubmissionForm({
         return;
       }
 
-      // Success
-      router.push('/dashboard');
-      router.refresh();
+      // Success - Force full page reload to ensure fresh data
+      window.location.href = '/dashboard';
     } catch (err) {
       setError(err instanceof Error ? err.message : '접수 중 오류가 발생했습니다.');
     } finally {

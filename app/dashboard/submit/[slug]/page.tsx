@@ -19,6 +19,7 @@
 import { requireAuth } from '@/lib/auth';
 import { getProductPrice } from '@/lib/pricing';
 import { redirect, notFound } from 'next/navigation';
+import { createClient } from '@/utils/supabase/server';
 import { PlaceSubmissionForm } from '../place/place-submission-form';
 import { ReceiptSubmissionForm } from '../receipt/receipt-submission-form';
 import { KakaomapSubmissionForm } from '../kakaomap/kakaomap-submission-form';
@@ -79,6 +80,16 @@ export default async function SubmissionPage({ params }: PageProps) {
   const { slug } = await params;
   const user = await requireAuth(['client']);
 
+  // Get fresh points from database instead of session
+  const supabase = await createClient();
+  const { data: client } = await supabase
+    .from('clients')
+    .select('points')
+    .eq('id', user.id)
+    .single();
+
+  const currentPoints = client?.points || 0;
+
   // PRODUCT_CONFIG에 없는 slug는 404
   const config = PRODUCT_CONFIG[slug];
   if (!config) {
@@ -137,13 +148,13 @@ export default async function SubmissionPage({ params }: PageProps) {
           reviewerPrice={reviewerPrice}
           videoPrice={videoPrice}
           automationPrice={automationPrice}
-          currentPoints={user.points || 0}
+          currentPoints={currentPoints}
         />
       ) : (
         <FormComponent
           clientId={user.id}
           pricePerUnit={pricePerUnit}
-          currentPoints={user.points || 0}
+          currentPoints={currentPoints}
         />
       )}
     </div>

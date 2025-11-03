@@ -5,24 +5,30 @@ import { AdminDashboardContent } from './admin-dashboard-content';
 async function getStats() {
   const supabase = await createClient();
 
-  const [clientsResult, submissionsResult, pointsResult] = await Promise.all([
+  const [clientsResult, submissionsResult, pointsResult, asRequestsResult] = await Promise.all([
     supabase.from('clients').select('id', { count: 'exact', head: true }),
     supabase
       .from('place_submissions')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'pending'),
     supabase.from('clients').select('points'),
+    supabase
+      .from('as_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending'),
   ]);
 
   const totalClients = clientsResult.count || 0;
   const pendingSubmissions = submissionsResult.count || 0;
   const totalPoints =
     pointsResult.data?.reduce((sum, client) => sum + (client.points || 0), 0) || 0;
+  const pendingAsRequests = asRequestsResult.count || 0;
 
   return {
     totalClients,
     pendingSubmissions,
     totalPoints,
+    pendingAsRequests,
   };
 }
 
@@ -124,16 +130,16 @@ export default async function AdminDashboard() {
       description: '처리 대기 중',
     },
     {
+      title: 'AS 신청',
+      value: stats.pendingAsRequests,
+      icon: 'AlertCircle' as const,
+      description: '처리 대기 중',
+    },
+    {
       title: '총 포인트',
       value: stats.totalPoints.toLocaleString(),
       icon: 'DollarSign' as const,
       description: '전체 거래처 보유',
-    },
-    {
-      title: '상품 카테고리',
-      value: 4,
-      icon: 'Package' as const,
-      description: '활성 상품',
     },
   ];
 

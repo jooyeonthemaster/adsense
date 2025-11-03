@@ -2,6 +2,10 @@ import { requireAuth } from '@/lib/auth';
 import { createClient } from '@/utils/supabase/server';
 import { ClientDashboardContent } from './client-dashboard-content';
 
+// Force dynamic rendering to prevent caching issues
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 async function getClientStats(clientId: string) {
   const supabase = await createClient();
 
@@ -109,6 +113,17 @@ async function getRecentSubmissions(clientId: string) {
 
 export default async function ClientDashboard() {
   const user = await requireAuth(['client']);
+
+  // Get fresh points from database instead of session
+  const supabase = await createClient();
+  const { data: client } = await supabase
+    .from('clients')
+    .select('points')
+    .eq('id', user.id)
+    .single();
+
+  const currentPoints = client?.points || 0;
+
   const [stats, products, recentSubmissions] = await Promise.all([
     getClientStats(user.id),
     getClientProducts(user.id),
@@ -119,7 +134,7 @@ export default async function ClientDashboard() {
     <ClientDashboardContent
       user={{
         name: user.company_name || user.name,
-        points: user.points || 0,
+        points: currentPoints,
       }}
       stats={stats}
       products={products}

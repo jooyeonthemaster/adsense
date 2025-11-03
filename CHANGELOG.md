@@ -1,5 +1,245 @@
 # CHANGELOG - 애드센스 마케팅 상품 접수 시스템
 
+## 2025-11-03 - [ADD] 관리자 접수 상세보기 일괄 파일 다운로드 기능 추가
+
+**Changed Files**:
+- app/admin/submissions/submission-detail-dialog.tsx (Before: 569 lines → After: 668 lines)
+- package.json (Added: jszip, file-saver, @types/file-saver)
+
+**Changes**:
+
+1. **일괄 다운로드 기능 구현**:
+   - JSZip 라이브러리를 사용한 ZIP 압축 다운로드
+   - 파일 타입별 폴더 구분:
+     - `business_license/`: 사업자등록증
+     - `photos/`: 업로드 사진들
+     - `scripts/`: 스크립트 파일들
+   - 다운로드 파일명: `업체명_접수ID_files.zip`
+
+2. **영수증 리뷰 지원**:
+   - 사업자등록증 (business_license_url)
+   - 업로드 사진 (photo_urls[])
+   - "일괄 다운로드" 버튼 추가 (카드 헤더 우측)
+
+3. **카카오맵 리뷰 지원**:
+   - 업로드 사진 (photo_urls[])
+   - 스크립트 파일 (script_urls[])
+   - "일괄 다운로드" 버튼 추가 (카드 헤더 우측)
+
+4. **UX 개선**:
+   - 다운로드 중 로딩 상태 표시: "다운로드 중..."
+   - 파일이 없을 때 버튼 숨김
+   - 에러 처리 및 사용자 알림
+
+**Reason**:
+- 관리자가 접수 파일들을 하나씩 다운로드해야 하는 불편함
+- 여러 파일을 빠르게 확인하고 보관하기 위한 일괄 다운로드 필요
+- 파일 관리 효율성 향상 필요
+
+**Impact**:
+
+✅ **관리자 업무 효율 대폭 개선**:
+- 한 번의 클릭으로 모든 파일 다운로드
+- 파일들이 폴더별로 정리되어 ZIP으로 제공
+- 다운로드 시간 단축 (병렬 다운로드)
+
+✅ **파일 관리 편의성**:
+- 업체명과 접수ID가 포함된 명확한 파일명
+- 폴더 구조로 파일 타입 구분 용이
+
+✅ **확장 가능성**:
+- 블로그 배포 등 다른 상품 타입에도 쉽게 적용 가능
+- 추가 파일 타입 지원 용이
+
+---
+
+## 2025-11-04 01:00 - [ADD] AS 요청 상세보기 및 관리자 대시보드 통계 추가
+
+**Changed Files**:
+- app/admin/as-requests/as-requests-table.tsx (Before: 381 lines → After: 516 lines)
+- app/admin/page.tsx (Before: 142 lines → After: 147 lines)
+- app/admin/admin-dashboard-content.tsx (Updated: AlertCircle 아이콘 추가)
+
+**Changes**:
+
+1. **AS 요청 상세보기 다이얼로그 추가**:
+   - 모바일: "상세보기" 버튼 추가 (Eye 아이콘 + 텍스트)
+   - 데스크탑: Eye 아이콘 버튼 추가
+   - 상세 정보 표시:
+     - 거래처, 요청일시
+     - 상품 유형, 상태
+     - 미달 현황 (예정/실제/미달률/미달 수량)
+     - **AS 신청 사유** (description) - 핵심!
+     - 관리자 응답 (있는 경우)
+   - "처리하기" 버튼으로 처리 다이얼로그 바로 이동
+
+2. **관리자 대시보드 통계 추가**:
+   - AS 신청 대기 건수 조회 API 추가
+   - "AS 신청" 통계 카드 추가
+   - AlertCircle 아이콘 사용
+   - 실시간 대기 중인 AS 신청 건수 표시
+
+**Reason**:
+- 관리자가 AS 신청 사유를 확인할 방법이 없었음
+- "처리" 다이얼로그에는 표시되지만, 처리 전에 빠르게 확인 불가
+- 관리자 대시보드에 AS 신청 통계가 없어서 신청 현황 파악 어려움
+
+**Impact**:
+
+✅ **관리자 경험 개선**:
+- AS 신청 사유 빠른 확인 가능
+- 처리하기 전에 내용 검토 가능
+- 미달 현황 한눈에 파악
+
+✅ **대시보드 가시성**:
+- AS 신청 대기 건수 즉시 확인
+- 처리 우선순위 파악 용이
+
+✅ **작업 효율성**:
+- 상세보기 → 처리하기 버튼으로 바로 이동
+- 클릭 횟수 최소화
+
+---
+
+## 2025-11-04 00:15 - [FIX + UX] AS 신청 기능 에러 수정 및 사용자 경험 대폭 개선
+
+**Changed Files**:
+- supabase/schema.sql (Before: 256 lines → After: 258 lines)
+- supabase/migrations/add_as_requests_counts.sql (NEW: 37 lines)
+- lib/submission-utils.ts (NEW: 104 lines)
+- app/dashboard/as-request/as-request-form.tsx (Before: 242 lines → After: 332 lines)
+
+**Changes**:
+
+1. **DB 스키마 수정 (critical fix)**:
+   - `as_requests` 테이블에 `expected_count` (예정 수량) 컬럼 추가
+   - `as_requests` 테이블에 `actual_count` (실제 달성 수량) 컬럼 추가
+   - CHECK 제약조건 추가: expected_count > 0 AND actual_count >= 0 AND expected_count >= actual_count
+   - Migration SQL 작성: `supabase/migrations/add_as_requests_counts.sql`
+
+2. **Submission 유틸 함수 추가** (`lib/submission-utils.ts`):
+   - `calculateExpectedCount(submission)`: 상품 타입별 예정 수량 자동 계산
+     - place: daily_count × total_days
+     - receipt/kakaomap/blog: total_count
+     - dynamic: form_data에서 추출
+   - `formatSubmissionLabel(submission)`: 드롭다운 표시용 레이블 포맷팅
+   - `getSubmissionDetails(submission)`: 상세 설명 생성
+
+3. **AS 신청 폼 UX 대폭 개선**:
+   - ❌ **제거**: UUID 직접 입력 필드
+   - ❌ **제거**: 상품 유형 수동 선택
+   - ❌ **제거**: 예정 수량 수동 입력
+   - ✅ **추가**: 완료된 접수 내역 드롭다운 선택
+   - ✅ **추가**: 선택 시 자동 데이터 채우기 (상품 유형, 업체명, 예정 수량)
+   - ✅ **추가**: 실시간 미달 수량 표시
+   - ✅ **추가**: 로딩 상태 표시 (접수 내역 불러오는 중)
+   - ✅ **추가**: 완료된 접수가 없을 때 안내 메시지
+
+4. **자동 데이터 채우기 로직**:
+   - 접수 내역 선택 → submission_type, submission_id, expected_count 자동 설정
+   - 사용자 입력: actual_count (실제 달성), description (AS 사유)
+   - 미달률 자동 계산 및 실시간 표시
+   - 미달 수량 표시: "미달 수량: XXX개"
+
+**Reason**:
+
+**문제 1 - DB 에러 (Critical)**:
+- AS 신청 시 PGRST204 에러 발생
+- DB 스키마에 `expected_count`, `actual_count` 컬럼 누락
+- API와 프론트엔드는 해당 컬럼 사용 중이었으나 DB에 존재하지 않음
+- INSERT 실패로 AS 신청 불가
+
+**문제 2 - UX 불편함**:
+- 사용자가 UUID를 직접 복사/붙여넣기 해야 함 (에러 발생 가능)
+- 예정 수량을 기억해서 입력해야 함
+- 완료되지 않은 접수에 대해서도 AS 신청 가능 (검증 부족)
+- submission_type과 submission_id 불일치 가능성
+
+**Tried But Failed Approaches**:
+- ❌ UUID 입력 필드 유지 + 검증 강화: 여전히 사용자 실수 가능성 높음
+- ❌ 예정 수량 수동 입력 + validation: 계산 오류 가능성
+
+**Impact**:
+
+✅ **기능 복구**:
+- AS 신청 기능 정상 작동
+- DB 무결성 보장 (올바른 컬럼 구조)
+
+✅ **UX 개선**:
+- UUID 복사/붙여넣기 불필요
+- 예정 수량 자동 계산
+- 완료된 접수만 선택 가능 (데이터 무결성)
+- 실수 방지 (자동 데이터 채우기)
+
+✅ **데이터 정합성**:
+- submission_type과 submission_id 자동 매칭 (불일치 불가능)
+- 정확한 expected_count 보장 (계산 로직 중앙화)
+- 완료된 접수만 AS 신청 가능
+
+✅ **개발자 경험**:
+- 재사용 가능한 유틸 함수 (submission-utils.ts)
+- 타입 안정성 (TypeScript)
+- 명확한 데이터 흐름
+
+**Migration 적용 방법**:
+```bash
+# Supabase CLI를 사용하는 경우
+npx supabase db push
+
+# 또는 SQL 직접 실행
+psql -f supabase/migrations/add_as_requests_counts.sql
+```
+
+---
+
+## 2025-11-03 23:30 - [ADD] 관리자 접수 상세 정보 조회 기능 구현
+
+**Changed Files**:
+- app/api/admin/submissions/[id]/route.ts (Before: 90 lines → After: 157 lines)
+- app/admin/submissions/admin-submissions-table.tsx (Before: 577 lines → After: 625 lines)
+- app/admin/submissions/submission-detail-dialog.tsx (NEW: 568 lines)
+- components/ui/separator.tsx (NEW: shadcn/ui component)
+
+**Changes**:
+- **API 엔드포인트 추가**:
+  - GET /api/admin/submissions/[id]?type={type} 구현
+  - 상품 타입별 테이블에서 상세 데이터 조회
+  - 거래처 정보 JOIN (username, company_name, contact_person, phone, email)
+
+- **상세보기 다이얼로그 컴포넌트 생성**:
+  - 거래처 정보, 접수 기본 정보, 상품별 상세 정보 구분 표시
+  - URL 복사/외부 열기 기능 (플레이스/카카오맵/블로그)
+  - 파일 미리보기 기능 (사업자등록증, 업로드 사진)
+  - 이미지 모달 미리보기 및 다운로드
+  - 키워드 배지 표시 (블로그)
+  - 비고 내용 표시
+
+- **테이블에 상세보기 버튼 추가**:
+  - 데스크탑: Eye 아이콘 버튼
+  - 모바일: "상세보기" 텍스트 버튼
+  - 클릭 시 상세 다이얼로그 오픈
+
+**Reason**:
+- 관리자가 고객이 입력한 실제 작업 정보를 확인할 수 없는 문제
+- URL, 업로드 파일, 스크립트, 키워드, 비고 등 중요 정보가 UI에 표시되지 않음
+- 데이터는 DB에 저장되지만 관리자가 볼 방법이 없었음
+
+**Features**:
+- ✅ 상품 타입별 맞춤 정보 표시 (플레이스/영수증/카카오맵/블로그)
+- ✅ URL 복사 및 새 탭 열기 기능
+- ✅ 이미지 파일 미리보기 및 다운로드
+- ✅ 거래처 상세 정보 조회 (담당자, 연락처, 이메일)
+- ✅ 깔끔한 카드 레이아웃 UI
+- ✅ 반응형 디자인 (모바일/데스크탑)
+
+**Impact**:
+- ✅ 관리자가 접수 내용을 체계적으로 확인 가능
+- ✅ 작업 진행에 필요한 모든 정보 접근 가능
+- ✅ 파일 다운로드로 오프라인 작업 지원
+- ✅ URL 복사로 빠른 접근 가능
+
+---
+
 ## 2025-11-03 - [FIX] 상품 가격 설정 오류 수정
 
 **Changed Files**:

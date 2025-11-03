@@ -191,6 +191,8 @@ CREATE TABLE IF NOT EXISTS as_requests (
   client_id UUID REFERENCES clients(id) ON DELETE CASCADE,
   submission_type VARCHAR(50) NOT NULL,
   submission_id UUID NOT NULL,
+  expected_count INTEGER NOT NULL,
+  actual_count INTEGER NOT NULL,
   missing_rate DECIMAL(5,2) NOT NULL CHECK (missing_rate >= 20),
   description TEXT NOT NULL,
   status VARCHAR(20) DEFAULT 'pending' NOT NULL, -- pending, in_progress, resolved, rejected
@@ -198,7 +200,8 @@ CREATE TABLE IF NOT EXISTS as_requests (
   resolved_by UUID REFERENCES admins(id),
   resolution_notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CONSTRAINT check_counts_valid CHECK (expected_count > 0 AND actual_count >= 0 AND expected_count >= actual_count)
 );
 
 -- ============================================

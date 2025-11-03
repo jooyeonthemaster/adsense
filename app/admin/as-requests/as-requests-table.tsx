@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Eye } from 'lucide-react';
 
 type AsRequestStatus = 'pending' | 'approved' | 'rejected';
 
@@ -73,11 +74,17 @@ export function AsRequestsTable() {
   const [asRequests, setAsRequests] = useState<AsRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // 처리 다이얼로그
   const [selectedRequest, setSelectedRequest] = useState<AsRequest | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [responseStatus, setResponseStatus] = useState<AsRequestStatus>('approved');
   const [adminResponse, setAdminResponse] = useState('');
   const [responding, setResponding] = useState(false);
+
+  // 상세보기 다이얼로그
+  const [detailRequest, setDetailRequest] = useState<AsRequest | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchAsRequests();
@@ -104,6 +111,11 @@ export function AsRequestsTable() {
     setResponseStatus(request.status === 'pending' ? 'approved' : request.status);
     setAdminResponse(request.admin_response || '');
     setDialogOpen(true);
+  };
+
+  const handleViewDetail = (request: AsRequest) => {
+    setDetailRequest(request);
+    setDetailDialogOpen(true);
   };
 
   const handleSubmitResponse = async () => {
@@ -225,11 +237,20 @@ export function AsRequestsTable() {
                       </div>
                     </div>
 
-                    <div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleViewDetail(request)}
+                        className="flex-1 text-xs"
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        상세보기
+                      </Button>
                       <Button
                         size="sm"
                         onClick={() => handleRespond(request)}
-                        className="w-full text-xs"
+                        className="flex-1 text-xs"
                       >
                         처리
                       </Button>
@@ -278,13 +299,23 @@ export function AsRequestsTable() {
                           </Badge>
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
-                          <Button
-                            size="sm"
-                            onClick={() => handleRespond(request)}
-                            className="text-xs"
-                          >
-                            처리
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewDetail(request)}
+                              className="text-xs"
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleRespond(request)}
+                              className="text-xs"
+                            >
+                              처리
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -373,6 +404,110 @@ export function AsRequestsTable() {
             >
               {responding ? '처리 중...' : '처리 완료'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 상세보기 다이얼로그 */}
+      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>AS 요청 상세 정보</DialogTitle>
+            <DialogDescription>
+              AS 요청의 상세 내용을 확인하세요
+            </DialogDescription>
+          </DialogHeader>
+
+          {detailRequest && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">거래처</p>
+                  <p className="font-medium">{detailRequest.clients?.company_name || '-'}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">요청일시</p>
+                  <p className="font-mono text-sm">{formatDate(detailRequest.created_at)}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">상품 유형</p>
+                  <Badge variant="outline" className="w-fit">
+                    {SUBMISSION_TYPE_LABELS[detailRequest.submission_type]}
+                  </Badge>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">상태</p>
+                  <Badge variant={STATUS_VARIANTS[detailRequest.status]} className="w-fit">
+                    {STATUS_LABELS[detailRequest.status]}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="grid gap-2 p-4 bg-muted rounded-lg">
+                <p className="text-sm font-medium text-muted-foreground">미달 현황</p>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">예정 수량</p>
+                    <p className="text-lg font-semibold">{detailRequest.expected_count.toLocaleString()}개</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">실제 수량</p>
+                    <p className="text-lg font-semibold">{detailRequest.actual_count.toLocaleString()}개</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">미달률</p>
+                    <p className="text-lg font-semibold text-destructive">
+                      {detailRequest.missing_rate.toFixed(1)}%
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  미달 수량: {(detailRequest.expected_count - detailRequest.actual_count).toLocaleString()}개
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">AS 신청 사유</p>
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm whitespace-pre-wrap">{detailRequest.description}</p>
+                </div>
+              </div>
+
+              {detailRequest.admin_response && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">관리자 응답</p>
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm whitespace-pre-wrap">{detailRequest.admin_response}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDetailDialogOpen(false)}
+            >
+              닫기
+            </Button>
+            {detailRequest && detailRequest.status === 'pending' && (
+              <Button
+                type="button"
+                onClick={() => {
+                  setDetailDialogOpen(false);
+                  handleRespond(detailRequest);
+                }}
+              >
+                처리하기
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

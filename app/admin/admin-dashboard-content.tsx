@@ -5,13 +5,14 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Activity, Database, Users, FileText, DollarSign, Package, Filter } from 'lucide-react';
+import { TrendingUp, Activity, Database, Users, FileText, DollarSign, Package, Filter, AlertCircle } from 'lucide-react';
 
 const iconMap = {
   Users,
   FileText,
   DollarSign,
   Package,
+  AlertCircle,
 };
 
 type IconName = keyof typeof iconMap;
@@ -32,6 +33,7 @@ interface AdminDashboardContentProps {
     totalClients: number;
     pendingSubmissions: number;
     totalPoints: number;
+    pendingAsRequests: number;
   };
   cards: Array<{
     title: string;
@@ -151,12 +153,11 @@ export function AdminDashboardContent({ stats, cards, recentSubmissions }: Admin
         })}
       </motion.div>
 
-      {/* 하단 카드 */}
+      {/* 최근 접수 내역 */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.5 }}
-        className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-1 lg:grid-cols-2"
       >
         <Card className="group hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 border-primary/10">
           <CardHeader className="p-3 sm:p-4 lg:p-6">
@@ -185,7 +186,7 @@ export function AdminDashboardContent({ stats, cards, recentSubmissions }: Admin
                 {showOnlyPending ? '대기중인 접수 내역이 없습니다.' : '최근 접수 내역이 없습니다.'}
               </p>
             ) : (
-              <div className="space-y-1.5 sm:space-y-2">
+              <div className="grid gap-2 sm:gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {filteredSubmissions.map((submission) => (
                   <div
                     key={`${submission.type}-${submission.id}`}
@@ -226,35 +227,6 @@ export function AdminDashboardContent({ stats, cards, recentSubmissions }: Admin
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        <Card className="group hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 border-primary/10">
-          <CardHeader className="p-3 sm:p-4 lg:p-6">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 p-2 sm:p-3 shadow-lg shadow-emerald-500/30">
-                <Database className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-              </div>
-              <CardTitle className="text-base sm:text-lg lg:text-xl">시스템 현황</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-3 sm:p-4 lg:p-6 pt-0">
-            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
-              <div className="flex justify-between items-center p-1.5 sm:p-2 rounded-lg bg-muted/30">
-                <span className="text-muted-foreground">시스템 상태</span>
-                <span className="font-medium text-emerald-600 flex items-center gap-0.5 sm:gap-1">
-                  <div className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-emerald-600 animate-pulse" />
-                  정상
-                </span>
-              </div>
-              <div className="flex justify-between items-center p-1.5 sm:p-2 rounded-lg bg-muted/30">
-                <span className="text-muted-foreground">데이터베이스</span>
-                <span className="font-medium text-emerald-600 flex items-center gap-0.5 sm:gap-1">
-                  <div className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-emerald-600 animate-pulse" />
-                  연결됨
-                </span>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </motion.div>

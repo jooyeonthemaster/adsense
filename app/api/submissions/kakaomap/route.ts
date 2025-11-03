@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { requireAuth } from '@/lib/auth';
 import { getProductPrice } from '@/lib/pricing';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(request: NextRequest) {
   try {
@@ -134,6 +135,9 @@ export async function POST(request: NextRequest) {
       reference_id: submission.id,
       description: `카카오맵 리뷰 접수 (${company_name})`,
     });
+
+    // Revalidate all dashboard pages to show updated points immediately
+    revalidatePath('/dashboard', 'layout');
 
     return NextResponse.json({
       success: true,

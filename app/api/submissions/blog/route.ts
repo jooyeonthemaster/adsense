@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { requireAuth } from '@/lib/auth';
 import { getProductPrice } from '@/lib/pricing';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(request: NextRequest) {
   try {
@@ -170,6 +171,9 @@ export async function POST(request: NextRequest) {
       reference_id: submission.id,
       description: `블로그 배포 접수 (${company_name} - ${distribution_type})`,
     });
+
+    // Revalidate all dashboard pages to show updated points immediately
+    revalidatePath('/dashboard', 'layout');
 
     return NextResponse.json({
       success: true,

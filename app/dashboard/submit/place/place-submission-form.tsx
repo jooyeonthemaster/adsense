@@ -76,8 +76,8 @@ export function PlaceSubmissionForm({
         return;
       }
 
-      router.push('/dashboard/submissions');
-      router.refresh();
+      // Force full page reload to ensure fresh data
+      window.location.href = '/dashboard';
     } catch (err) {
       setError('접수 중 오류가 발생했습니다.');
     } finally {
