@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2 } from 'lucide-react';
+import { Loader2, BookOpen } from 'lucide-react';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -81,6 +82,18 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center gradient-bg p-4 relative overflow-hidden">
+      {/* 사용 설명서 버튼 */}
+      <Link href="/how-to-use" className="fixed top-6 right-6 z-50">
+        <Button 
+          variant="outline" 
+          size="lg"
+          className="bg-white/90 backdrop-blur-sm hover:bg-white hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl border-primary/20"
+        >
+          <BookOpen className="mr-2 h-5 w-5 text-primary" />
+          <span className="font-semibold">사용 설명서</span>
+        </Button>
+      </Link>
+
       {/* 커서 트레일 효과 */}
       <motion.div
         className="fixed w-8 h-8 rounded-full border-2 border-primary/30 pointer-events-none z-50"
@@ -343,6 +356,19 @@ export default function LoginPage() {
                 </form>
               </TabsContent>
             </Tabs>
+
+            {/* 사용 설명서 링크 (모바일용) */}
+            <div className="pt-4 border-t mt-4">
+              <Link href="/how-to-use">
+                <Button 
+                  variant="ghost" 
+                  className="w-full text-sm text-muted-foreground hover:text-primary"
+                >
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  사용 설명서 보기
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
 
