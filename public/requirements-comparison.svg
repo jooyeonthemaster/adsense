@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="794" height="1123" viewBox="0 0 794 1123" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .title { font-family: 'Malgun Gothic', sans-serif; font-size: 28px; font-weight: bold; fill: #000; }
+      .subtitle { font-family: 'Malgun Gothic', sans-serif; font-size: 14px; fill: #666; }
+      .section-title { font-family: 'Malgun Gothic', sans-serif; font-size: 18px; font-weight: bold; fill: #000; }
+      .table-header { font-family: 'Malgun Gothic', sans-serif; font-size: 12px; font-weight: bold; fill: #fff; }
+      .table-cell { font-family: 'Malgun Gothic', sans-serif; font-size: 10px; fill: #333; }
+      .label { font-family: 'Malgun Gothic', sans-serif; font-size: 11px; font-weight: bold; fill: #000; }
+      .text { font-family: 'Malgun Gothic', sans-serif; font-size: 10px; fill: #444; }
+      .highlight { fill: #f0f0f0; }
+      .question-box { fill: #fff; stroke: #000; stroke-width: 1.5; }
+      .check-mark { fill: #000; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="794" height="1123" fill="#ffffff"/>
+
+  <!-- Header -->
+  <text x="60" y="60" class="title">요구사항 비교 분석</text>
+  <text x="60" y="82" class="subtitle">마자무 UI 접수 홈페이지 - 개발 기준 확인 자료</text>
+  <line x1="60" y1="95" x2="734" y2="95" stroke="#000" stroke-width="2"/>
+
+  <!-- Overview Section -->
+  <text x="60" y="125" class="section-title">📊 문서 개요</text>
+  <rect x="60" y="135" width="674" height="80" fill="#f8f8f8" stroke="#ddd" stroke-width="1"/>
+
+  <text x="80" y="160" class="label">요구사항 (최신버전)</text>
+  <text x="80" y="178" class="text">• 총 168줄 • 5개 대분류 • 12개 소분류</text>
+  <text x="80" y="193" class="text">• 상세 UI/UX 명세 • 워크플로우 정의 • 사용자 인터랙션 상세화</text>
+
+  <line x1="400" y1="145" x2="400" y2="205" stroke="#ddd" stroke-width="1"/>
+
+  <text x="420" y="160" class="label">요구사항2 (구버전)</text>
+  <text x="420" y="178" class="text">• 총 35줄 • 단순 상품 나열</text>
+  <text x="420" y="193" class="text">• 기본 입력 항목만 정의 • UI 구조 없음</text>
+
+  <!-- Main Comparison Table -->
+  <text x="60" y="245" class="section-title">🔍 주요 차이점</text>
+
+  <!-- Table Header -->
+  <rect x="60" y="255" width="190" height="30" fill="#000"/>
+  <rect x="250" y="255" width="242" height="30" fill="#000"/>
+  <rect x="492" y="255" width="242" height="30" fill="#000"/>
+
+  <text x="155" y="275" class="table-header" text-anchor="middle">항목</text>
+  <text x="371" y="275" class="table-header" text-anchor="middle">구버전 (요구사항2)</text>
+  <text x="613" y="275" class="table-header" text-anchor="middle">최신버전 (요구사항)</text>
+
+  <!-- Row 1: Structure -->
+  <rect x="60" y="285" width="190" height="50" class="highlight" stroke="#ddd" stroke-width="1"/>
+  <rect x="250" y="285" width="242" height="50" fill="#fff" stroke="#ddd" stroke-width="1"/>
+  <rect x="492" y="285" width="242" height="50" fill="#fff" stroke="#ddd" stroke-width="1"/>
+
+  <text x="70" y="305" class="label">UI 구조</text>
+  <text x="260" y="305" class="table-cell">• UI 구조 없음</text>
+  <text x="260" y="320" class="table-cell">• 단순 페이지 나열</text>
+  <text x="502" y="305" class="table-cell">• 헤더 (닉네임/포인트/로그아웃)</text>
+  <text x="502" y="320" class="table-cell">• 좌측 카테고리 (Fold-up)</text>
+
+  <!-- Row 2: Categories -->
+  <rect x="60" y="335" width="190" height="50" class="highlight" stroke="#ddd" stroke-width="1"/>
+  <rect x="250" y="335" width="242" height="50" fill="#fff" stroke="#ddd" stroke-width="1"/>
+  <rect x="492" y="335" width="242" height="50" fill="#fff" stroke="#ddd" stroke-width="1"/>
+
+  <text x="70" y="355" class="label">카테고리</text>
+  <text x="260" y="355" class="table-cell">• 4개 상품만 나열</text>
+  <text x="260" y="370" class="table-cell">• 분류 체계 없음</text>
+  <text x="502" y="355" class="table-cell">• 5개 대분류 / 12개 소분류</text>
+  <text x="502" y="370" class="table-cell">• 아이콘 + 체계적 분류</text>
+
+  <!-- Row 3: Workflow -->
+  <rect x="60" y="385" width="190" height="50" class="highlight" stroke="#ddd" stroke-width="1"/>
+  <rect x="250" y="385" width="242" height="50" fill="#fff" stroke="#ddd" stroke-width="1"/>
+  <rect x="492" y="385" width="242" height="50" fill="#fff" stroke="#ddd" stroke-width="1"/>
+
+  <text x="70" y="405" class="label">상태 관리</text>
+  <text x="260" y="405" class="table-cell">• 상태 표시 없음</text>
+  <text x="260" y="420" class="table-cell">• 간단한 컨펌만</text>
+  <text x="502" y="405" class="table-cell">• 상태바 (확인중/접수완료/구동중)</text>
+  <text x="502" y="420" class="table-cell">• 중단/환불 워크플로우</text>
+
+  <!-- Row 4: Features -->
+  <rect x="60" y="435" width="190" height="50" class="highlight" stroke="#ddd" stroke-width="1"/>
+  <rect x="250" y="435" width="242" height="50" fill="#fff" stroke="#ddd" stroke-width="1"/>
+  <rect x="492" y="435" width="242" height="50" fill="#fff" stroke="#ddd" stroke-width="1"/>
+
+  <text x="70" y="455" class="label">신규 기능</text>
+  <text x="260" y="455" class="table-cell">• 없음</text>
+  <text x="502" y="450" class="table-cell">• 체험단 마케팅 (4종)</text>
+  <text x="502" y="463" class="table-cell">• 카페침투 마케팅</text>
+  <text x="502" y="476" class="table-cell">• 수정요청 히스토리 시스템</text>
+
+  <!-- New Products Section -->
+  <text x="60" y="515" class="section-title">🆕 신규 추가 서비스</text>
+
+  <rect x="60" y="525" width="320" height="120" fill="#fff" stroke="#000" stroke-width="1.5"/>
+  <rect x="60" y="525" width="320" height="25" fill="#000"/>
+  <text x="220" y="542" class="table-header" text-anchor="middle">체험단 마케팅 (4종)</text>
+
+  <text x="75" y="565" class="table-cell">1. 블로그 체험단 - 방문형/배송형, 블로거 선정 시스템</text>
+  <text x="75" y="582" class="table-cell">2. 샤오홍슈 - 중국인 체험단, 글로벌 마케팅</text>
+  <text x="75" y="599" class="table-cell">3. 실계정 기자단 - 발행일 지정, 이미지 첨부</text>
+  <text x="75" y="616" class="table-cell">4. 블로그 인플루언서 - 최대 10팀, 블로그 지수 관리</text>
+  <text x="75" y="633" class="text" font-style="italic">※ 키워드 노출 현황 관리, 1:1 CS 연동 포함</text>
+
+  <rect x="414" y="525" width="320" height="120" fill="#fff" stroke="#000" stroke-width="1.5"/>
+  <rect x="414" y="525" width="320" height="25" fill="#000"/>
+  <text x="574" y="542" class="table-header" text-anchor="middle">카페침투 마케팅</text>
+
+  <text x="429" y="565" class="table-cell">• 지역군 선택 → 지역별 카페 리스트 노출</text>
+  <text x="429" y="582" class="table-cell">• 중복 선택 가능</text>
+  <text x="429" y="599" class="table-cell">• 원고작성 상태 관리</text>
+  <text x="429" y="616" class="table-cell">• 구글 스프레드시트 연동</text>
+  <text x="429" y="633" class="text" font-style="italic">※ 5단계 상태바 (원고작성중/완료 포함)</text>
+
+  <!-- Critical Questions -->
+  <text x="60" y="680" class="section-title">❓ 클라이언트 확인 필요 사항</text>
+
+  <!-- Question 1 -->
+  <rect x="60" y="690" width="674" height="55" class="question-box"/>
+  <circle cx="75" cy="705" r="4" class="check-mark"/>
+  <text x="90" y="708" class="label">Q1. 개발 기준 버전</text>
+  <text x="90" y="725" class="text">→ 최신버전(요구사항)을 기준으로 개발을 진행할까요?</text>
+  <text x="90" y="738" class="text">→ 구버전(요구사항2)의 일부 기능만 포함시킬까요?</text>
+
+  <!-- Question 2 -->
+  <rect x="60" y="755" width="674" height="55" class="question-box"/>
+  <circle cx="75" cy="770" r="4" class="check-mark"/>
+  <text x="90" y="773" class="label">Q2. 단계별 개발 범위</text>
+  <text x="90" y="790" class="text">→ Phase 1: 기본 구조 + 리워드/리뷰 (기존 서비스)</text>
+  <text x="90" y="803" class="text">→ Phase 2: 블로그 배포 + 고급 기능 | Phase 3: 체험단/카페침투 (신규 서비스)</text>
+
+  <!-- Question 3 -->
+  <rect x="60" y="820" width="674" height="68" class="question-box"/>
+  <circle cx="75" cy="835" r="4" class="check-mark"/>
+  <text x="90" y="838" class="label">Q3. 구버전의 특정 제약사항 유지 여부</text>
+  <text x="90" y="855" class="text">→ 플레이스 유입: 최대 7일 제한 (구버전) vs 제한 없음 (최신버전)</text>
+  <text x="90" y="868" class="text">→ 영수증 리뷰: 최소 30건 (구버전) vs 최소 제한 없음 (최신버전)</text>
+  <text x="90" y="881" class="text">→ 어느 기준을 따를지 확인 필요</text>
+
+  <!-- Question 4 -->
+  <rect x="60" y="898" width="674" height="55" class="question-box"/>
+  <circle cx="75" cy="913" r="4" class="check-mark"/>
+  <text x="90" y="916" class="label">Q4. 외부 시스템 연동</text>
+  <text x="90" y="933" class="text">→ 자동화 배포 하위계정 시스템: 현재 준비 상태 확인 필요</text>
+  <text x="90" y="946" class="text">→ 1:1 고객센터 링크: 기존 CS 시스템 URL 확인</text>
+
+  <!-- Question 5 -->
+  <rect x="60" y="963" width="674" height="55" class="question-box"/>
+  <circle cx="75" cy="978" r="4" class="check-mark"/>
+  <text x="90" y="981" class="label">Q5. 관리자 기능 범위</text>
+  <text x="90" y="998" class="text">→ 공지사항/가이드 자유 변경: CMS 수준의 에디터가 필요한지</text>
+  <text x="90" y="1011" class="text">→ 리포트 등록, 블로거 리스트 관리: 별도 관리자 페이지 개발 범위 확인</text>
+
+  <!-- Footer -->
+  <line x1="60" y1="1050" x2="734" y2="1050" stroke="#ddd" stroke-width="1"/>
+  <text x="60" y="1070" class="text">작성자: 개발팀 | 작성일: 2025-11-13</text>
+  <text x="60" y="1085" class="text" font-style="italic">※ 본 문서는 두 요구사항 파일의 차이를 분석하여 개발 방향을 확정하기 위한 자료입니다.</text>
+  <text x="60" y="1100" class="text" font-weight="bold">→ 위 질문사항에 대한 답변을 받은 후 개발 착수를 권장합니다.</text>
+
+  <!-- Page Border -->
+  <rect x="40" y="40" width="714" height="1043" fill="none" stroke="#000" stroke-width="2"/>
+</svg>

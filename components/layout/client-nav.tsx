@@ -13,21 +13,75 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import {
-  LayoutDashboard,
-  Package,
-  FileText,
-  DollarSign,
-  HelpCircle,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
   LogOut,
   Menu,
+  ChevronDown,
+  Gift,
+  MessageSquare,
+  Users,
+  Coffee,
+  FileText,
+  Volume2,
 } from 'lucide-react';
+import Image from 'next/image';
 
-const navigation = [
-  { name: '대시보드', href: '/dashboard', icon: LayoutDashboard },
-  { name: '상품 접수', href: '/dashboard/submit', icon: Package },
-  { name: '접수 내역', href: '/dashboard/submissions', icon: FileText },
-  { name: '포인트 내역', href: '/dashboard/points', icon: DollarSign },
-  { name: 'AS 신청', href: '/dashboard/as-request', icon: HelpCircle },
+// 네비게이션 메뉴 구조 (요구사항.txt 기준)
+const navigationSections = [
+  {
+    id: 'reward',
+    title: '리워드',
+    icon: Gift,
+    collapsible: true,
+    items: [
+      { name: '리워드 접수', href: '/dashboard/reward/submit', icon: Gift },
+      { name: '접수 현황 확인', href: '/dashboard/reward/status', icon: Gift },
+    ],
+  },
+  {
+    id: 'review',
+    title: '리뷰 마케팅',
+    icon: MessageSquare,
+    collapsible: true,
+    items: [
+      { name: '방문자 리뷰', href: '/dashboard/review/visitor', icon: MessageSquare },
+      { name: 'K맵 리뷰', href: '/dashboard/review/kmap', icon: MessageSquare },
+    ],
+  },
+  {
+    id: 'experience',
+    title: '체험단 마케팅',
+    icon: Users,
+    collapsible: true,
+    items: [
+      { name: '블로그', href: '/dashboard/experience/blog', icon: Users },
+      { name: '샤오홍슈', href: '/dashboard/experience/xiaohongshu', icon: Users },
+      { name: '실계정 기자단', href: '/dashboard/experience/journalist', icon: Users },
+      { name: '블로그 인플루언서', href: '/dashboard/experience/influencer', icon: Users },
+    ],
+  },
+  {
+    id: 'blog-distribution',
+    title: '블로그 배포',
+    icon: FileText,
+    collapsible: true,
+    items: [
+      { name: '영상 배포', href: '/dashboard/blog-distribution/video', icon: FileText },
+      { name: '자동화 배포', href: '/dashboard/blog-distribution/auto', icon: FileText },
+      { name: '리뷰어 배포', href: '/dashboard/blog-distribution/reviewer', icon: FileText },
+    ],
+  },
+  {
+    id: 'cafe',
+    title: '카페침투 마케팅',
+    icon: Coffee,
+    collapsible: false,
+    href: '/dashboard/cafe',
+  },
 ];
 
 interface ClientNavProps {
@@ -40,6 +94,7 @@ interface ClientNavProps {
 function NavContent({ user, onClose }: { user: ClientNavProps['user']; onClose?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [openSections, setOpenSections] = useState<string[]>(['reward', 'review', 'experience', 'blog-distribution']);
 
   const handleLogout = async () => {
     try {
@@ -51,61 +106,147 @@ function NavContent({ user, onClose }: { user: ClientNavProps['user']; onClose?:
     }
   };
 
+  const toggleSection = (sectionId: string) => {
+    setOpenSections((prev) =>
+      prev.includes(sectionId)
+        ? prev.filter((id) => id !== sectionId)
+        : [...prev, sectionId]
+    );
+  };
+
   return (
     <>
-      <div className="flex h-14 sm:h-16 items-center justify-center border-b border-slate-800">
-        <div className="flex items-center gap-2">
-          <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-primary flex items-center justify-center">
-            <span className="text-base sm:text-lg font-bold">A</span>
-          </div>
-          <span className="text-base sm:text-lg font-semibold">애드센스</span>
-        </div>
-      </div>
-
-      <div className="border-b border-slate-800 p-3 sm:p-4">
-        <div className="space-y-1">
-          <p className="text-xs sm:text-sm text-slate-400">거래처</p>
-          <p className="text-sm sm:text-base font-semibold">{user.name}</p>
-          <div className="flex items-center gap-2 mt-2">
-            <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-yellow-500" />
-            <span className="text-xs sm:text-sm font-medium">
-              {user.points.toLocaleString()} P
-            </span>
+      {/* 캐릭터 + 사용자 정보 영역 */}
+      <div className="border-b border-gray-200 p-6">
+        {/* 로고 */}
+        <div className="flex justify-center mb-6">
+          <div className="relative w-48 h-48">
+            <Image
+              src="/logo.png"
+              alt="마스코트"
+              width={192}
+              height={192}
+              className="object-contain"
+            />
           </div>
         </div>
-      </div>
 
-      <nav className="flex-1 space-y-1 px-2.5 sm:px-3 py-3 sm:py-4">
-        {navigation.map((item) => {
-          const isActive = item.href === '/dashboard'
-            ? pathname === '/dashboard'
-            : pathname === item.href || pathname?.startsWith(item.href + '/');
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              onClick={() => onClose?.()}
-              className={cn(
-                'flex items-center gap-2 sm:gap-3 rounded-md px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              )}
+        {/* 사용자 정보 */}
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg font-bold text-gray-900">{user.name} 님</span>
+            <span className="text-sm font-medium text-blue-600">실행사</span>
+          </div>
+        </div>
+
+        {/* 포인트 + 충전하기 버튼 */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-1">
+            <span className="text-3xl font-bold text-gray-900">{user.points.toLocaleString()}</span>
+            <span className="text-lg text-gray-500 font-medium">P</span>
+          </div>
+          <Link href="/dashboard/points" onClick={() => onClose?.()}>
+            <Button
+              className="bg-gray-800 hover:bg-gray-700 text-white font-medium px-5 py-2 rounded-lg text-sm"
             >
-              <item.icon className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
-              {item.name}
-            </Link>
+              충전하기
+            </Button>
+          </Link>
+        </div>
+
+        {/* 공지사항 · 개인알림 */}
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <Volume2 className="h-4 w-4" />
+          <span>공지사항 · 개인알림</span>
+        </div>
+      </div>
+
+      {/* 메인 네비게이션 */}
+      <nav className="flex-1 overflow-y-auto py-2">
+        {navigationSections.map((section) => {
+          const SectionIcon = section.icon;
+
+          // 카페침투 마케팅은 collapsible이 아닌 단일 링크
+          if (!section.collapsible && 'href' in section && section.href) {
+            const isActive = pathname === section.href || pathname?.startsWith(section.href + '/');
+
+            return (
+              <Link
+                key={section.id}
+                href={section.href}
+                onClick={() => onClose?.()}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                  isActive
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                )}
+              >
+                <SectionIcon className="h-5 w-5" />
+                {section.title}
+              </Link>
+            );
+          }
+
+          // collapsible 섹션
+          const isOpen = openSections.includes(section.id);
+
+          return (
+            <Collapsible
+              key={section.id}
+              open={isOpen}
+              onOpenChange={() => toggleSection(section.id)}
+            >
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <SectionIcon className="h-5 w-5 text-blue-600" />
+                    <span className="text-sm font-medium text-gray-900">{section.title}</span>
+                  </div>
+                  <ChevronDown
+                    className={cn(
+                      'h-4 w-4 text-gray-500 transition-transform',
+                      isOpen && 'rotate-180'
+                    )}
+                  />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="bg-gray-50">
+                {section.items?.map((item) => {
+                  const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+                  const ItemIcon = item.icon;
+
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => onClose?.()}
+                      className={cn(
+                        'flex items-center gap-2 pl-11 pr-4 py-2 text-sm transition-colors',
+                        isActive
+                          ? 'bg-blue-600 text-white'
+                          : 'text-gray-700 hover:bg-gray-200'
+                      )}
+                    >
+                      <ItemIcon className="h-4 w-4" />
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </CollapsibleContent>
+            </Collapsible>
           );
         })}
       </nav>
 
-      <div className="border-t border-slate-800 p-3 sm:p-4">
+      {/* 로그아웃 */}
+      <div className="border-t border-gray-200 p-3">
         <Button
           variant="ghost"
-          className="w-full justify-start text-xs sm:text-sm text-slate-300 hover:bg-slate-800 hover:text-white"
+          className="w-full justify-start text-sm text-gray-700 hover:bg-gray-100"
           onClick={handleLogout}
         >
-          <LogOut className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5" />
+          <LogOut className="mr-2 h-4 w-4" />
           로그아웃
         </Button>
       </div>
@@ -119,32 +260,29 @@ export function ClientNav({ user }: ClientNavProps) {
   return (
     <>
       {/* Mobile hamburger menu */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-slate-900 border-b border-slate-800 z-50 flex items-center px-4">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 z-50 flex items-center px-4">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-slate-100">
+            <Button variant="ghost" size="icon" className="text-gray-900">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0 bg-slate-900 border-slate-800">
+          <SheetContent side="left" className="w-72 p-0 bg-white border-gray-200">
             <SheetHeader className="sr-only">
               <SheetTitle>거래처 메뉴</SheetTitle>
             </SheetHeader>
-            <div className="flex h-screen flex-col text-slate-100">
+            <div className="flex h-screen flex-col">
               <NavContent user={user} onClose={() => setOpen(false)} />
             </div>
           </SheetContent>
         </Sheet>
         <div className="flex items-center gap-2 ml-4">
-          <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center">
-            <span className="text-base font-bold">A</span>
-          </div>
-          <span className="text-base font-semibold text-slate-100">애드센스</span>
+          <span className="text-base font-semibold text-gray-900">마자무</span>
         </div>
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:flex h-screen w-64 flex-col bg-slate-900 text-slate-100">
+      <div className="hidden lg:flex h-screen w-72 flex-col bg-white border-r border-gray-200">
         <NavContent user={user} />
       </div>
     </>
