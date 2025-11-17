@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +18,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Coffee, Sparkles, Camera } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 // 지역별 카페 데이터
 const cafesByRegion: Record<string, string[]> = {
@@ -31,80 +33,175 @@ const cafesByRegion: Record<string, string[]> = {
 };
 
 export default function CafeMarketingPage() {
+  const router = useRouter();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     businessName: '',
     placeUrl: '',
     contentType: 'review' as 'review' | 'info',
     region: '',
-    selectedCafes: [] as string[],
-    postCount: 1,
+    cafeDetails: [] as Array<{ name: string; count: number }>,
     guideline: '',
     hasPhoto: false,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [basePricePerPost, setBasePricePerPost] = useState<number>(8000);
+  const [loadingPrice, setLoadingPrice] = useState(true);
+
+  // 가격 정보 불러오기
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const response = await fetch('/api/pricing');
+        const data = await response.json();
+
+        if (data.success && data.pricing && data.pricing['cafe-marketing']) {
+          setBasePricePerPost(data.pricing['cafe-marketing']);
+        }
+      } catch (error) {
+        console.error('가격 정보 로드 실패:', error);
+      } finally {
+        setLoadingPrice(false);
+      }
+    };
+
+    fetchPricing();
+  }, []);
 
   const availableCafes = formData.region ? cafesByRegion[formData.region] || [] : [];
 
   const toggleCafe = (cafe: string) => {
+    setFormData(prev => {
+      const exists = prev.cafeDetails.find(c => c.name === cafe);
+      return {
+        ...prev,
+        cafeDetails: exists
+          ? prev.cafeDetails.filter(c => c.name !== cafe)
+          : [...prev.cafeDetails, { name: cafe, count: 1 }],
+      };
+    });
+  };
+
+  const updateCafeCount = (cafeName: string, count: number) => {
     setFormData(prev => ({
       ...prev,
-      selectedCafes: prev.selectedCafes.includes(cafe)
-        ? prev.selectedCafes.filter(c => c !== cafe)
-        : [...prev.selectedCafes, cafe],
+      cafeDetails: prev.cafeDetails.map(c =>
+        c.name === cafeName ? { ...c, count: Math.max(1, count) } : c
+      ),
     }));
   };
 
+  const calculateTotalCount = () => {
+    return formData.cafeDetails.reduce((sum, cafe) => sum + cafe.count, 0);
+  };
+
   const calculateTotalCost = () => {
-    const basePricePerPost = 8000;
-    const photoMultiplier = formData.hasPhoto ? 1.3 : 1.0;
-    return Math.floor(formData.selectedCafes.length * formData.postCount * basePricePerPost * photoMultiplier);
+    return calculateTotalCount() * basePricePerPost;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.businessName || !formData.placeUrl) {
-      alert('업체명과 플레이스 링크를 입력해주세요.');
+      toast({
+        variant: 'destructive',
+        title: '입력 오류',
+        description: '업체명과 플레이스 링크를 입력해주세요.',
+      });
       return;
     }
 
     if (!formData.region) {
-      alert('지역군을 선택해주세요.');
+      toast({
+        variant: 'destructive',
+        title: '입력 오류',
+        description: '지역군을 선택해주세요.',
+      });
       return;
     }
 
-    if (formData.selectedCafes.length === 0) {
-      alert('최소 1개 이상의 카페를 선택해주세요.');
+    if (formData.cafeDetails.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: '입력 오류',
+        description: '최소 1개 이상의 카페를 선택해주세요.',
+      });
       return;
     }
 
-    if (formData.postCount < 1) {
-      alert('발행 건수는 최소 1건 이상이어야 합니다.');
+    // Validate all cafes have count >= 1
+    const invalidCafe = formData.cafeDetails.find(c => c.count < 1);
+    if (invalidCafe) {
+      toast({
+        variant: 'destructive',
+        title: '입력 오류',
+        description: `${invalidCafe.name}의 발행 건수를 1건 이상 입력해주세요.`,
+      });
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      console.log('접수 데이터:', formData);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      alert('카페침투 마케팅 접수가 완료되었습니다.');
+      const totalCost = calculateTotalCost();
 
-      setFormData({
-        businessName: '',
-        placeUrl: '',
-        contentType: 'review',
-        region: '',
-        selectedCafes: [],
-        postCount: 1,
-        guideline: '',
-        hasPhoto: false,
+      const response = await fetch('/api/submissions/cafe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          company_name: formData.businessName,
+          place_url: formData.placeUrl,
+          content_type: formData.contentType,
+          region: formData.region,
+          cafe_details: formData.cafeDetails,
+          has_photo: formData.hasPhoto,
+          guideline: formData.guideline || null,
+          photo_urls: null,
+          total_points: totalCost,
+        }),
       });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || '접수에 실패했습니다.');
+      }
+
+      const data = await response.json();
+
+      // Toast 알림 표시
+      toast({
+        title: '✅ 카페 침투 마케팅 접수 완료!',
+        description: (
+          <div className="space-y-2 mt-2">
+            <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
+              <Coffee className="h-4 w-4 text-amber-600" />
+              <span className="text-sm font-medium text-amber-900">
+                차감 포인트: {data.submission?.total_points?.toLocaleString() || '0'}P
+              </span>
+            </div>
+            <div className="text-sm text-gray-600">
+              남은 포인트: {data.new_balance?.toLocaleString() || '0'}P
+            </div>
+          </div>
+        ) as React.ReactNode,
+        duration: 5000,
+      });
+
+      // 1.5초 후 접수 현황 페이지로 이동
+      setTimeout(() => {
+        router.push('/dashboard/cafe/status');
+        router.refresh(); // 서버 데이터 새로고침
+      }, 1500);
     } catch (error) {
       console.error('접수 실패:', error);
-      alert('접수 중 오류가 발생했습니다.');
-    } finally {
+      toast({
+        variant: 'destructive',
+        title: '접수 실패',
+        description: error instanceof Error ? error.message : '접수 중 오류가 발생했습니다.',
+      });
       setIsSubmitting(false);
     }
   };
@@ -205,7 +302,7 @@ export default function CafeMarketingPage() {
                 </Label>
                 <Select
                   value={formData.region}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, region: value, selectedCafes: [] }))}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, region: value, cafeDetails: [] }))}
                 >
                   <SelectTrigger className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm">
                     <SelectValue placeholder="지역을 선택하세요" />
@@ -224,46 +321,53 @@ export default function CafeMarketingPage() {
               {formData.region && availableCafes.length > 0 && (
                 <div className="space-y-2">
                   <Label className="text-xs font-medium text-gray-700">
-                    희망 카페 선택 (중복 가능) <span className="text-rose-500">*</span>
+                    희망 카페 선택 <span className="text-rose-500">*</span>
                   </Label>
-                  <div className="space-y-2 p-3 bg-amber-50 rounded-lg border border-amber-200 max-h-48 overflow-y-auto">
-                    {availableCafes.map((cafe) => (
-                      <div key={cafe} className="flex items-center gap-2">
-                        <Checkbox
-                          id={cafe}
-                          checked={formData.selectedCafes.includes(cafe)}
-                          onCheckedChange={() => toggleCafe(cafe)}
-                          className="h-4 w-4"
-                        />
-                        <label htmlFor={cafe} className="text-sm text-gray-700 cursor-pointer select-none">
-                          {cafe}
-                        </label>
-                      </div>
-                    ))}
+                  <div className="space-y-2 p-3 bg-amber-50 rounded-lg border border-amber-200 max-h-64 overflow-y-auto">
+                    {availableCafes.map((cafe) => {
+                      const cafeDetail = formData.cafeDetails.find(c => c.name === cafe);
+                      const isSelected = !!cafeDetail;
+
+                      return (
+                        <div key={cafe} className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id={cafe}
+                              checked={isSelected}
+                              onCheckedChange={() => toggleCafe(cafe)}
+                              className="h-4 w-4"
+                            />
+                            <label htmlFor={cafe} className="text-sm text-gray-700 cursor-pointer select-none flex-1">
+                              {cafe}
+                            </label>
+                          </div>
+                          {isSelected && (
+                            <div className="ml-6 flex items-center gap-2">
+                              <Label htmlFor={`count-${cafe}`} className="text-xs text-gray-600 whitespace-nowrap">
+                                발행 건수:
+                              </Label>
+                              <Input
+                                id={`count-${cafe}`}
+                                type="number"
+                                min="1"
+                                value={cafeDetail.count}
+                                onChange={(e) => updateCafeCount(cafe, Number(e.target.value))}
+                                className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-8 text-sm w-20"
+                              />
+                              <span className="text-xs text-gray-600">건</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                   <p className="text-xs text-gray-600">
-                    선택된 카페: <span className="font-semibold text-amber-700">{formData.selectedCafes.length}개</span>
+                    선택된 카페: <span className="font-semibold text-amber-700">{formData.cafeDetails.length}개</span>
+                    {' | '}
+                    총 발행 건수: <span className="font-semibold text-sky-700">{calculateTotalCount()}건</span>
                   </p>
                 </div>
               )}
-
-              {/* 발행 건수 */}
-              <div className="space-y-2">
-                <Label htmlFor="postCount" className="text-xs font-medium text-gray-700">
-                  발행 건수 (카페당) <span className="text-rose-500">*</span>
-                </Label>
-                <Input
-                  id="postCount"
-                  type="number"
-                  min="1"
-                  value={formData.postCount}
-                  onChange={(e) => setFormData(prev => ({ ...prev, postCount: Number(e.target.value) }))}
-                  className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
-                />
-                <p className="text-xs text-gray-600">
-                  총 게시물: <span className="font-semibold text-sky-700">{formData.selectedCafes.length * formData.postCount}개</span>
-                </p>
-              </div>
 
               {/* 가이드 및 요청사항 */}
               <div className="space-y-2">
@@ -313,7 +417,7 @@ export default function CafeMarketingPage() {
                   <span className="text-xs font-medium text-gray-700">선택된 카페</span>
                   <div className="flex items-baseline gap-1">
                     <span className="text-xl font-bold text-gray-900">
-                      {formData.selectedCafes.length}
+                      {formData.cafeDetails.length}
                     </span>
                     <span className="text-xs text-gray-600">개</span>
                   </div>
@@ -325,7 +429,7 @@ export default function CafeMarketingPage() {
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-white">예상 비용</span>
                       <Badge variant="secondary" className="bg-white/20 text-white border-0 text-xs px-2 py-0">
-                        총 {formData.selectedCafes.length * formData.postCount}건
+                        총 {calculateTotalCount()}건
                       </Badge>
                     </div>
                     <div className="flex items-baseline gap-1">
@@ -335,7 +439,7 @@ export default function CafeMarketingPage() {
                       <span className="text-sm text-white/90">P</span>
                     </div>
                     <div className="text-xs text-white/80">
-                      {formData.selectedCafes.length}개 카페 × {formData.postCount}건
+                      건당 {basePricePerPost.toLocaleString()}P × {calculateTotalCount()}건
                     </div>
                   </div>
                 </div>

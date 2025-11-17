@@ -4,6 +4,67 @@ import { requireAuth } from '@/lib/auth';
 import { getProductPrice } from '@/lib/pricing';
 import { revalidatePath } from 'next/cache';
 
+export async function GET() {
+  try {
+    const user = await requireAuth(['client']);
+    const supabase = await createClient();
+
+    // Get all blog distribution submissions for this client
+    const { data: submissions, error } = await supabase
+      .from('blog_distribution_submissions')
+      .select('*')
+      .eq('client_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching submissions:', error);
+      return NextResponse.json(
+        { error: '제출 내역 조회 중 오류가 발생했습니다.' },
+        { status: 500 }
+      );
+    }
+
+    // Fetch daily records to calculate progress
+    const { data: allDailyRecords } = await supabase
+      .from('blog_distribution_daily_records')
+      .select('submission_id, completed_count');
+
+    // Create a map of submission_id to total completed count
+    const completedCountMap = new Map<string, number>();
+    if (allDailyRecords) {
+      allDailyRecords.forEach((record: any) => {
+        const currentCount = completedCountMap.get(record.submission_id) || 0;
+        completedCountMap.set(record.submission_id, currentCount + record.completed_count);
+      });
+    }
+
+    // Add progress to each submission
+    const submissionsWithProgress = (submissions || []).map((sub: any) => {
+      const completedCount = completedCountMap.get(sub.id) || 0;
+      const progressPercentage = sub.total_count > 0
+        ? Math.round((completedCount / sub.total_count) * 100)
+        : 0;
+
+      return {
+        ...sub,
+        completed_count: completedCount,
+        progress_percentage: progressPercentage,
+      };
+    });
+
+    return NextResponse.json({
+      success: true,
+      submissions: submissionsWithProgress,
+    });
+  } catch (error) {
+    console.error('Error in GET /api/submissions/blog:', error);
+    return NextResponse.json(
+      { error: '제출 내역 조회 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(['client']);
@@ -18,26 +79,28 @@ export async function POST(request: NextRequest) {
       total_points,
       keywords,
       notes,
+      account_id,
+      charge_count,
     } = body;
 
     // Validation
-    if (!company_name || !distribution_type || !content_type || !place_url || !daily_count) {
+    if (!company_name || !distribution_type || !content_type || daily_count === undefined) {
       return NextResponse.json(
         { error: '필수 항목을 모두 입력해주세요.' },
         { status: 400 }
       );
     }
 
-    if (daily_count < 1 || daily_count > 3) {
+    if (daily_count < 3) {
       return NextResponse.json(
-        { error: '일 타수는 최소 1타, 최대 3타입니다.' },
+        { error: '일 접수량은 최소 3건입니다.' },
         { status: 400 }
       );
     }
 
-    if (total_count > 30) {
+    if (total_count < 30) {
       return NextResponse.json(
-        { error: '총 타수는 최대 30타입니다.' },
+        { error: '총 접수량은 최소 30건입니다. (최소 10일 × 3건)' },
         { status: 400 }
       );
     }
@@ -62,10 +125,10 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // Get client's current points
+    // Get client's current points and approval status
     const { data: client, error: clientError } = await supabase
       .from('clients')
-      .select('points')
+      .select('points, auto_distribution_approved')
       .eq('id', user.id)
       .single();
 
@@ -76,11 +139,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate external account usage for automation distribution
+    if (account_id && distribution_type === 'automation') {
+      if (!client.auto_distribution_approved) {
+        return NextResponse.json(
+          { error: '자동화 배포 외부 계정 충전은 승인된 회원만 사용할 수 있습니다. 관리자에게 문의하세요.' },
+          { status: 403 }
+        );
+      }
+    }
+
     // Get price for selected distribution type
     const categoryMap: Record<string, string> = {
-      reviewer: 'blog-reviewer',
-      video: 'blog-video',
-      automation: 'blog-automation',
+      reviewer: 'reviewer-distribution',
+      video: 'video-distribution',
+      automation: 'auto-distribution',
     };
 
     let pricePerUnit = await getProductPrice(user.id, categoryMap[distribution_type]);
@@ -145,6 +218,8 @@ export async function POST(request: NextRequest) {
         total_points,
         keywords: validKeywords,
         notes,
+        account_id: account_id || null,
+        charge_count: charge_count || null,
         status: 'pending',
       })
       .select()

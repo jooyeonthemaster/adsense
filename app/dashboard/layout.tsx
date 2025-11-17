@@ -1,6 +1,7 @@
 import { ClientNav } from '@/components/layout/client-nav';
 import { requireAuth } from '@/lib/auth';
 import { createClient } from '@/utils/supabase/server';
+import { Toaster } from '@/components/ui/toaster';
 
 export default async function ClientLayout({
   children,
@@ -30,6 +31,7 @@ export default async function ClientLayout({
       <main className="flex-1 overflow-y-auto bg-slate-50 pt-14 lg:pt-0">
         <div className="container mx-auto p-3 sm:p-4 lg:p-6">{children}</div>
       </main>
+      <Toaster />
     </div>
   );
 }

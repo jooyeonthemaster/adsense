@@ -4,6 +4,64 @@ import { requireAuth } from '@/lib/auth';
 import { getProductPrice } from '@/lib/pricing';
 import { revalidatePath } from 'next/cache';
 
+export async function GET(request: NextRequest) {
+  try {
+    const user = await requireAuth(['client']);
+    const supabase = await createClient();
+
+    // Get all kakaomap review submissions for this client
+    const { data: submissions, error } = await supabase
+      .from('kakaomap_review_submissions')
+      .select('*')
+      .eq('client_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching kakaomap submissions:', error);
+      return NextResponse.json(
+        { error: '접수 목록을 불러오는 중 오류가 발생했습니다.' },
+        { status: 500 }
+      );
+    }
+
+    // For each submission, get related data (content items, messages count)
+    const submissionsWithDetails = await Promise.all(
+      (submissions || []).map(async (submission) => {
+        // Get content items count
+        const { count: contentCount } = await supabase
+          .from('kakaomap_content_items')
+          .select('*', { count: 'exact', head: true })
+          .eq('submission_id', submission.id);
+
+        // Get unread messages count
+        const { count: unreadCount } = await supabase
+          .from('kakaomap_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('submission_id', submission.id)
+          .eq('is_read', false)
+          .eq('sender_type', 'admin');
+
+        return {
+          ...submission,
+          content_items_count: contentCount || 0,
+          unread_messages_count: unreadCount || 0,
+        };
+      })
+    );
+
+    return NextResponse.json({
+      success: true,
+      submissions: submissionsWithDetails,
+    });
+  } catch (error) {
+    console.error('Error in GET /api/submissions/kakaomap:', error);
+    return NextResponse.json(
+      { error: '접수 목록을 불러오는 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(['client']);
@@ -11,12 +69,18 @@ export async function POST(request: NextRequest) {
     const {
       company_name,
       kakaomap_url,
+      daily_count,
       total_count,
+      total_days,
       total_points,
       script,
       photo_urls,
+      script_urls,
       text_review_count,
       photo_review_count,
+      photo_ratio,
+      star_rating,
+      script_type,
       notes,
     } = body;
 
@@ -92,18 +156,46 @@ export async function POST(request: NextRequest) {
     }
 
     // Create submission
+    // Determine has_photo based on photo_review_count
+    const hasPhoto = photo_review_count > 0;
+
+    console.log('[DEBUG] Creating kakaomap submission with data:', {
+      client_id: user.id,
+      company_name,
+      kakaomap_url,
+      daily_count: daily_count || 1,
+      total_count,
+      total_days: total_days || Math.ceil(total_count / (daily_count || 1)),
+      has_photo: hasPhoto,
+      text_review_count: text_review_count || 0,
+      photo_review_count: photo_review_count || 0,
+      photo_urls,
+      script_urls,
+      photo_ratio,
+      star_rating,
+      script_type,
+      total_points,
+      notes,
+      status: 'pending',
+    });
+
     const { data: submission, error: submissionError } = await supabase
       .from('kakaomap_review_submissions')
       .insert({
         client_id: user.id,
         company_name,
         kakaomap_url,
-        daily_count: Math.ceil(total_count / 30),
+        daily_count: daily_count || 1,
         total_count,
-        has_photo: photo_urls && photo_urls.length > 0,
+        total_days: total_days || Math.ceil(total_count / (daily_count || 1)),
+        has_photo: hasPhoto,
         text_review_count: text_review_count || 0,
         photo_review_count: photo_review_count || 0,
         photo_urls,
+        script_urls,
+        photo_ratio,
+        star_rating,
+        script_type,
         total_points,
         notes,
         status: 'pending',
@@ -112,7 +204,8 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (submissionError) {
-      console.error('Error creating submission:', submissionError);
+      console.error('[ERROR] Failed to create kakaomap submission:', submissionError);
+      console.error('[ERROR] Supabase error details:', JSON.stringify(submissionError, null, 2));
       // Rollback points
       await supabase
         .from('clients')
@@ -120,7 +213,7 @@ export async function POST(request: NextRequest) {
         .eq('id', user.id);
 
       return NextResponse.json(
-        { error: '접수 생성 중 오류가 발생했습니다.' },
+        { error: `접수 생성 중 오류가 발생했습니다: ${submissionError.message || '알 수 없는 오류'}` },
         { status: 500 }
       );
     }

@@ -138,8 +138,8 @@ CREATE TABLE IF NOT EXISTS blog_distribution_submissions (
   content_type VARCHAR(20) NOT NULL, -- review, info
   company_name VARCHAR(200) NOT NULL,
   place_url TEXT NOT NULL,
-  daily_count INTEGER NOT NULL CHECK (daily_count <= 3),
-  total_count INTEGER NOT NULL CHECK (total_count <= 30),
+  daily_count INTEGER NOT NULL, -- 프론트엔드/API에서 최소 3건 검증
+  total_count INTEGER NOT NULL, -- 프론트엔드/API에서 최소 30건 검증
   keywords TEXT[],
   guide_text TEXT,
   photo_urls TEXT[],

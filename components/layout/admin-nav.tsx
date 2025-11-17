@@ -16,6 +16,10 @@ import {
   LogOut,
   BarChart3,
   Menu,
+  Sparkles,
+  Star,
+  Newspaper,
+  Coffee,
 } from 'lucide-react';
 
 const navigation = [
@@ -24,6 +28,10 @@ const navigation = [
   { name: '거래처 관리', href: '/admin/clients', icon: Users },
   // { name: '상품 관리', href: '/admin/products', icon: Package }, // [DISABLED 2025-11-02] 4가지 고정 상품만 사용
   { name: '접수 내역', href: '/admin/submissions', icon: FileText },
+  { name: '블로그 배포', href: '/admin/blog-distribution', icon: Newspaper },
+  { name: '카페 침투', href: '/admin/cafe-marketing', icon: Coffee },
+  { name: '리뷰 마케팅', href: '/admin/review-marketing', icon: Star },
+  { name: '체험단 관리', href: '/admin/experience', icon: Sparkles },
   { name: '포인트 관리', href: '/admin/points', icon: DollarSign },
   { name: 'AS 관리', href: '/admin/as-requests', icon: Settings },
 ];

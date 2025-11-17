@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Video, Zap, Users, Sparkles } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 type DistributionType = 'video' | 'auto' | 'reviewer';
 
@@ -35,11 +36,25 @@ const mapTypeToUrl = (type: DistributionType): string => {
   return mapping[type] || 'video';
 };
 
+// DistributionType을 DB slug로 매핑
+const mapTypeToSlug = (type: DistributionType): string => {
+  const mapping: Record<DistributionType, string> = {
+    'video': 'video-distribution',
+    'auto': 'auto-distribution',
+    'reviewer': 'reviewer-distribution',
+  };
+  return mapping[type];
+};
+
 export default function BlogDistributionPage() {
   const params = useParams();
   const router = useRouter();
+  const { toast } = useToast();
   const typeParam = params?.type as string;
   const [selectedType, setSelectedType] = useState<DistributionType>(mapTypeParam(typeParam));
+  const [pricing, setPricing] = useState<Record<string, number>>({});
+  const [pricingLoading, setPricingLoading] = useState(true);
+  const [isApprovedForAutoDistribution, setIsApprovedForAutoDistribution] = useState(false);
 
   // URL 파라미터가 변경되면 selectedType 업데이트
   useEffect(() => {
@@ -48,6 +63,27 @@ export default function BlogDistributionPage() {
     }
   }, [typeParam]);
 
+  // 가격 정보 및 승인 상태 불러오기
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const response = await fetch('/api/pricing');
+        const data = await response.json();
+
+        if (data.success && data.pricing) {
+          setPricing(data.pricing);
+          setIsApprovedForAutoDistribution(data.auto_distribution_approved || false);
+        }
+      } catch (error) {
+        console.error('가격 정보 로드 실패:', error);
+      } finally {
+        setPricingLoading(false);
+      }
+    };
+
+    fetchPricing();
+  }, []);
+
   const services = [
     {
       id: 'video' as DistributionType,
@@ -55,7 +91,7 @@ export default function BlogDistributionPage() {
       icon: Video,
       color: 'bg-blue-500',
       available: true,
-      pricePerPost: 15000,
+      pricePerPost: pricing['video-distribution'] || 15000,
       description: '영상 블로그 배포 서비스'
     },
     {
@@ -64,7 +100,7 @@ export default function BlogDistributionPage() {
       icon: Zap,
       color: 'bg-emerald-500',
       available: true,
-      pricePerPost: 10000,
+      pricePerPost: pricing['auto-distribution'] || 10000,
       description: '자동화 블로그 배포'
     },
     {
@@ -73,7 +109,7 @@ export default function BlogDistributionPage() {
       icon: Users,
       color: 'bg-amber-500',
       available: true,
-      pricePerPost: 20000,
+      pricePerPost: pricing['reviewer-distribution'] || 20000,
       description: '실계정 리뷰어 배포'
     },
   ];
@@ -126,33 +162,57 @@ export default function BlogDistributionPage() {
     // 자동화 배포 - 외부 계정 사용 시
     if (selectedType === 'auto' && formData.useExternalAccount) {
       if (!formData.externalAccountId || formData.chargeCount < 1) {
-        alert('외부 계정 ID와 충전건수를 입력해주세요.');
+        toast({
+          variant: 'destructive',
+          title: '입력 오류',
+          description: '외부 계정 ID와 충전건수를 입력해주세요.',
+        });
         return;
       }
     } else {
       // 일반 접수 검증
       if (!formData.businessName) {
-        alert('업체명을 입력해주세요.');
+        toast({
+          variant: 'destructive',
+          title: '입력 오류',
+          description: '업체명을 입력해주세요.',
+        });
         return;
       }
 
       if (!formData.skipMapLink && !formData.placeUrl) {
-        alert('플레이스 링크를 입력하거나 지도 삽입 생략을 선택해주세요.');
+        toast({
+          variant: 'destructive',
+          title: '입력 오류',
+          description: '플레이스 링크를 입력하거나 지도 삽입 생략을 선택해주세요.',
+        });
         return;
       }
 
       if (formData.dailyCount < 3) {
-        alert('일 접수량은 최소 3건 이상이어야 합니다.');
+        toast({
+          variant: 'destructive',
+          title: '입력 오류',
+          description: '일 접수량은 최소 3건 이상이어야 합니다.',
+        });
         return;
       }
 
       if (formData.operationDays < 10) {
-        alert('구동일수는 최소 10일 이상이어야 합니다.');
+        toast({
+          variant: 'destructive',
+          title: '입력 오류',
+          description: '구동일수는 최소 10일 이상이어야 합니다.',
+        });
         return;
       }
 
       if (formData.totalCount < 30) {
-        alert('총 작업수량은 최소 30건 이상이어야 합니다.');
+        toast({
+          variant: 'destructive',
+          title: '입력 오류',
+          description: '총 작업수량은 최소 30건 이상이어야 합니다.',
+        });
         return;
       }
     }
@@ -160,34 +220,83 @@ export default function BlogDistributionPage() {
     setIsSubmitting(true);
 
     try {
-      console.log('접수 데이터:', { type: selectedType, ...formData });
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // API 요청 데이터 준비
+      const service = services.find(s => s.id === selectedType);
+      const totalCost = calculateTotalCost();
 
-      const serviceName = services.find(s => s.id === selectedType)?.name;
-      if (selectedType === 'auto' && formData.useExternalAccount) {
-        alert('외부 계정 충전 요청이 완료되었습니다.');
-      } else {
-        alert(`${serviceName} 접수가 완료되었습니다.`);
+      // 백엔드가 기대하는 distribution_type으로 변환 ('auto' -> 'automation')
+      const backendDistributionType = selectedType === 'auto' ? 'automation' : selectedType;
+
+      const requestData = {
+        company_name: formData.businessName,
+        distribution_type: backendDistributionType,
+        content_type: formData.contentType,
+        place_url: formData.placeUrl || '',
+        daily_count: formData.dailyCount,
+        total_count: formData.totalCount,
+        total_points: totalCost,
+        keywords: formData.keywords ? formData.keywords.split(',').map(k => k.trim()).filter(k => k) : [],
+        guide_text: formData.guideline || null,
+        account_id: formData.useExternalAccount ? formData.externalAccountId : null,
+        charge_count: formData.useExternalAccount ? formData.chargeCount : null,
+        notes: null,
+      };
+
+      console.log('=== 블로그 배포 접수 요청 데이터 ===', requestData);
+
+      const response = await fetch('/api/submissions/blog', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      const data = await response.json();
+      console.log('=== 블로그 배포 응답 데이터 ===', { status: response.status, data });
+
+      if (!response.ok) {
+        console.error('=== 블로그 배포 에러 상세 ===', {
+          status: response.status,
+          error: data.error,
+          fullData: data
+        });
+        throw new Error(data.error || '접수 중 오류가 발생했습니다.');
       }
 
-      // 폼 초기화
-      setFormData({
-        businessName: '',
-        placeUrl: '',
-        skipMapLink: false,
-        contentType: 'review',
-        dailyCount: 3,
-        operationDays: 10,
-        totalCount: 30,
-        keywords: '',
-        guideline: '',
-        externalAccountId: '',
-        chargeCount: 0,
-        useExternalAccount: false,
+      const serviceName = service?.name;
+
+      // Toast 알림 표시
+      toast({
+        title: `✅ ${serviceName} 접수 완료!`,
+        description: (
+          <div className="space-y-2 mt-2">
+            <div className="flex items-center gap-2 p-3 bg-sky-50 rounded-lg border border-sky-200">
+              <Sparkles className="h-4 w-4 text-sky-600" />
+              <span className="text-sm font-medium text-sky-900">
+                차감 포인트: {data.submission?.total_points?.toLocaleString() || formData.totalCount * (service?.pricePerPost || 0)}P
+              </span>
+            </div>
+            <div className="text-sm text-gray-600">
+              남은 포인트: {data.new_balance?.toLocaleString() || '0'}P
+            </div>
+          </div>
+        ) as React.ReactNode,
+        duration: 5000,
       });
+
+      // 1.5초 후 접수 현황 페이지로 이동
+      setTimeout(() => {
+        router.push('/dashboard/blog-distribution/status');
+        router.refresh(); // 서버 데이터 새로고침
+      }, 1500);
     } catch (error) {
       console.error('접수 실패:', error);
-      alert('접수 중 오류가 발생했습니다.');
+      toast({
+        variant: 'destructive',
+        title: '접수 실패',
+        description: error instanceof Error ? error.message : '접수 중 오류가 발생했습니다.',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -288,12 +397,19 @@ export default function BlogDistributionPage() {
                           {formData.totalCount}건
                         </Badge>
                       </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-bold text-white">
-                          {calculateTotalCost().toLocaleString()}
-                        </span>
-                        <span className="text-sm text-white/90">P</span>
-                      </div>
+                      {pricingLoading ? (
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-24 bg-white/20 rounded animate-pulse"></div>
+                          <span className="text-sm text-white/90">P</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-bold text-white">
+                            {calculateTotalCost().toLocaleString()}
+                          </span>
+                          <span className="text-sm text-white/90">P</span>
+                        </div>
+                      )}
                       <div className="text-xs text-white/80">
                         일 {formData.dailyCount}건 × {formData.operationDays}일
                       </div>
@@ -303,7 +419,11 @@ export default function BlogDistributionPage() {
                   {/* 가격 정보 */}
                   <div className="p-3 rounded-lg border border-gray-200 bg-gray-50">
                     <div className="space-y-0.5 text-xs text-gray-700">
-                      <div>건당 가격: {services.find(s => s.id === selectedType)?.pricePerPost.toLocaleString()}P</div>
+                      {pricingLoading ? (
+                        <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                      ) : (
+                        <div>건당 가격: {services.find(s => s.id === selectedType)?.pricePerPost.toLocaleString()}P</div>
+                      )}
                       <div>최소 수량: 30건 (일 3건 × 10일)</div>
                     </div>
                   </div>
@@ -320,18 +440,31 @@ export default function BlogDistributionPage() {
               <CardContent className="space-y-4 pt-0">
                 {/* 자동화 배포 전용: 외부 계정 사용 여부 */}
                 {selectedType === 'auto' && (
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className={`p-3 rounded-lg border ${isApprovedForAutoDistribution ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50 border-gray-200'}`}>
                     <div className="flex items-center gap-2 mb-2">
                       <Checkbox
                         id="useExternalAccount"
                         checked={formData.useExternalAccount}
-                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, useExternalAccount: checked === true }))}
+                        onCheckedChange={(checked) => {
+                          if (isApprovedForAutoDistribution) {
+                            setFormData(prev => ({ ...prev, useExternalAccount: checked === true }));
+                          }
+                        }}
+                        disabled={!isApprovedForAutoDistribution}
                         className="h-5 w-5"
                       />
-                      <label htmlFor="useExternalAccount" className="text-sm font-medium text-yellow-900 cursor-pointer select-none">
+                      <label
+                        htmlFor="useExternalAccount"
+                        className={`text-sm font-medium ${isApprovedForAutoDistribution ? 'text-yellow-900 cursor-pointer' : 'text-gray-500 cursor-not-allowed'} select-none`}
+                      >
                         외부 계정 충전 요청 (승인된 회원만)
                       </label>
                     </div>
+                    {!isApprovedForAutoDistribution && (
+                      <div className="p-2 bg-gray-100 border border-gray-200 rounded text-xs text-gray-600 mt-2">
+                        ⚠️ 이 기능은 관리자 승인이 필요합니다. 사용을 원하시면 관리자에게 문의하세요.
+                      </div>
+                    )}
                     {formData.useExternalAccount && (
                       <div className="space-y-3 mt-3">
                         <div className="space-y-2">

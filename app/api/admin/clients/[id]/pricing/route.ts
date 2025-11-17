@@ -11,7 +11,7 @@ export async function POST(
     const { id } = await params;
 
     const body = await request.json();
-    const { prices } = body;
+    const { prices, auto_distribution_approved } = body;
 
     if (!Array.isArray(prices)) {
       return NextResponse.json(
@@ -21,6 +21,22 @@ export async function POST(
     }
 
     const supabase = await createClient();
+
+    // Update client's auto distribution approval status if provided
+    if (typeof auto_distribution_approved === 'boolean') {
+      const { error: clientUpdateError } = await supabase
+        .from('clients')
+        .update({ auto_distribution_approved })
+        .eq('id', id);
+
+      if (clientUpdateError) {
+        console.error('Error updating client approval status:', clientUpdateError);
+        return NextResponse.json(
+          { error: `승인 상태 업데이트 중 오류가 발생했습니다: ${clientUpdateError.message}` },
+          { status: 500 }
+        );
+      }
+    }
 
     // Delete existing prices for this client
     await supabase

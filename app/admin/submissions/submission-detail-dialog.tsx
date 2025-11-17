@@ -21,7 +21,7 @@ interface SubmissionDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   submissionId: string;
-  submissionType: 'place' | 'receipt' | 'kakaomap' | 'blog';
+  submissionType: 'place' | 'receipt' | 'kakaomap' | 'blog' | 'cafe';
 }
 
 interface DetailData {
@@ -62,6 +62,12 @@ interface DetailData {
   distribution_type?: string;
   content_type?: string;
   keywords?: string[];
+  // Cafe specific
+  region?: string;
+  cafe_details?: Array<{ name: string; count: number }>;
+  script_status?: string;
+  script_url?: string;
+  guideline?: string;
 }
 
 const STATUS_LABELS: Record<SubmissionStatus, string> = {
@@ -86,6 +92,7 @@ const TYPE_LABELS: Record<string, string> = {
   receipt: '영수증 리뷰',
   kakaomap: '카카오맵 리뷰',
   blog: '블로그 배포',
+  cafe: '카페 침투',
 };
 
 export function SubmissionDetailDialog({

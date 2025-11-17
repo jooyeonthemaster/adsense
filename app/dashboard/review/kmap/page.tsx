@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,8 +11,11 @@ import { CheckboxRadioGroup, CheckboxRadioItem } from '@/components/ui/checkbox-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Star } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function KmapReviewPage() {
+  const router = useRouter();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     businessName: '',
     kmapUrl: '',
@@ -26,6 +30,38 @@ export default function KmapReviewPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pricePerUnit, setPricePerUnit] = useState<number | null>(null);
+  const [loadingPrice, setLoadingPrice] = useState(true);
+
+  // 가격 정보 불러오기
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const response = await fetch('/api/pricing');
+        if (response.ok) {
+          const data = await response.json();
+          setPricePerUnit(data.pricing['kakaomap-review']);
+        } else {
+          toast({
+            variant: 'destructive',
+            title: '가격 정보 오류',
+            description: '가격 정보를 불러올 수 없습니다. 관리자에게 문의하세요.',
+          });
+        }
+      } catch (error) {
+        console.error('가격 정보 조회 실패:', error);
+        toast({
+          variant: 'destructive',
+          title: '가격 정보 오류',
+          description: '가격 정보를 불러오는 중 오류가 발생했습니다.',
+        });
+      } finally {
+        setLoadingPrice(false);
+      }
+    };
+
+    fetchPricing();
+  }, [toast]);
 
   const handleDailyCountChange = (value: number) => {
     const total = value * formData.totalDays;
@@ -46,62 +82,107 @@ export default function KmapReviewPage() {
   };
 
   const calculateTotalCost = () => {
-    // 임시 단가 (실제로는 DB에서 가져와야 함)
-    const basePricePerReview = 3000;
-    let multiplier = 1.0;
-
-    // 사진 포함 시 추가 비용
-    if (formData.hasPhoto) {
-      multiplier += 0.5;
-    }
-
-    // AI 원고 사용 시 추가 비용
-    if (formData.scriptOption === 'ai') {
-      multiplier += 0.3;
-    }
-
-    return Math.floor(formData.totalCount * basePricePerReview * multiplier);
+    if (!pricePerUnit) return 0;
+    return formData.totalCount * pricePerUnit;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!pricePerUnit) {
+      toast({
+        variant: 'destructive',
+        title: '가격 정보 오류',
+        description: '가격 정보를 불러올 수 없습니다. 페이지를 새로고침하거나 관리자에게 문의하세요.',
+      });
+      return;
+    }
+
     if (!formData.businessName || !formData.kmapUrl) {
-      alert('필수 항목을 모두 입력해주세요.');
+      toast({
+        variant: 'destructive',
+        title: '입력 오류',
+        description: '필수 항목을 모두 입력해주세요.',
+      });
       return;
     }
 
     if (formData.dailyCount < 1) {
-      alert('일 발행수량은 최소 1건 이상이어야 합니다.');
+      toast({
+        variant: 'destructive',
+        title: '입력 오류',
+        description: '일 발행수량은 최소 1건 이상이어야 합니다.',
+      });
       return;
     }
 
     setIsSubmitting(true);
 
+    const totalCost = calculateTotalCost();
+
     try {
-      // TODO: API 호출
-      console.log('접수 데이터:', formData);
-
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      alert('K맵 리뷰 접수가 완료되었습니다.');
-
-      // 폼 초기화
-      setFormData({
-        businessName: '',
-        kmapUrl: '',
-        dailyCount: 1,
-        totalDays: 1,
-        totalCount: 1,
-        hasPhoto: false,
-        scriptOption: 'custom',
-        photoRatio: 50,
-        starRating: 'mixed',
-        guideline: '',
+      const response = await fetch('/api/submissions/kakaomap', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          company_name: formData.businessName,
+          kakaomap_url: formData.kmapUrl,
+          daily_count: formData.dailyCount,
+          total_count: formData.totalCount,
+          total_days: formData.totalDays,
+          total_points: totalCost,
+          script: formData.guideline || null,
+          photo_urls: null,
+          script_urls: null,
+          text_review_count: formData.hasPhoto ? Math.floor(formData.totalCount * (1 - formData.photoRatio / 100)) : formData.totalCount,
+          photo_review_count: formData.hasPhoto ? Math.floor(formData.totalCount * (formData.photoRatio / 100)) : 0,
+          photo_ratio: formData.photoRatio,
+          star_rating: formData.starRating,
+          script_type: formData.scriptOption,
+          notes: formData.guideline || null,
+        }),
       });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || '접수에 실패했습니다.');
+      }
+
+      const data = await response.json();
+
+      // Toast 알림 표시
+      toast({
+        title: '✅ K맵 리뷰 접수 완료!',
+        description: (
+          <div className="space-y-2 mt-2">
+            <div className="flex items-center gap-2 p-3 bg-sky-50 rounded-lg border border-sky-200">
+              <Sparkles className="h-4 w-4 text-sky-600" />
+              <span className="text-sm font-medium text-sky-900">
+                차감 포인트: {data.submission?.total_points?.toLocaleString() || '0'}P
+              </span>
+            </div>
+            <div className="text-sm text-gray-600">
+              남은 포인트: {data.new_balance?.toLocaleString() || '0'}P
+            </div>
+          </div>
+        ) as React.ReactNode,
+        duration: 5000,
+      });
+
+      // 1.5초 후 접수 현황 페이지로 이동
+      setTimeout(() => {
+        router.push('/dashboard/review/kmap/status');
+        router.refresh(); // 서버 데이터 새로고침
+      }, 1500);
     } catch (error) {
       console.error('접수 실패:', error);
-      alert('접수 중 오류가 발생했습니다.');
+      toast({
+        variant: 'destructive',
+        title: '접수 실패',
+        description: error instanceof Error ? error.message : '접수 중 오류가 발생했습니다.',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -339,13 +420,22 @@ export default function KmapReviewPage() {
               {/* 접수 신청 버튼 */}
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || loadingPrice || !pricePerUnit}
                 className="w-full h-11 text-sm font-semibold bg-sky-500 hover:bg-sky-600 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? (
+                {loadingPrice ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    가격 정보 불러오는 중...
+                  </div>
+                ) : isSubmitting ? (
                   <div className="flex items-center gap-2">
                     <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     접수 중...
+                  </div>
+                ) : !pricePerUnit ? (
+                  <div className="flex items-center gap-2">
+                    가격 정보 없음 - 관리자에게 문의
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">

@@ -9,7 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BookText, Image, Users, Sparkles, Star, Clock, X } from 'lucide-react';
+import { BookText, Image, Users, Sparkles, Star, Clock, X, CheckCircle2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 type ServiceType = 'blog' | 'xiaohongshu' | 'reporter' | 'influencer';
 
@@ -41,9 +42,21 @@ const mapServiceToUrl = (service: ServiceType): string => {
   return mapping[service] || 'blog';
 };
 
+// ServiceType을 DB slug로 매핑
+const mapServiceToSlug = (service: ServiceType): string => {
+  const mapping: Record<ServiceType, string> = {
+    'blog': 'blog-experience',
+    'xiaohongshu': 'xiaohongshu',
+    'reporter': 'journalist',
+    'influencer': 'influencer',
+  };
+  return mapping[service];
+};
+
 export default function ExperienceServicePage() {
   const params = useParams();
   const router = useRouter();
+  const { toast } = useToast();
   const serviceParam = params?.service as string;
   const [selectedService, setSelectedService] = useState<ServiceType>(mapServiceParam(serviceParam));
   const [formData, setFormData] = useState({
@@ -65,6 +78,8 @@ export default function ExperienceServicePage() {
 
   const [keywordInput, setKeywordInput] = useState({ main: '', sub: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pricing, setPricing] = useState<Record<string, number>>({});
+  const [loadingPrice, setLoadingPrice] = useState(true);
 
   // URL 파라미터가 변경되면 selectedService 업데이트
   useEffect(() => {
@@ -73,11 +88,31 @@ export default function ExperienceServicePage() {
     }
   }, [serviceParam]);
 
+  // 가격 정보 불러오기
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const response = await fetch('/api/pricing');
+        const data = await response.json();
+
+        if (data.success && data.pricing) {
+          setPricing(data.pricing);
+        }
+      } catch (error) {
+        console.error('가격 정보 로드 실패:', error);
+      } finally {
+        setLoadingPrice(false);
+      }
+    };
+
+    fetchPricing();
+  }, []);
+
   const services = [
-    { id: 'blog' as ServiceType, name: '블로그', icon: BookText, color: 'bg-blue-500', available: true, pricePerTeam: 50000, description: '2주 이내 블로거 리스트 제공' },
-    { id: 'xiaohongshu' as ServiceType, name: '샤오홍슈', icon: Image, color: 'bg-rose-500', available: true, pricePerTeam: 70000, description: '중국 소셜 마케팅' },
-    { id: 'reporter' as ServiceType, name: '실계정 기자단', icon: Users, color: 'bg-emerald-500', available: true, pricePerTeam: 60000, description: '실제 기자 계정 활용' },
-    { id: 'influencer' as ServiceType, name: '블로그 인플루언서', icon: Star, color: 'bg-amber-500', available: true, pricePerTeam: 80000, description: '인플루언서 마케팅' },
+    { id: 'blog' as ServiceType, name: '블로그', icon: BookText, color: 'bg-blue-500', available: true, pricePerTeam: pricing['blog-experience'] || 50000, description: '2주 이내 블로거 리스트 제공' },
+    { id: 'xiaohongshu' as ServiceType, name: '샤오홍슈', icon: Image, color: 'bg-rose-500', available: true, pricePerTeam: pricing['xiaohongshu'] || 70000, description: '중국 소셜 마케팅' },
+    { id: 'reporter' as ServiceType, name: '실계정 기자단', icon: Users, color: 'bg-emerald-500', available: true, pricePerTeam: pricing['journalist'] || 60000, description: '실제 기자 계정 활용' },
+    { id: 'influencer' as ServiceType, name: '블로그 인플루언서', icon: Star, color: 'bg-amber-500', available: true, pricePerTeam: pricing['influencer'] || 80000, description: '인플루언서 마케팅' },
   ];
 
   const weekDays = ['월', '화', '수', '목', '금', '토', '일'];
@@ -119,35 +154,59 @@ export default function ExperienceServicePage() {
 
     // 공통 필수 필드: 업체명, 플레이스 링크
     if (!formData.businessName || !formData.placeUrl) {
-      alert('필수 항목을 모두 입력해주세요.');
+      toast({
+        variant: 'destructive',
+        title: '필수 항목 누락',
+        description: '필수 항목을 모두 입력해주세요.',
+      });
       return;
     }
 
     // 서비스별 필수 필드 검증
     if (selectedService === 'blog' || selectedService === 'xiaohongshu' || selectedService === 'influencer') {
       if (!formData.providedItems) {
-        alert('제공내역을 입력해주세요.');
+        toast({
+          variant: 'destructive',
+          title: '필수 항목 누락',
+          description: '제공내역을 입력해주세요.',
+        });
         return;
       }
       if (formData.availableDays.length === 0) {
-        alert('방문가능요일을 최소 1개 이상 선택해주세요.');
+        toast({
+          variant: 'destructive',
+          title: '필수 항목 누락',
+          description: '방문가능요일을 최소 1개 이상 선택해주세요.',
+        });
         return;
       }
     }
 
     if (selectedService === 'reporter') {
       if (!formData.publishDate || !formData.progressKeyword || !formData.guideline) {
-        alert('희망 발행일, 진행 키워드, 가이드를 모두 입력해주세요.');
+        toast({
+          variant: 'destructive',
+          title: '필수 항목 누락',
+          description: '희망 발행일, 진행 키워드, 가이드를 모두 입력해주세요.',
+        });
         return;
       }
       if (formData.hasImage && !formData.email) {
-        alert('이미지 첨부 시 이메일을 입력해주세요.');
+        toast({
+          variant: 'destructive',
+          title: '필수 항목 누락',
+          description: '이미지 첨부 시 이메일을 입력해주세요.',
+        });
         return;
       }
     }
 
     if (selectedService === 'influencer' && formData.teamCount > 10) {
-      alert('블로그 인플루언서는 최대 10팀까지만 가능합니다.');
+      toast({
+        variant: 'destructive',
+        title: '팀 수 초과',
+        description: '블로그 인플루언서는 최대 10팀까지만 가능합니다.',
+      });
       return;
     }
 
@@ -155,33 +214,83 @@ export default function ExperienceServicePage() {
 
     try {
       const serviceName = services.find(s => s.id === selectedService)?.name;
-      console.log('접수 데이터:', { service: selectedService, ...formData });
-      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      if (selectedService === 'blog') {
-        alert(`${serviceName} 체험단 접수가 완료되었습니다. 2주 이내에 블로거 리스트가 등록됩니다.`);
-      } else {
-        alert(`${serviceName} 접수가 완료되었습니다.`);
+      // API 호출
+      const response = await fetch('/api/submissions/experience/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          serviceType: selectedService,
+          businessName: formData.businessName,
+          placeUrl: formData.placeUrl,
+          teamCount: formData.teamCount,
+          keywords: formData.keywords,
+          guideline: formData.guideline,
+          availableDays: formData.availableDays,
+          availableTimeStart: formData.availableTimeStart,
+          availableTimeEnd: formData.availableTimeEnd,
+          providedItems: formData.providedItems,
+          publishDate: formData.publishDate,
+          progressKeyword: formData.progressKeyword,
+          hasImage: formData.hasImage,
+          email: formData.email,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '접수 중 오류가 발생했습니다.');
       }
 
-      setFormData({
-        businessName: '',
-        placeUrl: '',
-        providedItems: '',
-        teamCount: 1,
-        availableDays: [],
-        availableTimeStart: '11:00',
-        availableTimeEnd: '21:00',
-        guideline: '',
-        keywords: [],
-        publishDate: '',
-        progressKeyword: '',
-        hasImage: false,
-        email: '',
-      });
-    } catch (error) {
+      // 성공 토스트 메시지
+      if (selectedService === 'blog') {
+        toast({
+          title: '✅ 블로그 체험단 접수 완료!',
+          description: (
+            <div className="space-y-2 mt-2">
+              <p className="text-sm text-gray-600">2주 이내에 블로거 리스트가 등록됩니다.</p>
+              <div className="flex items-center gap-2 p-3 bg-sky-50 rounded-lg border border-sky-200">
+                <Sparkles className="h-4 w-4 text-sky-600" />
+                <span className="text-sm font-medium text-sky-900">
+                  차감 포인트: {data.total_points.toLocaleString()}P
+                </span>
+              </div>
+            </div>
+          ) as React.ReactNode,
+          duration: 5000,
+        });
+      } else {
+        toast({
+          title: `✅ ${serviceName} 접수 완료!`,
+          description: (
+            <div className="space-y-2 mt-2">
+              <div className="flex items-center gap-2 p-3 bg-sky-50 rounded-lg border border-sky-200">
+                <Sparkles className="h-4 w-4 text-sky-600" />
+                <span className="text-sm font-medium text-sky-900">
+                  차감 포인트: {data.total_points.toLocaleString()}P
+                </span>
+              </div>
+            </div>
+          ) as React.ReactNode,
+          duration: 5000,
+        });
+      }
+
+      // 성공 시 접수 현황 페이지로 이동
+      setTimeout(() => {
+        router.push('/dashboard/experience/status');
+        router.refresh(); // 서버 데이터 새로고침
+      }, 1500);
+    } catch (error: any) {
       console.error('접수 실패:', error);
-      alert('접수 중 오류가 발생했습니다.');
+      toast({
+        variant: 'destructive',
+        title: '접수 실패',
+        description: error.message || '접수 중 오류가 발생했습니다.',
+      });
     } finally {
       setIsSubmitting(false);
     }

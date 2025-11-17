@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,8 +10,12 @@ import { CheckboxRadioGroup, CheckboxRadioItem } from '@/components/ui/checkbox-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Upload, CheckCircle2, Sparkles } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { createClient } from '@/utils/supabase/client';
 
 export default function VisitorReviewPage() {
+  const router = useRouter();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     businessName: '',
     placeUrl: '',
@@ -21,10 +26,33 @@ export default function VisitorReviewPage() {
     photoOption: 'with', // 'with' | 'without'
     scriptOption: 'custom', // 'custom' | 'ai'
     guideline: '',
-    files: [] as File[],
+    businessLicense: null as File | null,
+    photos: [] as File[],
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pricePerReview, setPricePerReview] = useState<number>(5000);
+  const [loadingPrice, setLoadingPrice] = useState(true);
+
+  // 가격 정보 불러오기
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const response = await fetch('/api/pricing');
+        const data = await response.json();
+
+        if (data.success && data.pricing && data.pricing['receipt-review']) {
+          setPricePerReview(data.pricing['receipt-review']);
+        }
+      } catch (error) {
+        console.error('가격 정보 로드 실패:', error);
+      } finally {
+        setLoadingPrice(false);
+      }
+    };
+
+    fetchPricing();
+  }, []);
 
   // 플레이스 링크에서 MID 자동 추출
   const extractMidFromUrl = (url: string) => {
@@ -65,16 +93,52 @@ export default function VisitorReviewPage() {
     }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBusinessLicenseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFormData(prev => ({ ...prev, businessLicense: e.target.files![0] }));
+    }
+  };
+
+  const handlePhotosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
-      setFormData(prev => ({ ...prev, files: filesArray }));
+      setFormData(prev => ({ ...prev, photos: filesArray }));
+    }
+  };
+
+  // Supabase Storage에 파일 업로드
+  const uploadFileToStorage = async (file: File, folder: string): Promise<string | null> => {
+    try {
+      const supabase = createClient();
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `receipts/${folder}/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('submissions')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (error) {
+        console.error('파일 업로드 실패:', error);
+        return null;
+      }
+
+      // Public URL 가져오기
+      const { data: urlData } = supabase.storage
+        .from('submissions')
+        .getPublicUrl(filePath);
+
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error('파일 업로드 중 오류:', error);
+      return null;
     }
   };
 
   const calculateTotalCost = () => {
-    // 임시 단가 (실제로는 DB에서 가져와야 함)
-    const pricePerReview = 5000;
     return formData.totalCount * pricePerReview;
   };
 
@@ -82,51 +146,124 @@ export default function VisitorReviewPage() {
     e.preventDefault();
 
     if (!formData.businessName || !formData.placeUrl) {
-      alert('필수 항목을 모두 입력해주세요.');
+      toast({
+        variant: 'destructive',
+        title: '입력 오류',
+        description: '필수 항목을 모두 입력해주세요.',
+      });
       return;
     }
 
     if (!formData.placeMid) {
-      alert('플레이스 링크에서 MID를 추출할 수 없습니다. 올바른 링크를 입력해주세요.');
+      toast({
+        variant: 'destructive',
+        title: '입력 오류',
+        description: '플레이스 링크에서 MID를 추출할 수 없습니다. 올바른 링크를 입력해주세요.',
+      });
       return;
     }
 
     if (formData.dailyCount < 1 || formData.dailyCount > 10) {
-      alert('일 발행수량은 최소 1건, 최대 10건입니다.');
+      toast({
+        variant: 'destructive',
+        title: '입력 오류',
+        description: '일 발행수량은 최소 1건, 최대 10건입니다.',
+      });
       return;
     }
 
-    if (formData.files.length === 0) {
-      alert('사업자등록증 또는 샘플 영수증을 첨부해주세요.');
+    if (!formData.businessLicense && formData.photos.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: '입력 오류',
+        description: '사업자등록증 또는 샘플 영수증을 첨부해주세요.',
+      });
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // TODO: API 호출 및 파일 업로드
-      console.log('접수 데이터:', formData);
+      // 파일 업로드 처리
+      let businessLicenseUrl: string | null = null;
+      const photoUrls: string[] = [];
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 사업자등록증 업로드
+      if (formData.businessLicense) {
+        const url = await uploadFileToStorage(formData.businessLicense, 'business-licenses');
+        if (url) {
+          businessLicenseUrl = url;
+        } else {
+          throw new Error('사업자등록증 업로드에 실패했습니다.');
+        }
+      }
 
-      alert('방문자 리뷰 접수가 완료되었습니다.');
+      // 샘플 영수증 업로드
+      for (const photo of formData.photos) {
+        const url = await uploadFileToStorage(photo, 'receipt-photos');
+        if (url) {
+          photoUrls.push(url);
+        } else {
+          throw new Error('샘플 영수증 업로드에 실패했습니다.');
+        }
+      }
 
-      // 폼 초기화
-      setFormData({
-        businessName: '',
-        placeUrl: '',
-        placeMid: '',
-        dailyCount: 1,
-        totalDays: 1,
-        totalCount: 1,
-        photoOption: 'with',
-        scriptOption: 'custom',
-        guideline: '',
-        files: [],
+      const response = await fetch('/api/submissions/receipt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          company_name: formData.businessName,
+          place_url: formData.placeUrl,
+          daily_count: formData.dailyCount,
+          total_days: formData.totalDays,
+          total_count: formData.totalCount,
+          total_points: calculateTotalCost(),
+          business_license_url: businessLicenseUrl,
+          photo_urls: photoUrls.length > 0 ? photoUrls : null,
+          notes: formData.guideline || null,
+        }),
       });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || '접수에 실패했습니다.');
+      }
+
+      const data = await response.json();
+
+      // Toast 알림 표시
+      toast({
+        title: '✅ 방문자 리뷰 접수 완료!',
+        description: (
+          <div className="space-y-2 mt-2">
+            <div className="flex items-center gap-2 p-3 bg-sky-50 rounded-lg border border-sky-200">
+              <Sparkles className="h-4 w-4 text-sky-600" />
+              <span className="text-sm font-medium text-sky-900">
+                차감 포인트: {data.submission?.total_points?.toLocaleString() || '0'}P
+              </span>
+            </div>
+            <div className="text-sm text-gray-600">
+              남은 포인트: {data.new_balance?.toLocaleString() || '0'}P
+            </div>
+          </div>
+        ) as React.ReactNode,
+        duration: 5000,
+      });
+
+      // 1.5초 후 접수 현황 페이지로 이동
+      setTimeout(() => {
+        router.push('/dashboard/review/visitor/status');
+        router.refresh(); // 서버 데이터 새로고침
+      }, 1500);
     } catch (error) {
       console.error('접수 실패:', error);
-      alert('접수 중 오류가 발생했습니다.');
+      toast({
+        variant: 'destructive',
+        title: '접수 실패',
+        description: error instanceof Error ? error.message : '접수 중 오류가 발생했습니다.',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -269,40 +406,69 @@ export default function VisitorReviewPage() {
                   />
                 </div>
 
-                {/* 첨부파일 */}
+                {/* 사업자등록증 */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="files" className="text-xs font-medium text-gray-700">
-                    첨부파일 <span className="text-rose-500">*</span>
+                  <Label htmlFor="businessLicense" className="text-xs font-medium text-gray-700">
+                    사업자등록증
                   </Label>
                   <label
-                    htmlFor="files"
+                    htmlFor="businessLicense"
                     className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 cursor-pointer transition-colors"
                   >
                     <Upload className="h-4 w-4 text-gray-400" />
                     <span className="text-xs text-gray-600">
-                      {formData.files.length > 0
-                        ? `${formData.files.length}개 파일 선택됨`
-                        : 'JPG, PNG, PDF 파일 업로드'}
+                      {formData.businessLicense
+                        ? formData.businessLicense.name
+                        : 'PDF, JPG, PNG 파일 업로드'}
                     </span>
                     <input
-                      id="files"
+                      id="businessLicense"
                       type="file"
-                      multiple
-                      accept=".jpg,.jpeg,.png,.pdf"
-                      onChange={handleFileChange}
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={handleBusinessLicenseChange}
                       className="hidden"
                     />
                   </label>
-                  {formData.files.length > 0 && (
+                  {formData.businessLicense && (
+                    <div className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                      • {formData.businessLicense.name} ({(formData.businessLicense.size / 1024).toFixed(1)}KB)
+                    </div>
+                  )}
+                </div>
+
+                {/* 샘플 영수증 */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="photos" className="text-xs font-medium text-gray-700">
+                    샘플 영수증
+                  </Label>
+                  <label
+                    htmlFor="photos"
+                    className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 cursor-pointer transition-colors"
+                  >
+                    <Upload className="h-4 w-4 text-gray-400" />
+                    <span className="text-xs text-gray-600">
+                      {formData.photos.length > 0
+                        ? `${formData.photos.length}개 파일 선택됨`
+                        : 'JPG, PNG, PDF 파일 업로드 (여러 개 가능)'}
+                    </span>
+                    <input
+                      id="photos"
+                      type="file"
+                      multiple
+                      accept=".jpg,.jpeg,.png,.pdf"
+                      onChange={handlePhotosChange}
+                      className="hidden"
+                    />
+                  </label>
+                  {formData.photos.length > 0 && (
                     <div className="space-y-0.5 mt-1.5">
-                      {formData.files.map((file, index) => (
+                      {formData.photos.map((file, index) => (
                         <div key={index} className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
                           • {file.name} ({(file.size / 1024).toFixed(1)}KB)
                         </div>
                       ))}
                     </div>
                   )}
-                  <p className="text-xs text-gray-500">사업자등록증 or 샘플 영수증</p>
                 </div>
               </CardContent>
             </Card>

@@ -1,104 +1,215 @@
-import { AnySubmission } from '@/types/submission';
+import { UnifiedSubmission } from '@/types/submission';
+import { productConfig } from '@/config/submission-products';
 
 /**
- * Submission 타입별로 예정 수량(expected_count)을 계산합니다.
- *
- * - place: daily_count × total_days
- * - receipt: total_count
- * - kakaomap: total_count
- * - blog: total_count
- * - dynamic: form_data에서 추출 (복잡)
+ * 진행률 계산
  */
-export function calculateExpectedCount(submission: AnySubmission): number {
-  switch (submission.type) {
-    case 'place':
-      return submission.daily_count * submission.total_days;
+export const calculateProgress = (submission: UnifiedSubmission): number => {
+  if (submission.status === 'completed') return 100;
+  if (submission.status === 'pending' || !submission.current_day) return 0;
 
-    case 'receipt':
-    case 'kakaomap':
-    case 'blog':
-      return submission.total_count;
-
-    case 'dynamic':
-      // Dynamic submission은 form_data에서 수량 정보 추출
-      // form_data 구조에 따라 로직 조정 필요
-      const formData = submission.form_data as Record<string, any>;
-
-      // 일반적인 패턴: total_count, daily_count, quantity 등
-      if (formData.total_count) return Number(formData.total_count);
-      if (formData.daily_count && formData.total_days) {
-        return Number(formData.daily_count) * Number(formData.total_days);
-      }
-      if (formData.quantity) return Number(formData.quantity);
-
-      // 기본값
-      return 0;
-
-    default:
-      return 0;
+  if (submission.total_days && submission.current_day) {
+    return (submission.current_day / submission.total_days) * 100;
   }
-}
+
+  return 0;
+};
 
 /**
- * Submission을 드롭다운에 표시할 레이블로 포맷팅합니다.
- *
- * 예시:
- * - "플레이스 유입 - 테스트 업체 - 300타 (일 100타 × 3일) - 2025.11.03"
- * - "영수증 리뷰 - 테스트 업체 - 50개 - 2025.11.03"
+ * 날짜 포맷팅
  */
-export function formatSubmissionLabel(submission: AnySubmission): string {
-  const TYPE_LABELS: Record<string, string> = {
-    place: '플레이스 유입',
-    receipt: '영수증 리뷰',
-    kakaomap: '카카오맵 리뷰',
-    blog: '블로그 배포',
-    dynamic: '기타',
-  };
-
-  const typeLabel = TYPE_LABELS[submission.type] || submission.type;
-  const date = new Date(submission.created_at).toLocaleDateString('ko-KR', {
+export const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('ko-KR', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
   });
-  const expectedCount = calculateExpectedCount(submission);
-
-  // 플레이스 유입: 상세 정보 포함 (일일 수량 × 일수)
-  if (submission.type === 'place') {
-    return `${typeLabel} - ${submission.company_name} - ${expectedCount.toLocaleString()}타 (일 ${submission.daily_count.toLocaleString()}타 × ${submission.total_days}일) - ${date}`;
-  }
-
-  // 블로그 배포: 상세 정보 포함 (일일 수량 × 일수)
-  if (submission.type === 'blog') {
-    return `${typeLabel} - ${submission.company_name} - ${expectedCount.toLocaleString()}개 (일 ${submission.daily_count.toLocaleString()}개 × ${submission.total_days}일) - ${date}`;
-  }
-
-  // 영수증/카카오맵: 총 수량만 표시
-  return `${typeLabel} - ${submission.company_name} - ${expectedCount.toLocaleString()}개 - ${date}`;
-}
+};
 
 /**
- * Submission의 상세 설명을 생성합니다.
- * AS 신청 폼에서 자동으로 채워질 때 사용됩니다.
+ * 상품 정보 가져오기
  */
-export function getSubmissionDetails(submission: AnySubmission): string {
-  switch (submission.type) {
+export const getProductInfo = (submission: UnifiedSubmission) => {
+  // 서브타입이 있는 경우 복합 키로 찾기
+  if (submission.product_type === 'blog' && submission.distribution_type) {
+    const key = `blog-${submission.distribution_type}` as keyof typeof productConfig;
+    if (productConfig[key]) {
+      return productConfig[key];
+    }
+    return productConfig['blog-video'];
+  }
+
+  if (submission.product_type === 'experience' && submission.experience_type) {
+    const key = `experience-${submission.experience_type.replace('blog-experience', 'blog')}` as keyof typeof productConfig;
+    if (productConfig[key]) {
+      return productConfig[key];
+    }
+    return productConfig['experience-blog'];
+  }
+
+  // 기본 타입으로 찾기
+  const config = productConfig[submission.product_type as keyof typeof productConfig];
+  if (config) {
+    return config;
+  }
+
+  // fallback
+  return productConfig.place;
+};
+
+/**
+ * 체험단 마케팅의 현재 진행 단계 계산 (타입별 동적)
+ */
+export const getExperienceStep = (
+  submission: UnifiedSubmission
+): { step: number; label: string; totalSteps: number } => {
+  // Import dynamically to avoid circular dependency
+  const { getWorkflowSteps } = require('@/lib/experience-deadline-utils');
+  const steps = getWorkflowSteps(submission.experience_type || 'blog-experience');
+  const totalSteps = steps.length;
+
+  // Check completion status in reverse order (most advanced first)
+  if (submission.campaign_completed) {
+    return { step: totalSteps, label: '캠페인 완료', totalSteps };
+  }
+
+  let currentStep = 1;
+  const stepLabels: Record<string, string> = {
+    register: '블로거 등록',
+    selection: '블로거 선택',
+    schedule: '일정 등록',
+    client_confirm: '고객 확인',
+    publish: '컨텐츠 발행',
+    keyword_ranking: '키워드 순위',
+    complete: '캠페인 완료',
+  };
+
+  for (let i = 0; i < steps.length; i++) {
+    const stepType = steps[i];
+    currentStep = i + 1;
+
+    // Check if this step is completed
+    let isCompleted = false;
+    switch (stepType) {
+      case 'register':
+        isCompleted = submission.bloggers_registered || false;
+        break;
+      case 'selection':
+        isCompleted = submission.bloggers_selected || false;
+        break;
+      case 'schedule':
+        isCompleted = submission.schedule_confirmed || false;
+        break;
+      case 'client_confirm':
+        isCompleted = submission.client_confirmed || false;
+        break;
+      case 'publish':
+        isCompleted = submission.all_published || false;
+        break;
+      case 'keyword_ranking':
+        isCompleted = submission.all_published || false; // 발행 후 키워드 순위 체크
+        break;
+      case 'complete':
+        isCompleted = submission.campaign_completed || false;
+        break;
+    }
+
+    // If this step is not completed, this is the current step
+    if (!isCompleted) {
+      return { step: currentStep, label: stepLabels[stepType], totalSteps };
+    }
+  }
+
+  // If all steps are completed (shouldn't reach here due to campaign_completed check)
+  return { step: totalSteps, label: '캠페인 완료', totalSteps };
+};
+
+/**
+ * 상태 표시 정보 가져오기
+ */
+export const getStatusDisplay = (submission: UnifiedSubmission) => {
+  // 체험단 마케팅의 경우 세부 단계 표시
+  if (submission.product_type === 'experience') {
+    const { step, label, totalSteps } = getExperienceStep(submission);
+
+    if (submission.campaign_completed) {
+      return { label: '완료', variant: 'secondary' as const };
+    }
+
+    return {
+      label: `${step}/${totalSteps} ${label}`,
+      variant: 'default' as const,
+    };
+  }
+
+  // 카페 침투의 경우 스크립트 상태 확인
+  if (submission.product_type === 'cafe' && submission.script_status) {
+    if (submission.script_status === 'writing') {
+      return { label: '원고작성중', variant: 'outline' as const };
+    } else if (submission.script_status === 'completed') {
+      return { label: '원고작업완료', variant: 'default' as const };
+    }
+  }
+
+  const statusMap: Record<string, { label: string; variant: 'outline' | 'default' | 'secondary' | 'destructive' }> = {
+    pending: { label: '확인중', variant: 'outline' as const },
+    waiting_content: { label: '콘텐츠 대기', variant: 'outline' as const },
+    review: { label: '검수중', variant: 'default' as const },
+    in_progress: { label: '구동중', variant: 'default' as const },
+    completed: { label: '완료', variant: 'secondary' as const },
+    cancelled: { label: '중단됨', variant: 'destructive' as const },
+  };
+
+  return statusMap[submission.status] || { label: submission.status, variant: 'outline' as const };
+};
+
+/**
+ * 중단 가능 여부 확인
+ */
+export const canCancel = (submission: UnifiedSubmission): boolean => {
+  return ['pending', 'in_progress'].includes(submission.status);
+};
+
+/**
+ * 상세 정보 표시
+ */
+export const getDetailInfo = (submission: UnifiedSubmission): string => {
+  switch (submission.product_type) {
     case 'place':
-      return `일 ${submission.daily_count.toLocaleString()}타 × ${submission.total_days}일 (총 ${calculateExpectedCount(submission).toLocaleString()}타)`;
-
-    case 'blog':
-      return `일 ${submission.daily_count.toLocaleString()}개 × ${submission.total_days}일 (총 ${calculateExpectedCount(submission).toLocaleString()}개)`;
-
+      return `${submission.daily_count?.toLocaleString()}타 × ${submission.total_days}일`;
     case 'receipt':
     case 'kakaomap':
-      return `총 ${submission.total_count.toLocaleString()}개`;
-
-    case 'dynamic':
-      const count = calculateExpectedCount(submission);
-      const categoryName = submission.product_categories?.name || '기타 상품';
-      return `${categoryName} - 총 ${count.toLocaleString()}개`;
-
+      return `${submission.daily_count}건/일 × ${Math.ceil((submission.total_count || 0) / (submission.daily_count || 1))}일`;
+    case 'blog':
+      return `${submission.daily_count}건/일 × ${submission.total_days}일 (${submission.distribution_type})`;
+    case 'cafe':
+      return `${submission.total_count}건 (${submission.cafe_list?.length || 0}개 카페)`;
+    case 'experience':
+      return `${submission.team_count}팀 (${submission.experience_type})`;
     default:
       return '-';
   }
-}
+};
+
+/**
+ * 예상 건수 계산 (AS 요청용)
+ */
+export const calculateExpectedCount = (submission: any): number => {
+  if (submission.total_count) return submission.total_count;
+  if (submission.daily_count && submission.total_days) {
+    return submission.daily_count * submission.total_days;
+  }
+  return 0;
+};
+
+/**
+ * 제출 라벨 포맷팅 (AS 요청용)
+ */
+export const formatSubmissionLabel = (submission: any): string => {
+  const productInfo = getProductInfo(submission);
+  const detailInfo = getDetailInfo(submission);
+  return `${productInfo.label} - ${submission.company_name} (${detailInfo})`;
+};

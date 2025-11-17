@@ -3,25 +3,17 @@ import { requireAuth } from '@/lib/auth';
 import { notFound } from 'next/navigation';
 import { PricingForm } from './pricing-form';
 
-// [UPDATED 2025-11-02] 4가지 고정 상품의 slug 목록
-const FIXED_PRODUCT_SLUGS = [
-  'place-traffic',
-  'receipt-review',
-  'kakaomap-review',
-  'blog-distribution',
-];
-
 async function getClientWithPricing(clientId: string) {
   const supabase = await createClient();
 
   const [clientResult, categoriesResult, pricesResult] = await Promise.all([
     supabase.from('clients').select('*').eq('id', clientId).single(),
-    // 데이터베이스에서 실제 product_categories 조회 (UUID 포함)
+    // 모든 활성화된 상품 카테고리 조회
     supabase
       .from('product_categories')
       .select('*')
-      .in('slug', FIXED_PRODUCT_SLUGS)
-      .eq('is_active', true),
+      .eq('is_active', true)
+      .order('created_at', { ascending: true }),
     supabase
       .from('client_product_prices')
       .select('*, product_categories(*)')
@@ -36,16 +28,10 @@ async function getClientWithPricing(clientId: string) {
     return null;
   }
 
-  // 4가지 고정 상품만 필터링
-  const filteredPrices = (pricesResult.data || []).filter((price: any) => {
-    const slug = price.product_categories?.slug;
-    return FIXED_PRODUCT_SLUGS.includes(slug);
-  });
-
   return {
     client: clientResult.data,
-    categories: categoriesResult.data, // 실제 DB에서 조회한 카테고리 (UUID 포함)
-    prices: filteredPrices,
+    categories: categoriesResult.data, // 모든 활성화된 카테고리
+    prices: pricesResult.data || [],
   };
 }
 

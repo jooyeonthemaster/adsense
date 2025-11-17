@@ -33,7 +33,7 @@ interface Submission {
   total_points: number;
   status: SubmissionStatus;
   created_at: string;
-  type: 'place' | 'receipt' | 'kakaomap' | 'blog'; // [UPDATED 2025-11-02] 'dynamic' 제거
+  type: 'place' | 'receipt' | 'kakaomap' | 'blog' | 'cafe'; // [UPDATED 2025-11-18] 카페 침투 추가
   clients?: { company_name: string };
   daily_count?: number;
   total_days?: number;
@@ -65,6 +65,7 @@ const TYPE_LABELS: Record<string, string> = {
   receipt: '영수증 리뷰',
   kakaomap: '카카오맵 리뷰',
   blog: '블로그 배포',
+  cafe: '카페 침투',
   // dynamic: '동적 상품', // [DISABLED 2025-11-02] 동적 상품 제거
 };
 
@@ -86,7 +87,7 @@ export function AdminSubmissionsTable() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<{
     id: string;
-    type: 'place' | 'receipt' | 'kakaomap' | 'blog';
+    type: 'place' | 'receipt' | 'kakaomap' | 'blog' | 'cafe';
   } | null>(null);
 
   useEffect(() => {
@@ -211,6 +212,8 @@ export function AdminSubmissionsTable() {
             ? '영상형'
             : '자동화형';
         return `${blogTypeLabel} / 일 ${submission.daily_count}타 × ${submission.total_days}일`;
+      case 'cafe':
+        return `총 ${submission.total_count}타`;
       // [DISABLED 2025-11-02] dynamic 타입 제거
       // case 'dynamic':
       //   if (submission.form_data) {
@@ -381,6 +384,7 @@ export function AdminSubmissionsTable() {
                   <SelectItem value="receipt" className="text-xs sm:text-sm">영수증 리뷰</SelectItem>
                   <SelectItem value="kakaomap" className="text-xs sm:text-sm">카카오맵 리뷰</SelectItem>
                   <SelectItem value="blog" className="text-xs sm:text-sm">블로그 배포</SelectItem>
+                  <SelectItem value="cafe" className="text-xs sm:text-sm">카페 침투</SelectItem>
                   {/* <SelectItem value="dynamic">동적 상품</SelectItem> [DISABLED 2025-11-02] */}
                 </SelectContent>
               </Select>

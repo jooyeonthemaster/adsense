@@ -4,6 +4,39 @@ import { requireAuth } from '@/lib/auth';
 import { getProductPrice } from '@/lib/pricing';
 import { revalidatePath } from 'next/cache';
 
+export async function GET(request: NextRequest) {
+  try {
+    const user = await requireAuth(['client']);
+    const supabase = await createClient();
+
+    // Get all receipt review submissions for this client
+    const { data: submissions, error } = await supabase
+      .from('receipt_review_submissions')
+      .select('*')
+      .eq('client_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching receipt submissions:', error);
+      return NextResponse.json(
+        { error: '접수 목록을 불러오는 중 오류가 발생했습니다.' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      submissions: submissions || [],
+    });
+  } catch (error) {
+    console.error('Error in GET /api/submissions/receipt:', error);
+    return NextResponse.json(
+      { error: '접수 목록을 불러오는 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(['client']);
@@ -11,6 +44,8 @@ export async function POST(request: NextRequest) {
     const {
       company_name,
       place_url,
+      daily_count,
+      total_days,
       total_count,
       total_points,
       business_license_url,
@@ -19,16 +54,16 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validation
-    if (!company_name || !place_url || !total_count) {
+    if (!company_name || !place_url || !total_count || !daily_count) {
       return NextResponse.json(
         { error: '필수 항목을 모두 입력해주세요.' },
         { status: 400 }
       );
     }
 
-    if (total_count < 30) {
+    if (daily_count < 1 || daily_count > 10) {
       return NextResponse.json(
-        { error: '최소 30타 이상 입력해주세요.' },
+        { error: '일 발행수량은 최소 1건, 최대 10건입니다.' },
         { status: 400 }
       );
     }
@@ -49,14 +84,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify pricing
-    const pricePerUnit = await getProductPrice(user.id, 'receipt-review');
-    if (!pricePerUnit) {
-      return NextResponse.json(
-        { error: '상품 가격 정보를 찾을 수 없습니다.' },
-        { status: 400 }
-      );
-    }
+    // Verify pricing (use default 5000 if not set by admin)
+    const pricePerUnit = await getProductPrice(user.id, 'receipt-review') || 5000;
 
     const calculatedPoints = pricePerUnit * total_count;
     if (Math.abs(calculatedPoints - total_points) > 1) {
@@ -96,9 +125,9 @@ export async function POST(request: NextRequest) {
         client_id: user.id,
         company_name,
         place_url,
-        daily_count: Math.ceil(total_count / 30), // 30일 기준으로 계산
+        daily_count,
         total_count,
-        has_photo: photo_urls && photo_urls.length > 0,
+        has_photo: !!(photo_urls && photo_urls.length > 0),
         has_script: false, // 기본값
         total_points,
         business_license_url,

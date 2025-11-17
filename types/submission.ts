@@ -93,3 +93,70 @@ export type AnySubmission =
 export interface SubmissionsResponse {
   submissions: AnySubmission[];
 }
+
+// Unified submission type for all products view
+export type ProductType = 'place' | 'receipt' | 'kakaomap' | 'blog' | 'cafe' | 'experience';
+
+export interface UnifiedSubmission {
+  id: string;
+  product_type: ProductType;
+  company_name: string;
+  status: SubmissionStatus;
+  total_points: number;
+  created_at: string;
+  updated_at: string;
+
+  // Product-specific fields
+  place_url?: string;
+  place_mid?: string;
+  daily_count?: number;
+  total_days?: number;
+  current_day?: number;
+  total_count?: number;
+
+  // Blog-specific
+  distribution_type?: 'reviewer' | 'video' | 'automation';
+  keywords?: string[];
+
+  // Cafe-specific
+  cafe_list?: string[];
+  has_photo?: boolean;
+  script_status?: string;
+  script_url?: string;
+
+  // Experience-specific
+  experience_type?: string;
+  team_count?: number;
+  bloggers_registered?: boolean;
+  bloggers_selected?: boolean;
+  schedule_confirmed?: boolean;
+  client_confirmed?: boolean;
+  all_published?: boolean;
+  campaign_completed?: boolean;
+
+  // Common optional fields
+  notes?: string;
+  start_date?: string;
+}
+
+export interface AllSubmissionsStats {
+  total: number;
+  pending: number;
+  in_progress: number;
+  completed: number;
+  cancelled: number;
+  total_cost: number;
+  by_product: {
+    place: number;
+    receipt: number;
+    kakaomap: number;
+    blog: number;
+    cafe: number;
+    experience: number;
+  };
+}
+
+export interface AllSubmissionsResponse {
+  submissions: UnifiedSubmission[];
+  stats: AllSubmissionsStats;
+}

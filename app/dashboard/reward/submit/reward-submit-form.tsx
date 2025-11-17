@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +30,28 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pricePerHit, setPricePerHit] = useState<number>(10);
+  const [loadingPrice, setLoadingPrice] = useState(true);
+
+  // 가격 정보 불러오기
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const response = await fetch('/api/pricing');
+        const data = await response.json();
+
+        if (data.success && data.pricing && data.pricing['place-traffic']) {
+          setPricePerHit(data.pricing['place-traffic']);
+        }
+      } catch (error) {
+        console.error('가격 정보 로드 실패:', error);
+      } finally {
+        setLoadingPrice(false);
+      }
+    };
+
+    fetchPricing();
+  }, []);
 
   // 플레이스 링크에서 MID 자동 추출
   const extractMidFromUrl = (url: string) => {
@@ -52,9 +74,8 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
     extractMidFromUrl(url);
   };
 
-  // 비용 계산 (임시 단가 10원)
+  // 비용 계산
   const calculateTotalCost = () => {
-    const pricePerHit = 10;
     return formData.dailyVolume * formData.operationDays * pricePerHit;
   };
 
