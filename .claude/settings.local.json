@@ -49,9 +49,25 @@
       "Bash(git reset:*)",
       "Bash(git commit:*)",
       "Bash(timeout /t 10 /nobreak)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(node scripts/create-blogger-template.js:*)",
+      "Bash(find:*)",
+      "Bash(timeout /t 2 /nobreak)",
+      "Bash(node scripts/create-kakaomap-test-excel.js:*)",
+      "Bash(node scripts/create-kakaomap-test-excel-v2.js:*)",
+      "Bash(node scripts/create-simple-kakaomap-excel.js:*)",
+      "Bash(\"C:\\Users\\jooye\\Desktop\\20251101marketing\\app\\api\\admin\\kakaomap\\[id]\\content\\[itemId]\\route.ts\")",
+      "Bash(exit 0)",
+      "Bash(\"C:\\Users\\jooye\\Desktop\\20251101marketing\\app\\api\\admin\\blog-distribution\\[id]\\route.ts\")",
+      "Bash(powershell:*)",
+      "Bash(xargs ls:*)",
+      "Bash(tree:*)",
+      "Bash(if not exist claudedocs mkdir claudedocs)",
+      "Bash(node scripts/check-image-urls-column.js:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "model": "sonnet[1m]"
 }

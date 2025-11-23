@@ -10,8 +10,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { CheckboxRadioGroup, CheckboxRadioItem } from '@/components/ui/checkbox-radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Star } from 'lucide-react';
+import { Sparkles, Star, MapPin, CheckCircle2, Info, AlertCircle, BookOpen, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ProductGuideSection } from '@/components/dashboard/ProductGuideSection';
 
 export default function KmapReviewPage() {
   const router = useRouter();
@@ -20,8 +21,8 @@ export default function KmapReviewPage() {
     businessName: '',
     kmapUrl: '',
     dailyCount: 1,
-    totalDays: 1,
-    totalCount: 1,
+    totalDays: 10,
+    totalCount: 10,
     hasPhoto: false,
     scriptOption: 'custom' as 'custom' | 'ai',
     photoRatio: 50,
@@ -116,6 +117,15 @@ export default function KmapReviewPage() {
       return;
     }
 
+    if (formData.totalCount < 10) {
+      toast({
+        variant: 'destructive',
+        title: '최소 주문건수 미달',
+        description: 'K맵 리뷰는 최소 10건 이상 주문하셔야 합니다.',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     const totalCost = calculateTotalCost();
@@ -154,7 +164,7 @@ export default function KmapReviewPage() {
 
       // Toast 알림 표시
       toast({
-        title: '✅ K맵 리뷰 접수 완료!',
+        title: '✅ 카카오맵 접수 완료!',
         description: (
           <div className="space-y-2 mt-2">
             <div className="flex items-center gap-2 p-3 bg-sky-50 rounded-lg border border-sky-200">
@@ -191,6 +201,8 @@ export default function KmapReviewPage() {
   return (
     <div className="min-h-screen bg-white px-3 sm:px-4 lg:px-6 pt-4 pb-6">
       <div className="max-w-7xl mx-auto">
+        <ProductGuideSection productKey="kakaomap-review" />
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 상단 2열 그리드 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -368,14 +380,31 @@ export default function KmapReviewPage() {
             <CardContent className="space-y-3 pt-0">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* 총 작업수량 */}
-                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
-                  <span className="text-xs font-medium text-gray-700">총 작업수량</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xl font-bold text-gray-900">
-                      {formData.totalCount}
-                    </span>
-                    <span className="text-xs text-gray-600">건</span>
+                <div className="space-y-1.5">
+                  <div className={`flex items-center justify-between p-3 rounded-lg ${
+                    formData.totalCount < 10
+                      ? 'bg-rose-50 border border-rose-200'
+                      : 'bg-gray-50 border border-gray-200'
+                  }`}>
+                    <span className={`text-xs font-medium ${
+                      formData.totalCount < 10 ? 'text-rose-700' : 'text-gray-700'
+                    }`}>총 작업수량</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className={`text-xl font-bold ${
+                        formData.totalCount < 10 ? 'text-rose-900' : 'text-gray-900'
+                      }`}>
+                        {formData.totalCount}
+                      </span>
+                      <span className={`text-xs ${
+                        formData.totalCount < 10 ? 'text-rose-600' : 'text-gray-600'
+                      }`}>건</span>
+                    </div>
                   </div>
+                  {formData.totalCount < 10 && (
+                    <p className="text-xs text-rose-600 px-1">
+                      ⚠️ 최소 10건 이상 필요
+                    </p>
+                  )}
                 </div>
 
                 {/* 예상 비용 */}

@@ -14,7 +14,7 @@ interface BlogDistributionSubmission {
   content_type: string;
   daily_count: number;
   total_count: number;
-  blog_url: string;
+  place_url: string;
   keywords: string;
   special_requests: string | null;
   status: string;
@@ -196,10 +196,16 @@ export default function BlogDistributionDetailPage({
                   <p className="font-medium">{contentTypeLabels[submission.content_type] || submission.content_type}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">블로그 URL</p>
-                  <a href={submission.blog_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                    {submission.blog_url}
-                  </a>
+                  <p className="text-sm text-gray-600">
+                    {submission.distribution_type === 'reviewer' ? '플레이스/상품 링크' : '플레이스 링크'}
+                  </p>
+                  {submission.place_url ? (
+                    <a href={submission.place_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm break-all">
+                      {submission.place_url}
+                    </a>
+                  ) : (
+                    <p className="text-gray-400 text-sm">-</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">예상 총 구동일</p>

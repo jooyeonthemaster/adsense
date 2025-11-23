@@ -33,7 +33,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, ExternalLink, Image as ImageIcon, FileText, Loader2 } from 'lucide-react';
+import { Search, ExternalLink, Image as ImageIcon, FileText, Loader2, Building2, ChevronDown } from 'lucide-react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 interface ReceiptReviewSubmission {
   id: string;
@@ -70,6 +75,19 @@ export function VisitorReviewManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [groupBy, setGroupBy] = useState<'list' | 'client'>('list');
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  const toggleGroup = (groupName: string) => {
+    setExpandedGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupName)) {
+        newSet.delete(groupName);
+      } else {
+        newSet.add(groupName);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     fetchSubmissions();
@@ -273,22 +291,40 @@ export function VisitorReviewManagement() {
             // Grouped View
             <div className="space-y-4">
               {grouped.map((group) => (
-                <Card key={group.name}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle>{group.name}</CardTitle>
-                        <CardDescription>
-                          {group.count}개 캠페인 · {group.totalCost.toLocaleString()}P
-                        </CardDescription>
-                      </div>
-                      <div className="flex gap-2">
-                        <Badge variant="default">{group.inProgress}개 진행중</Badge>
-                        <Badge variant="secondary">{group.completed}개 완료</Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
+                <Collapsible
+                  key={group.name}
+                  open={expandedGroups.has(group.name)}
+                  onOpenChange={() => toggleGroup(group.name)}
+                >
+                  <Card>
+                    <CollapsibleTrigger asChild>
+                      <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Building2 className="h-5 w-5 text-primary" />
+                            <div>
+                              <CardTitle>{group.name}</CardTitle>
+                              <CardDescription>
+                                {group.count}개 캠페인 · {group.totalCost.toLocaleString()}P
+                              </CardDescription>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="flex gap-2">
+                              <Badge variant="default">{group.inProgress}개 진행중</Badge>
+                              <Badge variant="secondary">{group.completed}개 완료</Badge>
+                            </div>
+                            <ChevronDown
+                              className={`h-5 w-5 text-muted-foreground transition-transform ${
+                                expandedGroups.has(group.name) ? 'transform rotate-180' : ''
+                              }`}
+                            />
+                          </div>
+                        </div>
+                      </CardHeader>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <CardContent>
                     <div className="rounded-lg border">
                       <Table>
                         <TableHeader>
@@ -393,8 +429,10 @@ export function VisitorReviewManagement() {
                         </TableBody>
                       </Table>
                     </div>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
               ))}
             </div>
           ) : (
@@ -421,7 +459,7 @@ export function VisitorReviewManagement() {
                       <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                         {searchQuery || statusFilter !== 'all'
                           ? '검색 결과가 없습니다.'
-                          : '방문자 리뷰 접수 내역이 없습니다.'}
+                          : '네이버 영수증 접수 내역이 없습니다.'}
                       </TableCell>
                     </TableRow>
                   ) : (

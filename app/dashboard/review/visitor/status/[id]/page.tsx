@@ -27,6 +27,8 @@ interface ReceiptReviewDetail {
   created_at: string;
   business_license_url?: string;
   photo_urls?: string[];
+  actual_count_total?: number;
+  progress_percentage?: number;
 }
 
 interface DailyRecord {
@@ -183,7 +185,7 @@ export default function ClientVisitorReviewDetailPage({ params }: { params: Prom
             </Button>
             <div>
               <h1 className="text-2xl font-bold">{submission.company_name}</h1>
-              <p className="text-sm text-muted-foreground">방문자 리뷰 상세 정보</p>
+              <p className="text-sm text-muted-foreground">네이버 영수증 상세 정보</p>
             </div>
           </div>
           <Badge variant={statusConfig[submission.status]?.variant || 'outline'}>

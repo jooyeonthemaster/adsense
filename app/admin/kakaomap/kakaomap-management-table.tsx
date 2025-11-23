@@ -27,7 +27,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, ExternalLink, MessageSquare, Image, AlertCircle, Clock, CheckCircle } from 'lucide-react';
+import { Search, ExternalLink, MessageSquare, Image, AlertCircle, Clock, CheckCircle, Building2, ChevronDown } from 'lucide-react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { KAKAOMAP_STATUS_LABELS } from '@/config/kakaomap-status';
 
 interface KakaomapSubmission {
@@ -67,6 +72,19 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [contentFilter, setContentFilter] = useState<string>('all');
   const [groupBy, setGroupBy] = useState<'list' | 'client'>('list');
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  const toggleGroup = (groupName: string) => {
+    setExpandedGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupName)) {
+        newSet.delete(groupName);
+      } else {
+        newSet.add(groupName);
+      }
+      return newSet;
+    });
+  };
 
   // Apply filters
   const filteredSubmissions = submissions.filter((sub) => {
@@ -249,33 +267,51 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
             // Grouped View
             <div className="space-y-4">
               {grouped.map((group) => (
-                <Card key={group.name}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle>{group.name}</CardTitle>
-                        <CardDescription>
-                          {group.count}개 캠페인 · {group.totalCost.toLocaleString()}P
-                        </CardDescription>
-                      </div>
-                      <div className="flex gap-2">
-                        <Badge variant="default">{group.inProgress}개 진행중</Badge>
-                        <Badge variant="secondary">{group.completed}개 완료</Badge>
-                        {group.needsUpload > 0 && (
-                          <Badge variant="outline" className="text-orange-600 border-orange-600">
-                            {group.needsUpload}개 업로드 필요
-                          </Badge>
-                        )}
-                        {group.unreadMessages > 0 && (
-                          <Badge variant="destructive">
-                            <MessageSquare className="h-3 w-3 mr-1" />
-                            {group.unreadMessages}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
+                <Collapsible
+                  key={group.name}
+                  open={expandedGroups.has(group.name)}
+                  onOpenChange={() => toggleGroup(group.name)}
+                >
+                  <Card>
+                    <CollapsibleTrigger asChild>
+                      <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Building2 className="h-5 w-5 text-primary" />
+                            <div>
+                              <CardTitle>{group.name}</CardTitle>
+                              <CardDescription>
+                                {group.count}개 캠페인 · {group.totalCost.toLocaleString()}P
+                              </CardDescription>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="flex gap-2">
+                              <Badge variant="default">{group.inProgress}개 진행중</Badge>
+                              <Badge variant="secondary">{group.completed}개 완료</Badge>
+                              {group.needsUpload > 0 && (
+                                <Badge variant="outline" className="text-orange-600 border-orange-600">
+                                  {group.needsUpload}개 업로드 필요
+                                </Badge>
+                              )}
+                              {group.unreadMessages > 0 && (
+                                <Badge variant="destructive">
+                                  <MessageSquare className="h-3 w-3 mr-1" />
+                                  {group.unreadMessages}
+                                </Badge>
+                              )}
+                            </div>
+                            <ChevronDown
+                              className={`h-5 w-5 text-muted-foreground transition-transform ${
+                                expandedGroups.has(group.name) ? 'transform rotate-180' : ''
+                              }`}
+                            />
+                          </div>
+                        </div>
+                      </CardHeader>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <CardContent>
                     <div className="rounded-lg border">
                       <Table>
                         <TableHeader>
@@ -392,8 +428,10 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
                         </TableBody>
                       </Table>
                     </div>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
               ))}
             </div>
           ) : (
@@ -419,7 +457,7 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
                       <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                         {searchQuery || statusFilter !== 'all' || contentFilter !== 'all'
                           ? '검색 결과가 없습니다.'
-                          : 'K맵 리뷰 접수 내역이 없습니다.'}
+                          : '카카오맵 접수 내역이 없습니다.'}
                       </TableCell>
                     </TableRow>
                   ) : (

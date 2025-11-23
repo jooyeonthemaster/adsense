@@ -142,7 +142,6 @@ export default function CafeMarketingStatusPage() {
     total: submissions.length,
     in_progress: submissions.filter((s) => ['pending', 'in_progress'].includes(s.status)).length,
     completed: submissions.filter((s) => s.status === 'completed').length,
-    total_cost: submissions.reduce((sum, s) => sum + s.total_points, 0),
   };
 
   if (loading) {
@@ -154,53 +153,61 @@ export default function CafeMarketingStatusPage() {
   }
 
   return (
-    <div className="container mx-auto p-3 sm:p-4 lg:p-6">
-      <div className="space-y-6">
+    <div className="container mx-auto p-2 sm:p-3 lg:p-6">
+      <div className="space-y-3 sm:space-y-4">
         {/* 헤더 */}
-        <div className="bg-gradient-to-r from-orange-500 to-red-600 rounded-lg p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <Coffee className="h-8 w-8" />
-                <h1 className="text-2xl font-bold">카페 침투 마케팅 접수 현황</h1>
+        <div className="bg-gradient-to-r from-orange-500 to-red-600 rounded-lg p-3 sm:p-4 lg:p-6 text-white">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <Coffee className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+                <h1 className="text-base sm:text-xl lg:text-2xl font-bold truncate">카페 침투 마케팅 접수 현황</h1>
               </div>
-              <p className="text-orange-100">지역 카페 마케팅 접수 내역을 관리하세요</p>
+              <p className="text-[11px] sm:text-sm text-orange-100 truncate">지역 카페 마케팅 접수 내역을 관리하세요</p>
             </div>
-            <Link href="/dashboard/cafe">
-              <Button variant="secondary" size="sm">새 접수하기</Button>
+            <Link href="/dashboard/cafe" className="flex-shrink-0">
+              <Button variant="secondary" size="sm" className="h-7 sm:h-8 text-xs sm:text-sm px-2 sm:px-3">새 접수</Button>
             </Link>
           </div>
         </div>
 
         {/* 통계 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="p-4 rounded-lg border bg-white shadow-sm">
-            <p className="text-xs text-gray-500 mb-1">총 접수</p>
-            <p className="text-2xl font-bold">{stats.total}</p>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="p-2.5 sm:p-3 rounded-lg border bg-white shadow-sm">
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5">총 접수</p>
+                <p className="text-lg sm:text-xl font-bold">{stats.total}</p>
+              </div>
+            </div>
           </div>
-          <div className="p-4 rounded-lg border border-orange-200 bg-orange-50 shadow-sm">
-            <p className="text-xs text-orange-600 mb-1">진행중</p>
-            <p className="text-2xl font-bold text-orange-900">{stats.in_progress}</p>
+          <div className="p-2.5 sm:p-3 rounded-lg border border-orange-200 bg-orange-50 shadow-sm">
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] sm:text-xs text-orange-600 mb-0.5">진행중</p>
+                <p className="text-lg sm:text-xl font-bold text-orange-900">{stats.in_progress}</p>
+              </div>
+            </div>
           </div>
-          <div className="p-4 rounded-lg border border-green-200 bg-green-50 shadow-sm">
-            <p className="text-xs text-green-600 mb-1">완료</p>
-            <p className="text-2xl font-bold text-green-900">{stats.completed}</p>
-          </div>
-          <div className="p-4 rounded-lg border border-orange-200 bg-orange-50 shadow-sm">
-            <p className="text-xs text-orange-600 mb-1">총 비용</p>
-            <p className="text-2xl font-bold text-orange-900">{stats.total_cost.toLocaleString()}P</p>
+          <div className="p-2.5 sm:p-3 rounded-lg border border-green-200 bg-green-50 shadow-sm">
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] sm:text-xs text-green-600 mb-0.5">완료</p>
+                <p className="text-lg sm:text-xl font-bold text-green-900">{stats.completed}</p>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* 필터 */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input placeholder="업체명 검색..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 h-10 text-sm" />
+            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+            <Input placeholder="업체명 검색..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-8 h-8 text-xs sm:text-sm" />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-36 h-10 text-sm">
-              <Filter className="h-4 w-4 mr-2" />
+            <SelectTrigger className="w-full sm:w-28 h-8 text-xs sm:text-sm">
+              <Filter className="h-3.5 w-3.5 mr-1.5" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -211,7 +218,7 @@ export default function CafeMarketingStatusPage() {
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'date' | 'cost')}>
-            <SelectTrigger className="w-full sm:w-32 h-10 text-sm">
+            <SelectTrigger className="w-full sm:w-28 h-8 text-xs sm:text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -302,10 +309,10 @@ export default function CafeMarketingStatusPage() {
         </div>
 
         {/* 모바일 카드 */}
-        <div className="md:hidden space-y-3">
+        <div className="md:hidden space-y-2">
           {submissions.length === 0 ? (
-            <div className="text-center py-12 bg-white border rounded-lg">
-              <p className="text-sm text-gray-500">접수 내역이 없습니다.</p>
+            <div className="text-center py-8 bg-white border rounded-lg">
+              <p className="text-xs text-gray-500">접수 내역이 없습니다.</p>
             </div>
           ) : (
             submissions.map((sub) => {
@@ -313,57 +320,57 @@ export default function CafeMarketingStatusPage() {
               const scriptStatus = scriptStatusConfig[sub.script_status || 'pending'];
 
               return (
-                <div key={sub.id} className="bg-white border rounded-lg p-4 space-y-3 shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <h3 className="font-semibold text-sm">{sub.company_name}</h3>
-                    <Badge variant={statusDisplay.variant} className="text-xs">{statusDisplay.label}</Badge>
+                <div key={sub.id} className="bg-white border rounded-lg p-2.5 space-y-2 shadow-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-semibold text-xs truncate flex-1 min-w-0">{sub.company_name}</h3>
+                    <Badge variant={statusDisplay.variant} className="text-[10px] px-1.5 py-0.5 flex-shrink-0">{statusDisplay.label}</Badge>
                   </div>
-                  <div>
-                    <Badge variant="outline" className="text-xs mb-2">{scriptStatus.label}</Badge>
+                  <div className="space-y-1">
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">{scriptStatus.label}</Badge>
                     {sub.script_status === 'completed' && sub.script_url && (
-                      <a href={sub.script_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-teal-600">
-                        <FileSpreadsheet className="h-3 w-3" />구글시트 열기
+                      <a href={sub.script_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] text-teal-600">
+                        <FileSpreadsheet className="h-2.5 w-2.5" />구글시트 열기
                       </a>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-3 pt-3 border-t">
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
                     <div>
-                      <p className="text-xs text-gray-500">카페 수</p>
-                      <p className="text-sm font-medium">{sub.cafe_details?.length || 0}개</p>
+                      <p className="text-[10px] text-gray-500 mb-0.5">카페 수</p>
+                      <p className="text-xs font-medium">{sub.cafe_details?.length || 0}개</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">발행 건수</p>
-                      <p className="text-sm font-medium">{sub.total_count || 0}건</p>
+                      <p className="text-[10px] text-gray-500 mb-0.5">발행 건수</p>
+                      <p className="text-xs font-medium">{sub.total_count || 0}건</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-xs text-gray-500 mb-1">진행률</p>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                      <p className="text-[10px] text-gray-500 mb-0.5">진행률</p>
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex-1 bg-gray-200 rounded-full h-1.5">
                           <div
-                            className="bg-orange-600 h-2 rounded-full transition-all"
+                            className="bg-orange-600 h-1.5 rounded-full transition-all"
                             style={{ width: `${sub.progress_percentage || 0}%` }}
                           />
                         </div>
-                        <span className="text-sm font-medium text-orange-600">
+                        <span className="text-xs font-medium text-orange-600 min-w-[32px] text-right">
                           {sub.progress_percentage || 0}%
                         </span>
                       </div>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">접수일</p>
-                      <p className="text-sm font-medium">{formatDate(sub.created_at)}</p>
+                      <p className="text-[10px] text-gray-500 mb-0.5">접수일</p>
+                      <p className="text-xs font-medium">{formatDate(sub.created_at)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">비용</p>
-                      <p className="text-sm font-semibold text-orange-600">{sub.total_points.toLocaleString()}P</p>
+                      <p className="text-[10px] text-gray-500 mb-0.5">비용</p>
+                      <p className="text-xs font-semibold text-orange-600">{sub.total_points.toLocaleString()}P</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5 pt-1">
                     <Link href={`/dashboard/cafe/status/detail/${sub.id}`} className="flex-1">
-                      <Button variant="outline" size="sm" className="w-full text-xs h-9 text-blue-600">상세 보기</Button>
+                      <Button variant="outline" size="sm" className="w-full text-[11px] h-7 text-blue-600 border-blue-300 px-2">상세</Button>
                     </Link>
                     {canCancel(sub) && (
-                      <Button variant="outline" size="sm" onClick={() => handleCancelClick(sub)} className="flex-1 text-xs h-9 text-red-600">중단 신청</Button>
+                      <Button variant="outline" size="sm" onClick={() => handleCancelClick(sub)} className="flex-1 text-[11px] h-7 text-red-600 border-red-300 px-2">중단</Button>
                     )}
                   </div>
                 </div>

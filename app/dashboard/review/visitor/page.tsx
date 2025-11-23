@@ -9,9 +9,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { CheckboxRadioGroup, CheckboxRadioItem } from '@/components/ui/checkbox-radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Upload, CheckCircle2, Sparkles } from 'lucide-react';
+import { Upload, Sparkles, CheckCircle2, Info, AlertCircle, BookOpen, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/utils/supabase/client';
+import { extractNaverPlaceMID, fetchBusinessInfoByMID } from '@/utils/naver-place';
+import { ProductGuideSection } from '@/components/dashboard/ProductGuideSection';
 
 export default function VisitorReviewPage() {
   const router = useRouter();
@@ -21,8 +23,8 @@ export default function VisitorReviewPage() {
     placeUrl: '',
     placeMid: '',
     dailyCount: 1,
-    totalDays: 1,
-    totalCount: 1,
+    totalDays: 10,
+    totalCount: 10,
     photoOption: 'with', // 'with' | 'without'
     scriptOption: 'custom', // 'custom' | 'ai'
     guideline: '',
@@ -33,6 +35,7 @@ export default function VisitorReviewPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pricePerReview, setPricePerReview] = useState<number>(5000);
   const [loadingPrice, setLoadingPrice] = useState(true);
+  const [loadingBusinessName, setLoadingBusinessName] = useState(false);
 
   // 가격 정보 불러오기
   useEffect(() => {
@@ -54,25 +57,52 @@ export default function VisitorReviewPage() {
     fetchPricing();
   }, []);
 
-  // 플레이스 링크에서 MID 자동 추출
-  const extractMidFromUrl = (url: string) => {
-    try {
-      const match = url.match(/place\/(\d+)/);
-      if (match && match[1]) {
-        setFormData(prev => ({ ...prev, placeMid: match[1] }));
-      } else {
-        setFormData(prev => ({ ...prev, placeMid: '' }));
-      }
-    } catch (error) {
-      console.error('MID 추출 실패:', error);
-      setFormData(prev => ({ ...prev, placeMid: '' }));
-    }
-  };
-
-  const handlePlaceUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 플레이스 링크에서 MID 자동 추출 및 업체명 가져오기
+  const handlePlaceUrlChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
     setFormData(prev => ({ ...prev, placeUrl: url }));
-    extractMidFromUrl(url);
+
+    // MID 추출
+    const mid = extractNaverPlaceMID(url);
+
+    if (mid) {
+      setFormData(prev => ({ ...prev, placeMid: mid }));
+
+      // 업체명 자동 가져오기
+      setLoadingBusinessName(true);
+      try {
+        const businessInfo = await fetchBusinessInfoByMID(mid);
+
+        if (businessInfo && businessInfo.businessName) {
+          setFormData(prev => ({ ...prev, businessName: businessInfo.businessName }));
+
+          toast({
+            title: '✅ 업체명 자동 입력 완료',
+            description: `"${businessInfo.businessName}"이(가) 입력되었습니다.`,
+            duration: 3000,
+          });
+        } else {
+          toast({
+            variant: 'destructive',
+            title: '⚠️ 업체명 추출 실패',
+            description: '업체명을 가져올 수 없습니다. 직접 입력해주세요.',
+            duration: 3000,
+          });
+        }
+      } catch (error) {
+        console.error('업체명 가져오기 실패:', error);
+        toast({
+          variant: 'destructive',
+          title: '⚠️ 업체명 추출 오류',
+          description: '업체명을 가져오는 중 오류가 발생했습니다. 직접 입력해주세요.',
+          duration: 3000,
+        });
+      } finally {
+        setLoadingBusinessName(false);
+      }
+    } else {
+      setFormData(prev => ({ ...prev, placeMid: '' }));
+    }
   };
 
   const handleDailyCountChange = (value: number) => {
@@ -172,6 +202,15 @@ export default function VisitorReviewPage() {
       return;
     }
 
+    if (formData.totalCount < 30) {
+      toast({
+        variant: 'destructive',
+        title: '최소 주문건수 미달',
+        description: '방문자 리뷰는 최소 30건 이상 주문하셔야 합니다.',
+      });
+      return;
+    }
+
     if (!formData.businessLicense && formData.photos.length === 0) {
       toast({
         variant: 'destructive',
@@ -235,7 +274,7 @@ export default function VisitorReviewPage() {
 
       // Toast 알림 표시
       toast({
-        title: '✅ 방문자 리뷰 접수 완료!',
+        title: '✅ 네이버 영수증 접수 완료!',
         description: (
           <div className="space-y-2 mt-2">
             <div className="flex items-center gap-2 p-3 bg-sky-50 rounded-lg border border-sky-200">
@@ -272,6 +311,8 @@ export default function VisitorReviewPage() {
   return (
     <div className="min-h-screen bg-white px-3 sm:px-4 lg:px-6 pt-4 pb-6">
       <div className="max-w-7xl mx-auto">
+        <ProductGuideSection productKey="receipt-review" />
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 상단 2열 그리드 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -287,14 +328,22 @@ export default function VisitorReviewPage() {
                   <Label htmlFor="businessName" className="text-xs font-medium text-gray-700">
                     업체명 <span className="text-rose-500">*</span>
                   </Label>
-                  <Input
-                    id="businessName"
-                    type="text"
-                    value={formData.businessName}
-                    onChange={(e) => setFormData(prev => ({ ...prev, businessName: e.target.value }))}
-                    placeholder="업체명을 입력하세요"
-                    className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="businessName"
+                      type="text"
+                      value={formData.businessName}
+                      onChange={(e) => setFormData(prev => ({ ...prev, businessName: e.target.value }))}
+                      placeholder={loadingBusinessName ? "업체명 가져오는 중..." : "업체명을 입력하세요"}
+                      className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+                      disabled={loadingBusinessName}
+                    />
+                    {loadingBusinessName && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="h-4 w-4 border-2 border-sky-500/30 border-t-sky-500 rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* 플레이스 링크 */}
@@ -481,16 +530,33 @@ export default function VisitorReviewPage() {
               <CardDescription className="text-gray-600 text-sm">예상 비용을 확인하고 접수하세요</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 pt-0">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* 총 작업수량 */}
-                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
-                  <span className="text-xs font-medium text-gray-700">총 작업수량</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xl font-bold text-gray-900">
-                      {formData.totalCount}
-                    </span>
-                    <span className="text-xs text-gray-600">건</span>
+                <div className="space-y-1.5">
+                  <div className={`flex items-center justify-between p-3 rounded-lg ${
+                    formData.totalCount < 30
+                      ? 'bg-rose-50 border border-rose-200'
+                      : 'bg-gray-50 border border-gray-200'
+                  }`}>
+                    <span className={`text-xs font-medium ${
+                      formData.totalCount < 30 ? 'text-rose-700' : 'text-gray-700'
+                    }`}>총 작업수량</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className={`text-xl font-bold ${
+                        formData.totalCount < 30 ? 'text-rose-900' : 'text-gray-900'
+                      }`}>
+                        {formData.totalCount}
+                      </span>
+                      <span className={`text-xs ${
+                        formData.totalCount < 30 ? 'text-rose-600' : 'text-gray-600'
+                      }`}>건</span>
+                    </div>
                   </div>
+                  {formData.totalCount < 30 && (
+                    <p className="text-xs text-rose-600 px-1">
+                      ⚠️ 최소 30건 이상 필요
+                    </p>
+                  )}
                 </div>
 
                 {/* 예상 비용 */}
@@ -510,22 +576,6 @@ export default function VisitorReviewPage() {
                     </div>
                     <div className="text-xs text-white/80">
                       일 {formData.dailyCount}건 × {formData.totalDays}일
-                    </div>
-                  </div>
-                </div>
-
-                {/* 건당 단가 */}
-                <div className="p-3 rounded-lg border border-purple-200 bg-purple-50">
-                  <div className="space-y-1">
-                    <span className="text-xs font-medium text-purple-600">건당 단가</span>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-bold text-purple-900">
-                        5,000
-                      </span>
-                      <span className="text-sm text-purple-700">P</span>
-                    </div>
-                    <div className="text-xs text-purple-600">
-                      방문자 리뷰
                     </div>
                   </div>
                 </div>

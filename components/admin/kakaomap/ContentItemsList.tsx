@@ -80,7 +80,11 @@ export function ContentItemsList({
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to update');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API error:', errorData);
+        throw new Error(errorData.error || 'Failed to update');
+      }
 
       toast({
         title: '업로드 완료',

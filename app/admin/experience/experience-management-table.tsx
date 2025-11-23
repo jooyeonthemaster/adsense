@@ -27,7 +27,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, ExternalLink, Users, Sparkles, Clock, CheckCircle, List, Grid3x3, Building2 } from 'lucide-react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { Search, ExternalLink, Users, Sparkles, Clock, CheckCircle, List, Grid3x3, Building2, ChevronDown } from 'lucide-react';
 import { getExperienceStep } from '@/lib/submission-utils';
 import { SubmissionStatus } from '@/types/submission';
 
@@ -75,6 +80,19 @@ export function ExperienceManagementTable({ submissions }: { submissions: Experi
   const [stepFilter, setStepFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'list' | 'group'>('list');
   const [groupBy, setGroupBy] = useState<'client' | 'company'>('client');
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  const toggleGroup = (groupName: string) => {
+    setExpandedGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupName)) {
+        newSet.delete(groupName);
+      } else {
+        newSet.add(groupName);
+      }
+      return newSet;
+    });
+  };
 
   const getStatusDisplay = (sub: ExperienceSubmission) => {
     const { step, label, totalSteps } = getExperienceStep(sub);
@@ -368,25 +386,40 @@ export function ExperienceManagementTable({ submissions }: { submissions: Experi
       {viewMode === 'group' && (
         <div className="space-y-4">
           {groupedData().map((group) => (
-            <Card key={group.name}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Building2 className="h-5 w-5 text-violet-500" />
-                    <div>
-                      <CardTitle className="text-lg">{group.name}</CardTitle>
-                      <CardDescription>
-                        {group.count}개 캠페인 • 진행중 {group.inProgress}개 • 완료 {group.completed}개
-                      </CardDescription>
+            <Collapsible
+              key={group.name}
+              open={expandedGroups.has(group.name)}
+              onOpenChange={() => toggleGroup(group.name)}
+            >
+              <Card>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Building2 className="h-5 w-5 text-violet-500" />
+                        <div>
+                          <CardTitle className="text-lg">{group.name}</CardTitle>
+                          <CardDescription>
+                            {group.count}개 캠페인 • 진행중 {group.inProgress}개 • 완료 {group.completed}개
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-violet-600">{group.totalCost.toLocaleString()}P</p>
+                          <p className="text-xs text-gray-500">총 비용</p>
+                        </div>
+                        <ChevronDown
+                          className={`h-5 w-5 text-muted-foreground transition-transform ${
+                            expandedGroups.has(group.name) ? 'transform rotate-180' : ''
+                          }`}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-violet-600">{group.totalCost.toLocaleString()}P</p>
-                    <p className="text-xs text-gray-500">총 비용</p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent>
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
@@ -457,8 +490,10 @@ export function ExperienceManagementTable({ submissions }: { submissions: Experi
                     </TableBody>
                   </Table>
                 </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
           ))}
         </div>
       )}

@@ -5,7 +5,8 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Activity, Database, Users, FileText, DollarSign, Package, Filter, AlertCircle } from 'lucide-react';
+import { TrendingUp, Activity, Database, Users, FileText, DollarSign, Package, Filter, AlertCircle, CreditCard, Check, X } from 'lucide-react';
+import Link from 'next/link';
 
 const iconMap = {
   Users,
@@ -28,6 +29,19 @@ interface RecentSubmission {
   category_name?: string;
 }
 
+interface ChargeRequest {
+  id: string;
+  client_id: string;
+  amount: number;
+  description: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  clients?: {
+    company_name: string;
+    username: string;
+  };
+}
+
 interface AdminDashboardContentProps {
   stats: {
     totalClients: number;
@@ -42,6 +56,7 @@ interface AdminDashboardContentProps {
     description: string;
   }>;
   recentSubmissions: RecentSubmission[];
+  recentChargeRequests: ChargeRequest[];
 }
 
 const container = {
@@ -91,7 +106,19 @@ const STATUS_VARIANTS: Record<
   cancelled: 'destructive',
 };
 
-export function AdminDashboardContent({ stats, cards, recentSubmissions }: AdminDashboardContentProps) {
+const CHARGE_STATUS_LABELS: Record<string, string> = {
+  pending: '대기중',
+  approved: '승인됨',
+  rejected: '거부됨',
+};
+
+const CHARGE_STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'destructive'> = {
+  pending: 'default',
+  approved: 'secondary',
+  rejected: 'destructive',
+};
+
+export function AdminDashboardContent({ stats, cards, recentSubmissions, recentChargeRequests }: AdminDashboardContentProps) {
   const [showOnlyPending, setShowOnlyPending] = useState(false);
 
   // 필터 적용
@@ -153,13 +180,15 @@ export function AdminDashboardContent({ stats, cards, recentSubmissions }: Admin
         })}
       </motion.div>
 
-      {/* 최근 접수 내역 */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.5 }}
-      >
-        <Card className="group hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 border-primary/10">
+      {/* 최근 접수 내역 & 최근 충전 요청 (가로 배치) */}
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
+        {/* 최근 접수 내역 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+        >
+          <Card className="group hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 border-primary/10 h-full">
           <CardHeader className="p-3 sm:p-4 lg:p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
               <div className="flex items-center gap-2 sm:gap-3">
@@ -186,7 +215,7 @@ export function AdminDashboardContent({ stats, cards, recentSubmissions }: Admin
                 {showOnlyPending ? '대기중인 접수 내역이 없습니다.' : '최근 접수 내역이 없습니다.'}
               </p>
             ) : (
-              <div className="grid gap-2 sm:gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              <div className="space-y-2 sm:space-y-3">
                 {filteredSubmissions.map((submission) => (
                   <div
                     key={`${submission.type}-${submission.id}`}
@@ -229,7 +258,92 @@ export function AdminDashboardContent({ stats, cards, recentSubmissions }: Admin
             )}
           </CardContent>
         </Card>
-      </motion.div>
+        </motion.div>
+
+        {/* 최근 충전 요청 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+        >
+          <Card className="group hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 border-primary/10 h-full">
+          <CardHeader className="p-3 sm:p-4 lg:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 p-2 sm:p-3 shadow-lg shadow-emerald-500/30">
+                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                </div>
+                <CardTitle className="text-base sm:text-lg lg:text-xl">최근 충전 요청</CardTitle>
+              </div>
+              <Link href="/admin/charge-requests">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 sm:gap-2 text-xs sm:text-sm h-7 sm:h-8 px-2 sm:px-3"
+                >
+                  <span>전체 보기</span>
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent className="p-3 sm:p-4 lg:p-6 pt-0">
+            {recentChargeRequests.length === 0 ? (
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed text-center py-3 sm:py-4">
+                최근 충전 요청이 없습니다.
+              </p>
+            ) : (
+              <div className="space-y-2 sm:space-y-3">
+                {recentChargeRequests.map((request) => (
+                  <div
+                    key={request.id}
+                    className="p-3 sm:p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors space-y-2"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm sm:text-base font-semibold truncate">
+                          {request.clients?.company_name || '-'}
+                        </p>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                          @{request.clients?.username || '-'}
+                        </p>
+                      </div>
+                      <p className="text-sm sm:text-base font-bold text-emerald-600 whitespace-nowrap">
+                        {request.amount.toLocaleString()} P
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={CHARGE_STATUS_VARIANTS[request.status]} className="text-[10px] sm:text-xs px-2 py-0.5">
+                        {CHARGE_STATUS_LABELS[request.status]}
+                      </Badge>
+                      {request.status === 'pending' && (
+                        <Link href="/admin/charge-requests">
+                          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                            처리
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
+                    {request.description && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {request.description}
+                      </p>
+                    )}
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      {new Date(request.created_at).toLocaleDateString('ko-KR', {
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        </motion.div>
+      </div>
     </div>
   );
 }

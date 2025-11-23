@@ -6,17 +6,17 @@ import { BookOpen, Flower2, Newspaper, Users } from 'lucide-react';
 
 const tabs = [
   {
-    name: '블로그',
+    name: '블로그 체험단',
     href: '/dashboard/experience/blog',
     icon: BookOpen,
   },
   {
-    name: '샤오홍슈',
+    name: '샤오홍슈(중국인 체험단)',
     href: '/dashboard/experience/xiaohongshu',
     icon: Flower2,
   },
   {
-    name: '실계정 기자단',
+    name: '블로그 기자단',
     href: '/dashboard/experience/journalist',
     icon: Newspaper,
   },
@@ -35,9 +35,9 @@ export default function ExperienceLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="space-y-4">
-      {/* 탭 네비게이션 - 접수 폼 페이지에서만 표시 */}
+      {/* 탭 네비게이션 - 접수 폼 페이지에서만 표시, 모바일에서는 숨김 */}
       {!isStatusPage && (
-        <div className="bg-white border-b border-gray-200">
+        <div className="bg-white border-b border-gray-200 hidden md:block">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <nav className="flex space-x-8" aria-label="Tabs">
               {tabs.map((tab) => {

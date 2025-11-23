@@ -62,6 +62,8 @@ interface ReceiptReviewSubmission {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  actual_count_total?: number;
+  progress_percentage?: number;
 }
 
 const statusConfig = {
@@ -195,15 +197,13 @@ export default function VisitorReviewStatusPage() {
 
   const calculateProgress = (submission: ReceiptReviewSubmission) => {
     if (submission.status === 'completed') return 100;
-    if (submission.status === 'pending' || !submission.start_date) return 0;
+    if (submission.progress_percentage !== undefined) return submission.progress_percentage;
 
-    const startDate = new Date(submission.start_date);
-    const today = new Date();
-    const diffTime = Math.abs(today.getTime() - startDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const totalDays = Math.ceil(submission.total_count / submission.daily_count);
-
-    return Math.min((diffDays / totalDays) * 100, 100);
+    // Fallback calculation
+    const actualCount = submission.actual_count_total || 0;
+    return submission.total_count > 0
+      ? Math.round((actualCount / submission.total_count) * 100)
+      : 0;
   };
 
   const canCancel = (submission: ReceiptReviewSubmission) => {
@@ -216,7 +216,6 @@ export default function VisitorReviewStatusPage() {
     pending: submissions.filter((s) => s.status === 'pending').length,
     in_progress: submissions.filter((s) => s.status === 'in_progress').length,
     completed: submissions.filter((s) => s.status === 'completed').length,
-    total_cost: submissions.reduce((sum, s) => sum + s.total_points, 0),
   };
 
   if (loading) {
@@ -231,89 +230,78 @@ export default function VisitorReviewStatusPage() {
   }
 
   return (
-    <div className="container mx-auto p-3 sm:p-4 lg:p-6">
-      <div className="space-y-6">
+    <div className="container mx-auto p-2 sm:p-3 lg:p-6">
+      <div className="space-y-3 sm:space-y-4">
         {/* 헤더 */}
-        <div className="bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <Camera className="h-8 w-8" />
-                <h1 className="text-2xl font-bold">영수증 리뷰 접수 현황</h1>
+        <div className="bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg p-3 sm:p-4 lg:p-6 text-white">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <Camera className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+                <h1 className="text-base sm:text-xl lg:text-2xl font-bold truncate">영수증 리뷰 접수 현황</h1>
               </div>
-              <p className="text-purple-100">방문자 영수증 리뷰 접수 내역을 관리하세요</p>
+              <p className="text-[11px] sm:text-sm text-purple-100 truncate">방문자 영수증 리뷰 접수 내역을 관리하세요</p>
             </div>
-            <Link href="/dashboard/review/visitor">
-              <Button variant="secondary" size="sm">
-                새 접수하기
+            <Link href="/dashboard/review/visitor" className="flex-shrink-0">
+              <Button variant="secondary" size="sm" className="h-7 sm:h-8 text-xs sm:text-sm px-2 sm:px-3">
+                새 접수
               </Button>
             </Link>
           </div>
         </div>
 
         {/* 통계 카드 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="p-4 rounded-lg border border-gray-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">총 접수</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="p-2.5 sm:p-3 rounded-lg border border-gray-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5">총 접수</p>
+                <p className="text-lg sm:text-xl font-bold text-gray-900">{stats.total}</p>
               </div>
-              <TrendingUp className="h-8 w-8 text-gray-400" />
+              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 flex-shrink-0" />
             </div>
           </div>
 
-          <div className="p-4 rounded-lg border border-purple-200 bg-purple-50 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-purple-600 mb-1">진행중</p>
-                <p className="text-2xl font-bold text-purple-900">
+          <div className="p-2.5 sm:p-3 rounded-lg border border-purple-200 bg-purple-50 shadow-sm">
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] sm:text-xs text-purple-600 mb-0.5">진행중</p>
+                <p className="text-lg sm:text-xl font-bold text-purple-900">
                   {stats.pending + stats.in_progress}
                 </p>
               </div>
-              <Calendar className="h-8 w-8 text-purple-400" />
+              <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-purple-400 flex-shrink-0" />
             </div>
           </div>
 
-          <div className="p-4 rounded-lg border border-emerald-200 bg-emerald-50 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-emerald-600 mb-1">완료</p>
-                <p className="text-2xl font-bold text-emerald-900">{stats.completed}</p>
+          <div className="p-2.5 sm:p-3 rounded-lg border border-emerald-200 bg-emerald-50 shadow-sm">
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] sm:text-xs text-emerald-600 mb-0.5">완료</p>
+                <p className="text-lg sm:text-xl font-bold text-emerald-900">{stats.completed}</p>
               </div>
-              <TrendingUp className="h-8 w-8 text-emerald-400" />
+              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-400 flex-shrink-0" />
             </div>
           </div>
 
-          <div className="p-4 rounded-lg border border-purple-200 bg-purple-50 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-purple-600 mb-1">총 비용</p>
-                <p className="text-2xl font-bold text-purple-900">
-                  {stats.total_cost.toLocaleString()}P
-                </p>
-              </div>
-              <DollarSign className="h-8 w-8 text-purple-400" />
-            </div>
-          </div>
         </div>
 
         {/* 검색 및 필터 */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
             <Input
               placeholder="업체명으로 검색..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 text-sm"
+              className="pl-8 h-8 text-xs sm:text-sm"
             />
           </div>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-40 h-10 text-sm">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="상태 필터" />
+            <SelectTrigger className="w-full sm:w-32 h-8 text-xs sm:text-sm">
+              <Filter className="h-3.5 w-3.5 mr-1.5" />
+              <SelectValue placeholder="전체" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">전체</SelectItem>
@@ -325,7 +313,7 @@ export default function VisitorReviewStatusPage() {
           </Select>
 
           <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'date' | 'cost')}>
-            <SelectTrigger className="w-full sm:w-40 h-10 text-sm">
+            <SelectTrigger className="w-full sm:w-32 h-8 text-xs sm:text-sm">
               <SelectValue placeholder="정렬" />
             </SelectTrigger>
             <SelectContent>
@@ -465,10 +453,10 @@ export default function VisitorReviewStatusPage() {
         </div>
 
         {/* 카드 - Mobile */}
-        <div className="md:hidden space-y-3">
+        <div className="md:hidden space-y-2">
           {submissions.length === 0 ? (
-            <div className="text-center py-12 bg-white border border-gray-200 rounded-lg">
-              <p className="text-sm text-gray-500">접수 내역이 없습니다.</p>
+            <div className="text-center py-8 bg-white border border-gray-200 rounded-lg">
+              <p className="text-xs text-gray-500">접수 내역이 없습니다.</p>
             </div>
           ) : (
             submissions.map((submission) => {
@@ -479,53 +467,55 @@ export default function VisitorReviewStatusPage() {
               return (
                 <div
                   key={submission.id}
-                  className="bg-white border border-gray-200 rounded-lg p-4 space-y-3 shadow-sm"
+                  className="bg-white border border-gray-200 rounded-lg p-2.5 space-y-2 shadow-sm"
                 >
                   {/* 헤더 */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-sm">{submission.company_name}</h3>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <h3 className="font-semibold text-xs truncate">{submission.company_name}</h3>
                         <a
                           href={submission.place_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-purple-500"
+                          className="text-purple-500 flex-shrink-0"
                         >
-                          <ExternalLink className="h-3.5 w-3.5" />
+                          <ExternalLink className="h-3 w-3" />
                         </a>
                       </div>
-                      {mid && <p className="text-xs text-gray-500">MID: {mid}</p>}
+                      {mid && <p className="text-[10px] text-gray-500 truncate">MID: {mid}</p>}
                     </div>
-                    <Badge variant={statusDisplay.variant} className="text-xs">
+                    <Badge variant={statusDisplay.variant} className="text-[10px] px-1.5 py-0.5 flex-shrink-0">
                       {statusDisplay.label}
                     </Badge>
                   </div>
 
                   {/* 옵션 */}
-                  <div className="flex gap-2">
-                    {submission.has_photo && (
-                      <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700">
-                        <ImageIcon className="h-3 w-3 mr-1" />
-                        사진
-                      </Badge>
-                    )}
-                    {submission.has_script && (
-                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                        <FileTextIcon className="h-3 w-3 mr-1" />
-                        원고
-                      </Badge>
-                    )}
-                  </div>
+                  {(submission.has_photo || submission.has_script) && (
+                    <div className="flex gap-1.5">
+                      {submission.has_photo && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-700 border-amber-200">
+                          <ImageIcon className="h-2.5 w-2.5 mr-0.5" />
+                          사진
+                        </Badge>
+                      )}
+                      {submission.has_script && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-700 border-blue-200">
+                          <FileTextIcon className="h-2.5 w-2.5 mr-0.5" />
+                          원고
+                        </Badge>
+                      )}
+                    </div>
+                  )}
 
                   {/* 진행률 */}
                   {submission.status === 'in_progress' && progress > 0 && (
                     <div>
-                      <div className="flex justify-between text-xs text-gray-600 mb-1">
+                      <div className="flex justify-between text-[10px] text-gray-600 mb-0.5">
                         <span>진행률</span>
                         <span className="font-medium">{Math.round(progress)}%</span>
                       </div>
-                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-purple-500 transition-all"
                           style={{ width: `${progress}%` }}
@@ -535,45 +525,39 @@ export default function VisitorReviewStatusPage() {
                   )}
 
                   {/* 상세 정보 */}
-                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
                     <div>
-                      <p className="text-xs text-gray-500">일 발행수량</p>
-                      <p className="text-sm font-medium">{submission.daily_count}건</p>
+                      <p className="text-[10px] text-gray-500 mb-0.5">일 발행수량</p>
+                      <p className="text-xs font-medium">{submission.daily_count}건</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">총 작업수량</p>
-                      <p className="text-sm font-medium">{submission.total_count}건</p>
+                      <p className="text-[10px] text-gray-500 mb-0.5">총 작업수량</p>
+                      <p className="text-xs font-medium">{submission.total_count}건</p>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-500">접수일시</p>
-                      <p className="text-sm font-medium">{formatDate(submission.created_at)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">총 비용</p>
-                      <p className="text-sm font-semibold text-purple-600">
-                        {submission.total_points.toLocaleString()}P
-                      </p>
+                    <div className="col-span-2">
+                      <p className="text-[10px] text-gray-500 mb-0.5">접수일시</p>
+                      <p className="text-xs font-medium">{formatDate(submission.created_at)}</p>
                     </div>
                   </div>
 
                   {/* 액션 버튼 */}
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex gap-1.5 pt-1">
                     <Link href={`/dashboard/review/visitor/status/${submission.id}`} className="flex-1">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full text-xs h-9 text-purple-600 border-purple-300"
+                        className="w-full text-[11px] h-7 text-purple-600 border-purple-300 px-2"
                       >
-                        상세보기
+                        상세
                       </Button>
                     </Link>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleDownloadReport(submission.id)}
-                      className="flex-1 text-xs h-9 text-emerald-600 border-emerald-300"
+                      className="flex-1 text-[11px] h-7 text-emerald-600 border-emerald-300 px-2"
                     >
-                      <Download className="h-3 w-3 mr-1" />
+                      <Download className="h-2.5 w-2.5 mr-0.5" />
                       리포트
                     </Button>
                     {canCancel(submission) && (
@@ -581,9 +565,9 @@ export default function VisitorReviewStatusPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleCancelClick(submission)}
-                        className="flex-1 text-xs h-9 text-red-600 border-red-300"
+                        className="flex-1 text-[11px] h-7 text-red-600 border-red-300 px-2"
                       >
-                        중단 신청
+                        중단
                       </Button>
                     )}
                   </div>

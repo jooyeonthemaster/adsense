@@ -42,7 +42,7 @@ export async function GET() {
     const submissionsWithProgress = (submissions || []).map((sub: any) => {
       const completedCount = completedCountMap.get(sub.id) || 0;
       const progressPercentage = sub.total_count > 0
-        ? Math.round((completedCount / sub.total_count) * 100)
+        ? Math.min(100, Math.round((completedCount / sub.total_count) * 100))
         : 0;
 
       return {

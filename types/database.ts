@@ -9,6 +9,7 @@ export type Client = {
   points: number;
   is_active: boolean;
   auto_distribution_approved: boolean;
+  pending_charge_requests_count: number;
   created_at: string;
   updated_at: string;
 };

@@ -24,9 +24,37 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Fetch daily records to calculate progress
+    const { data: allDailyRecords } = await supabase
+      .from('receipt_review_daily_records')
+      .select('submission_id, actual_count');
+
+    // Create a map of submission_id to total actual count
+    const actualCountMap = new Map<string, number>();
+    if (allDailyRecords) {
+      allDailyRecords.forEach((record: any) => {
+        const currentCount = actualCountMap.get(record.submission_id) || 0;
+        actualCountMap.set(record.submission_id, currentCount + record.actual_count);
+      });
+    }
+
+    // Add progress to each submission
+    const submissionsWithProgress = (submissions || []).map((sub: any) => {
+      const actualCount = actualCountMap.get(sub.id) || 0;
+      const progressPercentage = sub.total_count > 0
+        ? Math.min(100, Math.round((actualCount / sub.total_count) * 100))
+        : 0;
+
+      return {
+        ...sub,
+        actual_count_total: actualCount,
+        progress_percentage: progressPercentage,
+      };
+    });
+
     return NextResponse.json({
       success: true,
-      submissions: submissions || [],
+      submissions: submissionsWithProgress,
     });
   } catch (error) {
     console.error('Error in GET /api/submissions/receipt:', error);

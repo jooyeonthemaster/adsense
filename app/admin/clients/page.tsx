@@ -25,18 +25,18 @@ export default async function ClientsPage() {
   const clients = await getClients();
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">거래처 관리</h1>
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight">거래처 관리</h1>
           <CreateClientDialog>
-            <Button className="h-9 sm:h-10 text-xs sm:text-sm">
-              <Plus className="mr-1 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              거래처 추가
+            <Button className="h-8 sm:h-9 text-xs sm:text-sm px-3">
+              <Plus className="mr-1 sm:mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              추가
             </Button>
           </CreateClientDialog>
         </div>
-        <p className="text-xs sm:text-sm text-muted-foreground">
+        <p className="text-[11px] sm:text-xs text-muted-foreground">
           거래처 계정을 생성하고 관리합니다
         </p>
       </div>

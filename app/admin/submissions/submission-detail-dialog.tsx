@@ -21,7 +21,7 @@ interface SubmissionDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   submissionId: string;
-  submissionType: 'place' | 'receipt' | 'kakaomap' | 'blog' | 'cafe';
+  submissionType: 'place' | 'receipt' | 'kakaomap' | 'blog' | 'cafe' | 'experience';
 }
 
 interface DetailData {
@@ -93,6 +93,7 @@ const TYPE_LABELS: Record<string, string> = {
   kakaomap: '카카오맵 리뷰',
   blog: '블로그 배포',
   cafe: '카페 침투',
+  experience: '체험단',
 };
 
 export function SubmissionDetailDialog({
@@ -110,6 +111,7 @@ export function SubmissionDetailDialog({
     if (open && submissionId) {
       fetchDetail();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, submissionId, submissionType]);
 
   const fetchDetail = async () => {
@@ -651,6 +653,7 @@ export function SubmissionDetailDialog({
               </DialogTitle>
             </DialogHeader>
             <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imagePreview}
                 alt="Preview"

@@ -37,10 +37,10 @@ export async function POST(
     await requireAuth(['admin']);
     const { id } = await params;
     const body = await request.json();
-    const { date, actual_count, notes } = body;
+    const { record_date, completed_count, notes } = body;
 
-    if (!date || actual_count === undefined) {
-      return NextResponse.json({ error: 'Date and actual_count are required' }, { status: 400 });
+    if (!record_date || completed_count === undefined) {
+      return NextResponse.json({ error: 'record_date and completed_count are required' }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -50,8 +50,8 @@ export async function POST(
       .from('kakaomap_review_daily_records')
       .upsert({
         submission_id: id,
-        date,
-        actual_count,
+        date: record_date,
+        actual_count: completed_count,
         notes,
       }, {
         onConflict: 'submission_id,date'
@@ -60,6 +60,20 @@ export async function POST(
     if (error) {
       console.error('Error saving daily record:', error);
       return NextResponse.json({ error: 'Failed to save daily record' }, { status: 500 });
+    }
+
+    // Change status to in_progress if pending (regardless of first record or not)
+    const { data: submission } = await supabase
+      .from('kakaomap_review_submissions')
+      .select('status')
+      .eq('id', id)
+      .single();
+
+    if (submission && submission.status === 'pending') {
+      await supabase
+        .from('kakaomap_review_submissions')
+        .update({ status: 'in_progress' })
+        .eq('id', id);
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

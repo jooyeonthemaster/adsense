@@ -26,10 +26,10 @@ import {
   Users,
   Coffee,
   FileText,
-  Volume2,
   ClipboardList,
   ChevronLeft,
   ChevronRight,
+  Bell,
 } from 'lucide-react';
 import Image from 'next/image';
 import {
@@ -48,7 +48,7 @@ const navigationSections = [
     collapsible: true,
     items: [
       { name: '리워드 접수', href: '/dashboard/reward/submit', icon: Gift },
-      { name: '접수 현황 확인', href: '/dashboard/reward/status', icon: Gift },
+      { name: '접수 현황 확인', href: '/dashboard/reward/status', icon: ClipboardList },
     ],
   },
   {
@@ -57,8 +57,10 @@ const navigationSections = [
     icon: MessageSquare,
     collapsible: true,
     items: [
-      { name: '방문자 리뷰', href: '/dashboard/review/visitor', icon: MessageSquare },
-      { name: 'K맵 리뷰', href: '/dashboard/review/kmap', icon: MessageSquare },
+      { name: '네이버 영수증', href: '/dashboard/review/visitor', icon: MessageSquare },
+      { name: '네이버 영수증 접수 현황', href: '/dashboard/review/visitor/status', icon: ClipboardList },
+      { name: '카카오맵', href: '/dashboard/review/kmap', icon: MessageSquare },
+      { name: '카카오맵 접수 현황', href: '/dashboard/review/kmap/status', icon: ClipboardList },
     ],
   },
   {
@@ -67,10 +69,11 @@ const navigationSections = [
     icon: Users,
     collapsible: true,
     items: [
-      { name: '블로그', href: '/dashboard/experience/blog', icon: Users },
-      { name: '샤오홍슈', href: '/dashboard/experience/xiaohongshu', icon: Users },
-      { name: '실계정 기자단', href: '/dashboard/experience/journalist', icon: Users },
+      { name: '블로그 체험단', href: '/dashboard/experience/blog', icon: Users },
+      { name: '샤오홍슈(중국인 체험단)', href: '/dashboard/experience/xiaohongshu', icon: Users },
+      { name: '블로그 기자단', href: '/dashboard/experience/journalist', icon: Users },
       { name: '블로그 인플루언서', href: '/dashboard/experience/influencer', icon: Users },
+      { name: '체험단 접수 현황', href: '/dashboard/experience/status', icon: ClipboardList },
     ],
   },
   {
@@ -82,14 +85,18 @@ const navigationSections = [
       { name: '영상 배포', href: '/dashboard/blog-distribution/video', icon: FileText },
       { name: '자동화 배포', href: '/dashboard/blog-distribution/auto', icon: FileText },
       { name: '리뷰어 배포', href: '/dashboard/blog-distribution/reviewer', icon: FileText },
+      { name: '블로그 배포 접수 현황', href: '/dashboard/blog-distribution/status', icon: ClipboardList },
     ],
   },
   {
     id: 'cafe',
     title: '카페침투 마케팅',
     icon: Coffee,
-    collapsible: false,
-    href: '/dashboard/cafe',
+    collapsible: true,
+    items: [
+      { name: '카페 마케팅 접수', href: '/dashboard/cafe', icon: Coffee },
+      { name: '카페 마케팅 접수 현황', href: '/dashboard/cafe/status', icon: ClipboardList },
+    ],
   },
 ];
 
@@ -136,103 +143,101 @@ function NavContent({
   return (
     <>
       {/* 캐릭터 + 사용자 정보 영역 */}
-      <div className="border-b border-gray-200 p-6 relative">
+      <div className="border-b border-gray-200 p-4 relative">
         {/* 접기 버튼 - 우측 상단 */}
         {onToggleCollapse && !isCollapsed && (
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
             onClick={onToggleCollapse}
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-4 w-4" />
           </Button>
         )}
 
         {!isCollapsed ? (
           <>
-            {/* 로고 */}
-            <div className="flex justify-center mb-6">
-              <div className="relative w-48 h-48">
-                <Image
-                  src="/logo.png"
-                  alt="마스코트"
-                  width={192}
-                  height={192}
-                  className="object-contain"
-                />
+            {/* 로고 - 클릭 시 공지사항 페이지로 이동 */}
+            <Link href="/dashboard/notifications" onClick={() => onClose?.()} className="block">
+              <div className="flex justify-center mb-3 cursor-pointer hover:opacity-80 transition-opacity">
+                <div className="relative w-32 h-32">
+                  <Image
+                    src="/logo.png"
+                    alt="마스코트"
+                    width={128}
+                    height={128}
+                    className="object-contain"
+                  />
+                </div>
               </div>
-            </div>
+            </Link>
 
             {/* 사용자 정보 */}
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg font-bold text-gray-900">{user.name} 님</span>
-                <span className="text-sm font-medium text-blue-600">실행사</span>
+            <div className="mb-2">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-base font-bold text-gray-900 truncate">{user.name} 님</span>
+                <span className="text-xs font-medium text-blue-600 flex-shrink-0">실행사</span>
               </div>
             </div>
 
             {/* 포인트 + 충전하기 버튼 */}
-            <div className="space-y-3 mb-4">
-              <div className="flex items-center gap-1">
-                <span className="text-3xl font-bold text-gray-900">{user.points.toLocaleString()}</span>
-                <span className="text-lg text-gray-500 font-medium">P</span>
+            <div className="space-y-2">
+              <div className="flex items-center gap-0.5">
+                <span className="text-2xl font-bold text-gray-900">{user.points.toLocaleString()}</span>
+                <span className="text-base text-gray-500 font-medium">P</span>
               </div>
               <Link href="/dashboard/points" onClick={() => onClose?.()} className="block">
                 <Button
-                  className="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium px-5 py-2 rounded-lg text-sm"
+                  className="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium px-3 py-1.5 rounded-lg text-xs h-8"
                 >
                   충전하기
                 </Button>
               </Link>
               <Link href="/dashboard/submissions" onClick={() => onClose?.()} className="block">
                 <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg text-sm flex items-center justify-center gap-2"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium px-3 py-1.5 rounded-lg text-xs h-8 flex items-center justify-center gap-1.5"
                 >
-                  <ClipboardList className="h-4 w-4" />
+                  <ClipboardList className="h-3.5 w-3.5" />
                   통합 접수 현황
                 </Button>
               </Link>
-            </div>
-
-            {/* 공지사항 · 개인알림 */}
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Volume2 className="h-4 w-4" />
-              <span>공지사항 · 개인알림</span>
             </div>
           </>
         ) : (
           <>
             {/* 펼치기 버튼 - 접힌 상태 */}
             {onToggleCollapse && (
-              <div className="flex justify-center mb-4">
+              <div className="flex justify-center mb-3">
                 <Button
                   variant="ghost"
                   size="icon"
                   className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
                   onClick={onToggleCollapse}
                 >
-                  <ChevronRight className="h-5 w-5" />
+                  <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
             )}
-            <div className="flex justify-center">
-              <div className="relative w-12 h-12">
-                <Image
-                  src="/logo.png"
-                  alt="마스코트"
-                  width={48}
-                  height={48}
-                  className="object-contain"
-                />
+            <Link href="/dashboard/notifications" onClick={() => onClose?.()} className="block">
+              <div className="flex justify-center cursor-pointer hover:opacity-80 transition-opacity">
+                <div className="relative w-12 h-12">
+                  <Image
+                    src="/logo.png"
+                    alt="마스코트"
+                    width={48}
+                    height={48}
+                    className="object-contain"
+                  />
+                </div>
               </div>
-            </div>
+            </Link>
           </>
         )}
       </div>
 
       {/* 메인 네비게이션 */}
-      <nav className="flex-1 overflow-y-auto py-2">
+      <nav className="flex-1 overflow-y-auto py-1.5">
         <TooltipProvider delayDuration={300}>
           {navigationSections.map((section) => {
             const SectionIcon = section.icon;
@@ -247,14 +252,14 @@ function NavContent({
                   href={section.href}
                   onClick={() => onClose?.()}
                   className={cn(
-                    'flex items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                    'flex items-center gap-2 px-3 py-2 text-xs transition-colors',
                     isActive
                       ? 'bg-blue-600 text-white'
                       : 'text-gray-700 hover:bg-gray-100',
                     isCollapsed && 'justify-center'
                   )}
                 >
-                  <SectionIcon className="h-5 w-5 flex-shrink-0" />
+                  <SectionIcon className="h-4 w-4 flex-shrink-0" />
                   {!isCollapsed && section.title}
                 </Link>
               );
@@ -281,8 +286,8 @@ function NavContent({
               return (
                 <Tooltip key={section.id}>
                   <TooltipTrigger asChild>
-                    <div className="px-4 py-2.5 flex justify-center hover:bg-gray-100 transition-colors cursor-pointer">
-                      <SectionIcon className="h-5 w-5 text-blue-600" />
+                    <div className="px-3 py-2 flex justify-center hover:bg-gray-100 transition-colors cursor-pointer">
+                      <SectionIcon className="h-4 w-4 text-blue-600" />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="p-0">
@@ -298,13 +303,13 @@ function NavContent({
                             href={item.href}
                             onClick={() => onClose?.()}
                             className={cn(
-                              'flex items-center gap-2 px-3 py-2 text-sm transition-colors w-48',
+                              'flex items-center gap-2 px-3 py-1.5 text-xs transition-colors w-48',
                               isActive
                                 ? 'bg-blue-600 text-white'
                                 : 'text-gray-700 hover:bg-gray-100'
                             )}
                           >
-                            <ItemIcon className="h-4 w-4" />
+                            <ItemIcon className="h-3.5 w-3.5" />
                             {item.name}
                           </Link>
                         );
@@ -322,14 +327,14 @@ function NavContent({
                 onOpenChange={() => toggleSection(section.id)}
               >
                 <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-100 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <SectionIcon className="h-5 w-5 text-blue-600" />
-                      <span className="text-sm font-medium text-gray-900">{section.title}</span>
+                  <div className="flex items-center justify-between px-3 py-2 hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-1.5">
+                      <SectionIcon className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                      <span className="text-xs font-medium text-gray-900">{section.title}</span>
                     </div>
                     <ChevronDown
                       className={cn(
-                        'h-4 w-4 text-gray-500 transition-transform',
+                        'h-3.5 w-3.5 text-gray-500 transition-transform flex-shrink-0',
                         isOpen && 'rotate-180'
                       )}
                     />
@@ -346,13 +351,13 @@ function NavContent({
                         href={item.href}
                         onClick={() => onClose?.()}
                         className={cn(
-                          'flex items-center gap-2 pl-11 pr-4 py-2 text-sm transition-colors',
+                          'flex items-center gap-1.5 pl-8 pr-3 py-1.5 text-xs transition-colors',
                           isActive
                             ? 'bg-blue-600 text-white'
                             : 'text-gray-700 hover:bg-gray-200'
                         )}
                       >
-                        <ItemIcon className="h-4 w-4" />
+                        <ItemIcon className="h-3.5 w-3.5 flex-shrink-0" />
                         {item.name}
                       </Link>
                     );
@@ -365,14 +370,14 @@ function NavContent({
       </nav>
 
       {/* 로그아웃 */}
-      <div className="border-t border-gray-200 p-3">
+      <div className="border-t border-gray-200 p-2">
         {!isCollapsed ? (
           <Button
             variant="ghost"
-            className="w-full justify-start text-sm text-gray-700 hover:bg-gray-100"
+            className="w-full justify-start text-xs text-gray-700 hover:bg-gray-100 h-8"
             onClick={handleLogout}
           >
-            <LogOut className="mr-2 h-4 w-4" />
+            <LogOut className="mr-1.5 h-3.5 w-3.5" />
             로그아웃
           </Button>
         ) : (
@@ -381,10 +386,10 @@ function NavContent({
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="w-full justify-center text-sm text-gray-700 hover:bg-gray-100 px-2"
+                  className="w-full justify-center text-xs text-gray-700 hover:bg-gray-100 h-8 px-2"
                   onClick={handleLogout}
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right">

@@ -24,8 +24,7 @@ export async function POST(request: NextRequest) {
       // 기자단 전용
       publishDate,
       progressKeyword,
-      hasImage,
-      email,
+      imageUrls, // 이미지 URL 배열
     } = body;
 
     // 필수 필드 검증
@@ -47,16 +46,36 @@ export async function POST(request: NextRequest) {
 
     const experienceType = experienceTypeMap[serviceType] || 'blog-experience';
 
-    // 가격 계산
-    const priceMap: Record<string, number> = {
-      'blog-experience': 50000,
-      'xiaohongshu': 70000,
-      'journalist': 60000,
-      'influencer': 80000,
-    };
+    const supabase = await createClient();
 
-    const pricePerTeam = priceMap[experienceType] || 50000;
-    const totalPoints = teamCount * pricePerTeam;
+    // 클라이언트별 설정된 가격 조회
+    const { data: priceData, error: priceError } = await supabase
+      .from('client_product_prices')
+      .select('price_per_unit, product_categories!inner(slug)')
+      .eq('client_id', user.id)
+      .eq('product_categories.slug', experienceType)
+      .eq('is_visible', true)
+      .single();
+
+    let pricePerTeam: number;
+    let totalPoints: number;
+
+    if (priceError) {
+      console.error('Error fetching price:', priceError);
+      // 가격 정보를 찾을 수 없는 경우 기본값 사용
+      const defaultPrices: Record<string, number> = {
+        'blog-experience': 50000,
+        'xiaohongshu': 70000,
+        'journalist': 60000,
+        'influencer': 80000,
+      };
+      pricePerTeam = defaultPrices[experienceType] || 50000;
+      totalPoints = teamCount * pricePerTeam;
+    } else {
+      // DB에서 가져온 가격 사용
+      pricePerTeam = priceData?.price_per_unit || 50000;
+      totalPoints = teamCount * pricePerTeam;
+    }
 
     // 키워드 배열 생성
     const keywordArray = keywords?.map((kw: any) => `${kw.main} ${kw.sub}`.trim()) || [];
@@ -73,16 +92,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 기자단: 발행일, 진행키워드, 이미지 여부 추가
+    // 기자단: 발행일, 진행키워드 추가
     if (experienceType === 'journalist') {
       guideText += `\n\n[희망 발행일]\n${publishDate || ''}`;
       guideText += `\n\n[진행 키워드]\n${progressKeyword || ''}`;
-      if (hasImage) {
-        guideText += `\n\n[이미지 첨부]\n예 (이메일: ${email || ''})`;
-      }
     }
-
-    const supabase = await createClient();
 
     // Get client's current points
     const { data: client, error: clientError } = await supabase
@@ -136,6 +150,7 @@ export async function POST(request: NextRequest) {
         available_time_start: availableTimeStart || null,
         available_time_end: availableTimeEnd || null,
         provided_items: providedItems || null,
+        image_urls: imageUrls || null, // 이미지 URL 배열 저장
         total_points: totalPoints,
         status: 'pending',
       })
@@ -157,6 +172,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Create point transaction record
+    const experienceTypeLabels: Record<string, string> = {
+      'blog-experience': '블로그 체험단',
+      'xiaohongshu': '샤오홍슈',
+      'journalist': '실계정 기자단',
+      'influencer': '블로그 인플루언서',
+    };
+
     await supabase.from('point_transactions').insert({
       client_id: user.id,
       transaction_type: 'deduct',
@@ -164,7 +186,7 @@ export async function POST(request: NextRequest) {
       balance_after: newBalance,
       reference_type: 'experience_submission',
       reference_id: submission.id,
-      description: `체험단 마케팅 접수 (${businessName} - ${experienceType})`,
+      description: `체험단 마케팅 접수 (${businessName} - ${experienceTypeLabels[experienceType] || experienceType})`,
     });
 
     // Revalidate all dashboard pages to show updated points immediately

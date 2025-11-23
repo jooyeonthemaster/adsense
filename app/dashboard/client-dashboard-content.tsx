@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Package, FileText, DollarSign, ArrowRight, TrendingUp, Activity } from 'lucide-react';
 import Link from 'next/link';
+import { ChargeRequestDialog } from './points/charge-request-dialog';
 
 const iconMap = {
   Package,
@@ -88,6 +90,8 @@ export function ClientDashboardContent({
   products,
   recentSubmissions,
 }: ClientDashboardContentProps) {
+  const [chargeDialogOpen, setChargeDialogOpen] = useState(false);
+
   const statsCards = [
     {
       title: '보유 포인트',
@@ -95,6 +99,7 @@ export function ClientDashboardContent({
       description: '현재 사용 가능',
       icon: DollarSign,
       gradient: 'from-primary to-primary/80',
+      hasButton: true,
     },
     {
       title: '총 접수',
@@ -102,6 +107,7 @@ export function ClientDashboardContent({
       description: '전체 접수 건수',
       icon: FileText,
       gradient: 'from-blue-500 to-cyan-500',
+      hasButton: false,
     },
     {
       title: '이용 상품',
@@ -109,6 +115,7 @@ export function ClientDashboardContent({
       description: '사용 가능 상품',
       icon: Package,
       gradient: 'from-violet-500 to-purple-500',
+      hasButton: false,
     },
   ];
 
@@ -158,6 +165,14 @@ export function ClientDashboardContent({
                   <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   {card.description}
                 </p>
+                {card.hasButton && (
+                  <Button 
+                    onClick={() => setChargeDialogOpen(true)}
+                    className="w-full mt-3 sm:mt-4 h-8 sm:h-9 text-xs sm:text-sm bg-gray-800 hover:bg-gray-700"
+                  >
+                    충전하기
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -309,6 +324,12 @@ export function ClientDashboardContent({
           </motion.div>
         )}
       </motion.div>
+
+      {/* 충전 요청 다이얼로그 */}
+      <ChargeRequestDialog
+        open={chargeDialogOpen}
+        onOpenChange={setChargeDialogOpen}
+      />
     </div>
   );
 }

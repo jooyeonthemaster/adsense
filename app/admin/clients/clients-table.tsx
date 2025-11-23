@@ -96,21 +96,21 @@ export function ClientsTable({ clients }: ClientsTableProps) {
   return (
     <>
       {/* 필터 영역 - 반응형 */}
-      <div className="mb-4 sm:mb-6 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-        <div className="grid gap-1.5 sm:gap-2">
-          <Label htmlFor="search" className="text-xs sm:text-sm">검색</Label>
+      <div className="mb-3 sm:mb-4 grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+        <div className="grid gap-1">
+          <Label htmlFor="search" className="text-[10px] sm:text-xs">검색</Label>
           <Input
             id="search"
             placeholder="회사명, 담당자, 아이디..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="h-9 sm:h-10 text-xs sm:text-sm"
+            className="h-8 text-xs sm:text-sm"
           />
         </div>
-        <div className="grid gap-1.5 sm:gap-2">
-          <Label htmlFor="status-filter" className="text-xs sm:text-sm">상태</Label>
+        <div className="grid gap-1">
+          <Label htmlFor="status-filter" className="text-[10px] sm:text-xs">상태</Label>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger id="status-filter" className="h-9 sm:h-10 text-xs sm:text-sm">
+            <SelectTrigger id="status-filter" className="h-8 text-xs sm:text-sm">
               <SelectValue placeholder="전체" />
             </SelectTrigger>
             <SelectContent>
@@ -120,10 +120,10 @@ export function ClientsTable({ clients }: ClientsTableProps) {
             </SelectContent>
           </Select>
         </div>
-        <div className="grid gap-1.5 sm:gap-2">
-          <Label htmlFor="sort-by" className="text-xs sm:text-sm">정렬</Label>
+        <div className="grid gap-1">
+          <Label htmlFor="sort-by" className="text-[10px] sm:text-xs">정렬</Label>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger id="sort-by" className="h-9 sm:h-10 text-xs sm:text-sm">
+            <SelectTrigger id="sort-by" className="h-8 text-xs sm:text-sm">
               <SelectValue placeholder="최신순" />
             </SelectTrigger>
             <SelectContent>
@@ -145,87 +145,94 @@ export function ClientsTable({ clients }: ClientsTableProps) {
       ) : (
         <>
           {/* 모바일: 카드 레이아웃 */}
-          <div className="md:hidden space-y-3">
+          <div className="md:hidden space-y-2">
             {filteredClients.map((client) => (
-              <div key={client.id} className="rounded-lg border bg-card p-4 space-y-3">
+              <div key={client.id} className="rounded-lg border bg-card p-2.5 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate">{client.company_name}</p>
-                    <p className="text-xs text-muted-foreground">@{client.username}</p>
+                    <p className="font-semibold text-xs truncate">{client.company_name}</p>
+                    <p className="text-[10px] text-muted-foreground">@{client.username}</p>
                   </div>
-                  <Badge variant={client.is_active ? 'default' : 'secondary'} className="text-xs shrink-0">
+                  <Badge variant={client.is_active ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0.5 shrink-0">
                     {client.is_active ? '활성' : '비활성'}
                   </Badge>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="grid grid-cols-2 gap-2 text-[10px]">
                   <div>
-                    <p className="text-muted-foreground">담당자</p>
-                    <p className="font-medium">{client.contact_person || '-'}</p>
+                    <p className="text-muted-foreground mb-0.5">담당자</p>
+                    <p className="font-medium text-xs">{client.contact_person || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">연락처</p>
-                    <p className="font-medium">{client.phone || '-'}</p>
+                    <p className="text-muted-foreground mb-0.5">연락처</p>
+                    <p className="font-medium text-xs">{client.phone || '-'}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <p className="text-sm font-bold text-primary">
-                    {client.points.toLocaleString()} P
-                  </p>
-                  <div className="flex gap-1">
+                <div className="flex items-center justify-between pt-1.5 border-t border-gray-100">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-bold text-primary">
+                      {client.points.toLocaleString()} P
+                    </p>
+                    {client.pending_charge_requests_count > 0 && (
+                      <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5">
+                        충전 {client.pending_charge_requests_count}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex gap-0.5">
                     <Link href={`/admin/clients/${client.id}/pricing`}>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" title="가격 설정">
-                        <Settings className="h-3.5 w-3.5" />
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="가격 설정">
+                        <Settings className="h-3 w-3" />
                       </Button>
                     </Link>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-7 w-7"
                       title="포인트 관리"
                       onClick={() => {
                         setSelectedClient(client);
                         setPointDialogOpen(true);
                       }}
                     >
-                      <DollarSign className="h-3.5 w-3.5" />
+                      <DollarSign className="h-3 w-3" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-7 w-7"
                       title="비밀번호 재설정"
                       onClick={() => {
                         setSelectedClient(client);
                         setPasswordDialogOpen(true);
                       }}
                     >
-                      <Key className="h-3.5 w-3.5" />
+                      <Key className="h-3 w-3" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-7 w-7"
                       title="거래처 수정"
                       onClick={() => {
                         setSelectedClient(client);
                         setEditDialogOpen(true);
                       }}
                     >
-                      <Edit className="h-3.5 w-3.5" />
+                      <Edit className="h-3 w-3" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-7 w-7"
                       title="거래처 삭제"
                       onClick={() => {
                         setSelectedClient(client);
                         setDeleteDialogOpen(true);
                       }}
                     >
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      <Trash2 className="h-3 w-3 text-destructive" />
                     </Button>
                   </div>
                 </div>
@@ -263,7 +270,14 @@ export function ClientsTable({ clients }: ClientsTableProps) {
                       {client.phone || '-'}
                     </TableCell>
                     <TableCell className="font-semibold text-xs lg:text-sm whitespace-nowrap">
-                      {client.points.toLocaleString()} P
+                      <div className="flex items-center gap-2">
+                        {client.points.toLocaleString()} P
+                        {client.pending_charge_requests_count > 0 && (
+                          <Badge variant="destructive" className="text-xs">
+                            충전 {client.pending_charge_requests_count}
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={client.is_active ? 'default' : 'secondary'} className="text-xs">
@@ -271,59 +285,59 @@ export function ClientsTable({ clients }: ClientsTableProps) {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1 lg:gap-2">
+                      <div className="flex justify-end gap-1">
                         <Link href={`/admin/clients/${client.id}/pricing`}>
-                          <Button variant="ghost" size="icon" className="h-9 w-9" title="가격 설정">
-                            <Settings className="h-4 w-4" />
+                          <Button variant="ghost" size="icon" className="h-8 w-8" title="가격 설정">
+                            <Settings className="h-3.5 w-3.5" />
                           </Button>
                         </Link>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-9 w-9"
+                          className="h-8 w-8"
                           title="포인트 관리"
                           onClick={() => {
                             setSelectedClient(client);
                             setPointDialogOpen(true);
                           }}
                         >
-                          <DollarSign className="h-4 w-4" />
+                          <DollarSign className="h-3.5 w-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-9 w-9"
+                          className="h-8 w-8"
                           title="비밀번호 재설정"
                           onClick={() => {
                             setSelectedClient(client);
                             setPasswordDialogOpen(true);
                           }}
                         >
-                          <Key className="h-4 w-4" />
+                          <Key className="h-3.5 w-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-9 w-9"
+                          className="h-8 w-8"
                           title="거래처 수정"
                           onClick={() => {
                             setSelectedClient(client);
                             setEditDialogOpen(true);
                           }}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-3.5 w-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-9 w-9"
+                          className="h-8 w-8"
                           title="거래처 삭제"
                           onClick={() => {
                             setSelectedClient(client);
                             setDeleteDialogOpen(true);
                           }}
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
                         </Button>
                       </div>
                     </TableCell>

@@ -12,17 +12,41 @@ export async function PATCH(
     const { id: submissionId, itemId } = await context.params;
     const supabase = await createClient();
 
-    // FormData 파싱
-    const formData = await request.formData();
-    const imageFile = formData.get('image') as File | null;
-    const scriptText = formData.get('script_text') as string | null;
+    // Content-Type에 따라 다르게 처리
+    const contentType = request.headers.get('content-type') || '';
+    let imageFile: File | null = null;
+    let scriptText: string | null = null;
+    let imageUrl: string | null = null;
+    let fileName: string | null = null;
+    let fileSize: number | null = null;
 
-    // 최소한 하나는 있어야 함
-    if (!imageFile && !scriptText) {
-      return NextResponse.json(
-        { error: '수정할 내용이 없습니다.' },
-        { status: 400 }
-      );
+    if (contentType.includes('application/json')) {
+      // JSON 요청 처리 (클라이언트가 이미 업로드한 경우)
+      const body = await request.json();
+      imageUrl = body.image_url || null;
+      fileName = body.file_name || null;
+      fileSize = body.file_size || null;
+      scriptText = body.script_text || null;
+
+      if (!imageUrl && !scriptText) {
+        return NextResponse.json(
+          { error: '수정할 내용이 없습니다.' },
+          { status: 400 }
+        );
+      }
+    } else {
+      // FormData 파싱 (파일 직접 업로드)
+      const formData = await request.formData();
+      imageFile = formData.get('image') as File | null;
+      scriptText = formData.get('script_text') as string | null;
+
+      // 최소한 하나는 있어야 함
+      if (!imageFile && !scriptText) {
+        return NextResponse.json(
+          { error: '수정할 내용이 없습니다.' },
+          { status: 400 }
+        );
+      }
     }
 
     // 콘텐츠 아이템 존재 확인
@@ -40,11 +64,14 @@ export async function PATCH(
       );
     }
 
-    let imageUrl = existingItem.image_url;
-    let fileName = existingItem.file_name;
-    let fileSize = existingItem.file_size;
+    // 기존 값으로 초기화 (JSON 요청이 아닌 경우에만)
+    if (!imageUrl) {
+      imageUrl = existingItem.image_url;
+      fileName = existingItem.file_name;
+      fileSize = existingItem.file_size;
+    }
 
-    // 이미지 업로드 처리
+    // 이미지 업로드 처리 (FormData로 파일이 직접 전송된 경우)
     if (imageFile) {
       // 파일 크기 체크 (10MB)
       if (imageFile.size > 10 * 1024 * 1024) {
@@ -93,14 +120,28 @@ export async function PATCH(
     // DB 업데이트
     const updateData: any = {};
 
-    if (imageUrl !== existingItem.image_url) {
+    // 이미지 관련 필드 업데이트
+    if (imageUrl && imageUrl !== existingItem.image_url) {
       updateData.image_url = imageUrl;
+    }
+    if (fileName && fileName !== existingItem.file_name) {
       updateData.file_name = fileName;
+    }
+    if (fileSize !== null && fileSize !== existingItem.file_size) {
       updateData.file_size = fileSize;
     }
 
+    // 스크립트 텍스트 업데이트
     if (scriptText !== null && scriptText !== undefined) {
       updateData.script_text = scriptText;
+    }
+
+    // 업데이트할 내용이 없으면 에러
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { error: '수정할 내용이 없습니다.' },
+        { status: 400 }
+      );
     }
 
     const { data: updatedItem, error: updateError } = await supabase

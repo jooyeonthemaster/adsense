@@ -24,6 +24,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Fetch daily records to calculate progress
+    const { data: allDailyRecords } = await supabase
+      .from('kakaomap_review_daily_records')
+      .select('submission_id, actual_count');
+
+    // Create a map of submission_id to total actual count
+    const actualCountMap = new Map<string, number>();
+    if (allDailyRecords) {
+      allDailyRecords.forEach((record: any) => {
+        const currentCount = actualCountMap.get(record.submission_id) || 0;
+        actualCountMap.set(record.submission_id, currentCount + record.actual_count);
+      });
+    }
+
     // For each submission, get related data (content items, messages count)
     const submissionsWithDetails = await Promise.all(
       (submissions || []).map(async (submission) => {
@@ -41,10 +55,18 @@ export async function GET(request: NextRequest) {
           .eq('is_read', false)
           .eq('sender_type', 'admin');
 
+        // Calculate progress
+        const actualCount = actualCountMap.get(submission.id) || 0;
+        const progressPercentage = submission.total_count > 0
+          ? Math.min(100, Math.round((actualCount / submission.total_count) * 100))
+          : 0;
+
         return {
           ...submission,
           content_items_count: contentCount || 0,
           unread_messages_count: unreadCount || 0,
+          actual_count_total: actualCount,
+          progress_percentage: progressPercentage,
         };
       })
     );

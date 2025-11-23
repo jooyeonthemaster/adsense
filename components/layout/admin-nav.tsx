@@ -20,20 +20,25 @@ import {
   Star,
   Newspaper,
   Coffee,
+  Gift,
+  Megaphone,
 } from 'lucide-react';
 
 const navigation = [
   { name: '대시보드', href: '/admin', icon: LayoutDashboard },
-  { name: '데이터 분석', href: '/admin/analytics', icon: BarChart3 },
+  // { name: '데이터 분석', href: '/admin/analytics', icon: BarChart3 }, // 숨김 처리
   { name: '거래처 관리', href: '/admin/clients', icon: Users },
   // { name: '상품 관리', href: '/admin/products', icon: Package }, // [DISABLED 2025-11-02] 4가지 고정 상품만 사용
   { name: '접수 내역', href: '/admin/submissions', icon: FileText },
   { name: '블로그 배포', href: '/admin/blog-distribution', icon: Newspaper },
   { name: '카페 침투', href: '/admin/cafe-marketing', icon: Coffee },
   { name: '리뷰 마케팅', href: '/admin/review-marketing', icon: Star },
+  { name: '리워드 관리', href: '/admin/reward', icon: Gift },
   { name: '체험단 관리', href: '/admin/experience', icon: Sparkles },
   { name: '포인트 관리', href: '/admin/points', icon: DollarSign },
   { name: 'AS 관리', href: '/admin/as-requests', icon: Settings },
+  { name: '공지사항 관리', href: '/admin/announcements', icon: Megaphone },
+  { name: '상품 가이드 관리', href: '/admin/product-guides', icon: Package },
 ];
 
 function NavContent({ onClose }: { onClose?: () => void }) {

@@ -47,24 +47,33 @@ export function ScheduleDialog({
   const [schedules, setSchedules] = useState<BloggerSchedule[]>([]);
 
   useEffect(() => {
-    if (open) {
-      setSchedules(
-        selectedBloggers.map((b) => ({
-          blogger_id: b.id,
-          visit_date: b.visit_date || '',
-          visit_time: b.visit_time || '',
-          visit_count: b.visit_count || 1,
-        }))
-      );
+    if (open && selectedBloggers.length > 0) {
+      console.log('[useEffect] Initializing schedules for', selectedBloggers.length, 'bloggers');
+      const initialSchedules = selectedBloggers.map((b) => ({
+        blogger_id: b.id,
+        visit_date: b.visit_date || '',
+        visit_time: b.visit_time || '',
+        visit_count: b.visit_count || 1,
+      }));
+      console.log('[useEffect] Initial schedules:', initialSchedules);
+      setSchedules(initialSchedules);
     }
-  }, [open, selectedBloggers]);
+  }, [open]);
 
   const handleAutoAssign = (type: string) => {
+    console.log('[Auto Assign] Type:', type);
+    console.log('[Auto Assign] Submission:', submission);
+    console.log('[Auto Assign] Available Days:', submission?.available_days);
+    console.log('[Auto Assign] Time:', submission?.available_time_start, submission?.available_time_end);
+    console.log('[Auto Assign] Current Schedules:', schedules);
+
     if (
       !submission?.available_days ||
+      submission.available_days.length === 0 ||
       !submission.available_time_start ||
       !submission.available_time_end
     ) {
+      console.error('[Auto Assign] Missing required data');
       toast({
         title: '자동 배정 불가',
         description: '방문가능 정보가 등록되지 않았습니다.',
@@ -73,54 +82,90 @@ export function ScheduleDialog({
       return;
     }
 
-    let updated: BloggerSchedule[] = [];
-    let successMessage = '';
+    try {
+      let updated: BloggerSchedule[] = [];
+      let successMessage = '';
 
-    switch (type) {
-      case 'random':
-        updated = autoAssignRandom(
-          schedules,
-          submission.available_days,
-          submission.available_time_start,
-          submission.available_time_end
-        );
-        successMessage = '일정이 무작위로 배정되었습니다.';
-        break;
-      case 'distributed':
-        updated = autoAssignDistributed(
-          schedules,
-          submission.available_days,
-          submission.available_time_start,
-          submission.available_time_end
-        );
-        successMessage = '일정이 고르게 분산되어 배정되었습니다.';
-        break;
-      case 'earliest':
-        updated = autoAssignEarliest(
-          schedules,
-          submission.available_days,
-          submission.available_time_start,
-          submission.available_time_end
-        );
-        successMessage = '가장 빠른 일정으로 배정되었습니다.';
-        break;
-      case 'evenly':
-        updated = autoAssignEvenly(
-          schedules,
-          submission.available_days,
-          submission.available_time_start,
-          submission.available_time_end
-        );
-        successMessage = '30일 기간에 균일하게 배정되었습니다.';
-        break;
-      case '14:00':
-        updated = autoAssignSpecificTime(schedules, submission.available_days, '14:00');
-        successMessage = '14시 시간대로 배정되었습니다.';
-        break;
+      switch (type) {
+        case 'random':
+          updated = autoAssignRandom(
+            schedules,
+            submission.available_days,
+            submission.available_time_start,
+            submission.available_time_end
+          );
+          successMessage = '일정이 무작위로 배정되었습니다.';
+          break;
+        case 'distributed':
+          updated = autoAssignDistributed(
+            schedules,
+            submission.available_days,
+            submission.available_time_start,
+            submission.available_time_end
+          );
+          successMessage = '일정이 고르게 분산되어 배정되었습니다.';
+          break;
+        case 'earliest':
+          updated = autoAssignEarliest(
+            schedules,
+            submission.available_days,
+            submission.available_time_start,
+            submission.available_time_end
+          );
+          successMessage = '가장 빠른 일정으로 배정되었습니다.';
+          break;
+        case 'evenly':
+          updated = autoAssignEvenly(
+            schedules,
+            submission.available_days,
+            submission.available_time_start,
+            submission.available_time_end
+          );
+          successMessage = '30일 기간에 균일하게 배정되었습니다.';
+          break;
+        case '14:00':
+          updated = autoAssignSpecificTime(schedules, submission.available_days, '14:00');
+          successMessage = '14시 시간대로 배정되었습니다.';
+          break;
+        default:
+          console.error('[Auto Assign] Unknown type:', type);
+          return;
+      }
+
+      console.log('[Auto Assign] Updated schedules:', updated);
+      
+      // 각 스케줄의 실제 값 확인
+      updated.forEach((schedule, idx) => {
+        console.log(`[Auto Assign] Schedule ${idx}:`, {
+          blogger_id: schedule.blogger_id,
+          visit_date: schedule.visit_date,
+          visit_time: schedule.visit_time,
+          visit_count: schedule.visit_count
+        });
+      });
+      
+      // 새로운 배열로 강제 리렌더
+      const newSchedules = updated.map(s => ({...s}));
+      console.log('[Auto Assign] Setting new schedules (deep copy)');
+      setSchedules(newSchedules);
+      
+      // State 업데이트 확인 (함수형)
+      setTimeout(() => {
+        setSchedules(prev => {
+          console.log('[Auto Assign] Current state:', prev);
+          return prev;
+        });
+      }, 100);
+      
+      toast({ title: '자동 배정 완료', description: successMessage });
+    } catch (error) {
+      console.error('[Auto Assign] Error:', error);
+      toast({
+        title: '자동 배정 실패',
+        description: error instanceof Error ? error.message : '자동 배정 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
     }
-
-    setSchedules(updated);
-    toast({ title: '자동 배정 완료', description: successMessage });
   };
 
   const handleSave = async () => {
@@ -262,7 +307,7 @@ export function ScheduleDialog({
               const blogger = selectedBloggers.find((b) => b.id === schedule.blogger_id);
               return (
                 <Card
-                  key={schedule.blogger_id}
+                  key={`schedule-${schedule.blogger_id}-${index}`}
                   className="border-gray-200 hover:border-violet-300 transition-colors"
                 >
                   <CardHeader className="pb-3">
@@ -294,11 +339,14 @@ export function ScheduleDialog({
                         </label>
                         <Input
                           type="date"
-                          value={schedule.visit_date}
+                          value={schedule.visit_date || ''}
                           onChange={(e) => {
-                            const updated = [...schedules];
-                            updated[index].visit_date = e.target.value;
-                            setSchedules(updated);
+                            const newValue = e.target.value;
+                            setSchedules(prev => {
+                              const updated = [...prev];
+                              updated[index] = { ...updated[index], visit_date: newValue };
+                              return updated;
+                            });
                           }}
                           className="h-9"
                         />
@@ -309,11 +357,14 @@ export function ScheduleDialog({
                         </label>
                         <Input
                           type="time"
-                          value={schedule.visit_time}
+                          value={schedule.visit_time || ''}
                           onChange={(e) => {
-                            const updated = [...schedules];
-                            updated[index].visit_time = e.target.value;
-                            setSchedules(updated);
+                            const newValue = e.target.value;
+                            setSchedules(prev => {
+                              const updated = [...prev];
+                              updated[index] = { ...updated[index], visit_time: newValue };
+                              return updated;
+                            });
                           }}
                           className="h-9"
                         />
@@ -325,11 +376,14 @@ export function ScheduleDialog({
                         <Input
                           type="number"
                           min="1"
-                          value={schedule.visit_count || ''}
+                          value={schedule.visit_count || 1}
                           onChange={(e) => {
-                            const updated = [...schedules];
-                            updated[index].visit_count = parseInt(e.target.value) || 1;
-                            setSchedules(updated);
+                            const newValue = parseInt(e.target.value) || 1;
+                            setSchedules(prev => {
+                              const updated = [...prev];
+                              updated[index] = { ...updated[index], visit_count: newValue };
+                              return updated;
+                            });
                           }}
                           className="h-9"
                         />

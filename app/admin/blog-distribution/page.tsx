@@ -29,7 +29,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Search, Calendar, FileText, Video, Zap, Users, List, Grid3x3, Building2 } from 'lucide-react';
+import { Search, Calendar, FileText, Video, Zap, Users, List, Grid3x3, Building2, ChevronDown } from 'lucide-react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { BlogDistributionSubmission, BlogDistributionDailyRecord } from '@/types/database';
 
 interface SubmissionWithClient extends BlogDistributionSubmission {
@@ -67,6 +72,19 @@ export default function AdminBlogDistributionPage() {
   // 뷰 모드 상태
   const [viewMode, setViewMode] = useState<'list' | 'group'>('list');
   const [groupBy, setGroupBy] = useState<'client' | 'type'>('client');
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  const toggleGroup = (groupName: string) => {
+    setExpandedGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupName)) {
+        newSet.delete(groupName);
+      } else {
+        newSet.add(groupName);
+      }
+      return newSet;
+    });
+  };
 
   // 다이얼로그 상태
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -255,82 +273,82 @@ export default function AdminBlogDistributionPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="space-y-6">
+    <div className="p-3 sm:p-4 lg:p-6">
+      <div className="space-y-3 sm:space-y-4">
         {/* 헤더 */}
-        <div className="bg-gradient-to-r from-sky-500 to-blue-600 rounded-lg p-6 text-white">
-          <div className="flex items-center gap-3 mb-2">
-            <FileText className="h-8 w-8" />
-            <h1 className="text-2xl font-bold">블로그 배포 관리</h1>
+        <div className="bg-gradient-to-r from-sky-500 to-blue-600 rounded-lg p-3 sm:p-4 lg:p-6 text-white">
+          <div className="flex items-center gap-2 mb-1">
+            <FileText className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+            <h1 className="text-base sm:text-xl lg:text-2xl font-bold truncate">블로그 배포 관리</h1>
           </div>
-          <p className="text-sky-100">영상/자동화/리뷰어 배포 접수 관리</p>
+          <p className="text-[11px] sm:text-sm text-sky-100 truncate">영상/자동화/리뷰어 배포 접수 관리</p>
         </div>
 
         {/* 통계 카드 */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-gray-500">총 접수</CardTitle>
+            <CardHeader className="pb-2 p-2.5 sm:p-3">
+              <CardTitle className="text-[10px] sm:text-xs text-gray-500">총 접수</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{stats.total}</p>
+            <CardContent className="p-2.5 sm:p-3 pt-0">
+              <p className="text-lg sm:text-xl font-bold">{stats.total}</p>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-gray-500">확인중</CardTitle>
+            <CardHeader className="pb-2 p-2.5 sm:p-3">
+              <CardTitle className="text-[10px] sm:text-xs text-gray-500">확인중</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-gray-700">{stats.pending}</p>
+            <CardContent className="p-2.5 sm:p-3 pt-0">
+              <p className="text-lg sm:text-xl font-bold text-gray-700">{stats.pending}</p>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-sky-600">구동중</CardTitle>
+            <CardHeader className="pb-2 p-2.5 sm:p-3">
+              <CardTitle className="text-[10px] sm:text-xs text-sky-600">구동중</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-sky-600">{stats.in_progress}</p>
+            <CardContent className="p-2.5 sm:p-3 pt-0">
+              <p className="text-lg sm:text-xl font-bold text-sky-600">{stats.in_progress}</p>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-green-600">완료</CardTitle>
+            <CardHeader className="pb-2 p-2.5 sm:p-3">
+              <CardTitle className="text-[10px] sm:text-xs text-green-600">완료</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
+            <CardContent className="p-2.5 sm:p-3 pt-0">
+              <p className="text-lg sm:text-xl font-bold text-green-600">{stats.completed}</p>
             </CardContent>
           </Card>
         </div>
 
         {/* 필터 */}
-        <div className="flex flex-col gap-3">
-          <div className="flex gap-3">
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
               <Input
                 placeholder="업체명 검색..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+                className="pl-8 h-8 text-xs sm:text-sm"
               />
             </div>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="타입 필터" />
+              <SelectTrigger className="w-28 sm:w-32 h-8 text-xs sm:text-sm">
+                <SelectValue placeholder="전체" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">전체 타입</SelectItem>
+                <SelectItem value="all">전체</SelectItem>
                 <SelectItem value="video">영상</SelectItem>
                 <SelectItem value="automation">자동화</SelectItem>
                 <SelectItem value="reviewer">리뷰어</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="상태 필터" />
+              <SelectTrigger className="w-28 h-8 text-xs sm:text-sm">
+                <SelectValue placeholder="전체" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">전체 상태</SelectItem>
+                <SelectItem value="all">전체</SelectItem>
                 <SelectItem value="pending">확인중</SelectItem>
                 <SelectItem value="in_progress">구동중</SelectItem>
                 <SelectItem value="completed">완료</SelectItem>
@@ -340,31 +358,31 @@ export default function AdminBlogDistributionPage() {
           </div>
 
           {/* View Mode Toggle */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
               <Button
                 variant={viewMode === 'list' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('list')}
-                className="h-8 px-3"
+                className="h-7 px-2 sm:px-3 text-xs"
               >
-                <List className="h-4 w-4 mr-2" />
+                <List className="h-3.5 w-3.5 mr-1 sm:mr-1.5" />
                 리스트
               </Button>
               <Button
                 variant={viewMode === 'group' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('group')}
-                className="h-8 px-3"
+                className="h-7 px-2 sm:px-3 text-xs"
               >
-                <Grid3x3 className="h-4 w-4 mr-2" />
+                <Grid3x3 className="h-3.5 w-3.5 mr-1 sm:mr-1.5" />
                 그룹
               </Button>
             </div>
 
             {viewMode === 'group' && (
               <Select value={groupBy} onValueChange={(value: 'client' | 'type') => setGroupBy(value)}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-32 h-7 text-xs sm:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -378,7 +396,9 @@ export default function AdminBlogDistributionPage() {
 
         {/* List View */}
         {viewMode === 'list' && (
-          <Card>
+          <>
+          {/* Desktop Table */}
+          <Card className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -488,31 +508,145 @@ export default function AdminBlogDistributionPage() {
               </TableBody>
             </Table>
           </Card>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-2">
+            {filteredSubmissions.length === 0 ? (
+              <div className="text-center py-8 bg-white border rounded-lg">
+                <p className="text-xs text-gray-500">접수 내역이 없습니다.</p>
+              </div>
+            ) : (
+              filteredSubmissions.map((sub) => {
+                const typeInfo = typeConfig[sub.distribution_type];
+                const TypeIcon = typeInfo.icon;
+                const statusInfo = statusConfig[sub.status];
+
+                return (
+                  <div key={sub.id} className="bg-white border rounded-lg p-2.5 space-y-2 shadow-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">
+                            <TypeIcon className="h-2.5 w-2.5 mr-0.5" />
+                            {typeInfo.label}
+                          </Badge>
+                        </div>
+                        <p className="font-semibold text-xs truncate">{sub.company_name}</p>
+                        <p className="text-[10px] text-gray-500 truncate">{sub.clients?.company_name || '-'}</p>
+                      </div>
+                      <Badge className={`text-[10px] px-1.5 py-0.5 flex-shrink-0 ${statusInfo.color}`}>
+                        {statusInfo.label}
+                      </Badge>
+                    </div>
+
+                    {sub.keywords && sub.keywords.length > 0 && (
+                      <div className="flex gap-1 flex-wrap">
+                        {sub.keywords.slice(0, 3).map((kw, i) => (
+                          <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                            {kw}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+                      <div>
+                        <p className="text-[10px] text-gray-500 mb-0.5">일 배포/총 수량</p>
+                        <p className="text-xs font-medium">{sub.daily_count}건 / {sub.total_count}건</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-500 mb-0.5">진행률</p>
+                        <div className="flex items-center gap-1">
+                          <div className="flex-1 bg-gray-200 rounded-full h-1.5">
+                            <div
+                              className="bg-blue-600 h-1.5 rounded-full transition-all"
+                              style={{ width: `${sub.progress_percentage || 0}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-medium text-blue-600">
+                            {sub.progress_percentage || 0}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-[10px] text-gray-500 mb-0.5">접수일</p>
+                        <p className="text-xs font-medium">{formatDate(sub.created_at)}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-1 pt-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.location.href = `/admin/blog-distribution/${sub.id}`}
+                        className="flex-1 text-[11px] h-7 text-blue-600 border-blue-300 px-2"
+                      >
+                        상세
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusChange(sub)}
+                        className="flex-1 text-[11px] h-7 px-2"
+                      >
+                        상태
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDailyRecordOpen(sub)}
+                        className="flex-1 text-[11px] h-7 px-2"
+                      >
+                        <Calendar className="h-2.5 w-2.5 mr-0.5" />
+                        기록
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          </>
         )}
 
         {/* Group View */}
         {viewMode === 'group' && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {groupedData().map((group) => (
-              <Card key={group.name}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Building2 className="h-5 w-5 text-sky-500" />
-                      <div>
-                        <CardTitle className="text-lg">{group.name}</CardTitle>
-                        <CardDescription>
-                          {group.count}개 접수 • 진행중 {group.inProgress}개 • 완료 {group.completed}개
-                        </CardDescription>
+              <Collapsible
+                key={group.name}
+                open={expandedGroups.has(group.name)}
+                onOpenChange={() => toggleGroup(group.name)}
+              >
+                <Card>
+                  <CollapsibleTrigger asChild>
+                    <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors p-3 sm:p-4 lg:p-6">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-sky-500 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <CardTitle className="text-sm sm:text-base lg:text-lg truncate">{group.name}</CardTitle>
+                            <CardDescription className="text-[10px] sm:text-xs truncate">
+                              {group.count}개 • 진행중 {group.inProgress} • 완료 {group.completed}
+                            </CardDescription>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                          <div className="text-right">
+                            <p className="text-sm sm:text-lg lg:text-xl font-bold text-sky-600">{group.totalCount.toLocaleString()}건</p>
+                            <p className="text-[10px] sm:text-xs text-gray-500 hidden sm:block">총 배포 수량</p>
+                          </div>
+                          <ChevronDown
+                            className={`h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground transition-transform flex-shrink-0 ${
+                              expandedGroups.has(group.name) ? 'transform rotate-180' : ''
+                            }`}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-sky-600">{group.totalCount.toLocaleString()}건</p>
-                      <p className="text-xs text-gray-500">총 배포 수량</p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
+                    </CardHeader>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <CardContent>
                   <div className="rounded-md border">
                     <Table>
                       <TableHeader>
@@ -611,8 +745,10 @@ export default function AdminBlogDistributionPage() {
                       </TableBody>
                     </Table>
                   </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
             ))}
           </div>
         )}

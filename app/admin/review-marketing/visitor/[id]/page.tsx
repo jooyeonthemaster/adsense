@@ -221,7 +221,7 @@ export default function VisitorReviewDetailPage({ params }: { params: Promise<{ 
             </Button>
             <div>
               <h1 className="text-2xl font-bold">{submission.company_name}</h1>
-              <p className="text-sm text-muted-foreground">방문자 리뷰 상세 관리</p>
+              <p className="text-sm text-muted-foreground">네이버 영수증 상세 관리</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

@@ -1,11 +1,11 @@
 import { requireAuth } from '@/lib/auth';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/utils/supabase/service';
 import { AdminDashboardContent } from './admin-dashboard-content';
 
 async function getStats() {
-  const supabase = await createClient();
+  const supabase = createClient();
 
-  const [clientsResult, submissionsResult, pointsResult, asRequestsResult] = await Promise.all([
+  const [clientsResult, submissionsResult, pointsResult, asRequestsResult, chargeRequestsResult] = await Promise.all([
     supabase.from('clients').select('id', { count: 'exact', head: true }),
     supabase
       .from('place_submissions')
@@ -16,6 +16,10 @@ async function getStats() {
       .from('as_requests')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'pending'),
+    supabase
+      .from('point_charge_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending'),
   ]);
 
   const totalClients = clientsResult.count || 0;
@@ -23,17 +27,19 @@ async function getStats() {
   const totalPoints =
     pointsResult.data?.reduce((sum, client) => sum + (client.points || 0), 0) || 0;
   const pendingAsRequests = asRequestsResult.count || 0;
+  const pendingChargeRequests = chargeRequestsResult.count || 0;
 
   return {
     totalClients,
     pendingSubmissions,
     totalPoints,
     pendingAsRequests,
+    pendingChargeRequests,
   };
 }
 
 async function getRecentSubmissions() {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   // 최근 1일(24시간) 기준
   const oneDayAgo = new Date();
@@ -109,11 +115,35 @@ async function getRecentSubmissions() {
     .slice(0, 10);
 }
 
+async function getRecentChargeRequests() {
+  const supabase = createClient();
+
+  // 최근 7일 기준
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const sevenDaysAgoISO = sevenDaysAgo.toISOString();
+
+  const { data: chargeRequests, error } = await supabase
+    .from('point_charge_requests')
+    .select('*, clients(company_name, username)')
+    .gte('created_at', sevenDaysAgoISO)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  if (error) {
+    console.error('Error fetching charge requests:', error);
+    return [];
+  }
+
+  return chargeRequests || [];
+}
+
 export default async function AdminDashboard() {
   await requireAuth(['admin']);
-  const [stats, recentSubmissions] = await Promise.all([
+  const [stats, recentSubmissions, recentChargeRequests] = await Promise.all([
     getStats(),
     getRecentSubmissions(),
+    getRecentChargeRequests(),
   ]);
 
   const cards = [
@@ -136,6 +166,12 @@ export default async function AdminDashboard() {
       description: '처리 대기 중',
     },
     {
+      title: '충전 요청',
+      value: stats.pendingChargeRequests,
+      icon: 'DollarSign' as const,
+      description: '승인 대기 중',
+    },
+    {
       title: '총 포인트',
       value: stats.totalPoints.toLocaleString(),
       icon: 'DollarSign' as const,
@@ -143,5 +179,5 @@ export default async function AdminDashboard() {
     },
   ];
 
-  return <AdminDashboardContent stats={stats} cards={cards} recentSubmissions={recentSubmissions} />;
+  return <AdminDashboardContent stats={stats} cards={cards} recentSubmissions={recentSubmissions} recentChargeRequests={recentChargeRequests} />;
 }

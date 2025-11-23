@@ -5,10 +5,10 @@ export default async function AdminSubmissionsPage() {
   await requireAuth(['admin']);
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">전체 접수 내역</h1>
-        <p className="text-xs sm:text-sm text-muted-foreground">
+    <div className="space-y-3 sm:space-y-4">
+      <div className="space-y-1.5">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight">전체 접수 내역</h1>
+        <p className="text-[11px] sm:text-xs text-muted-foreground">
           모든 거래처의 접수 내역을 조회하고 관리합니다
         </p>
       </div>

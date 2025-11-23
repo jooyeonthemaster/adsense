@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -28,97 +29,36 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Calendar, TrendingUp, DollarSign, ExternalLink, Filter } from 'lucide-react';
+import { Search, Calendar, TrendingUp, ExternalLink, Filter, Gift, DollarSign } from 'lucide-react';
 
-type RewardStatus = 'checking' | 'approved' | 'running' | 'completed' | 'cancelled';
+type RewardStatus = 'pending' | 'approved' | 'in_progress' | 'completed' | 'cancelled';
 
 interface RewardSubmission {
   id: string;
-  businessName: string;
-  placeUrl: string;
-  placeMid: string;
-  dailyVolume: number;
-  operationDays: number;
-  currentDay: number;
+  company_name: string;
+  place_url: string;
+  place_mid: string;
+  daily_count: number;
+  total_days: number;
+  current_day?: number;
+  completed_count?: number;
+  progress_percentage?: number;
   status: RewardStatus;
-  submittedAt: string;
-  totalCost: number;
+  created_at: string;
+  total_points: number;
 }
 
-// 임시 데이터 (실제로는 API에서 가져옴)
-const mockSubmissions: RewardSubmission[] = [
-  {
-    id: '1',
-    businessName: '강남 맛집',
-    placeUrl: 'https://map.naver.com/p/place/123456',
-    placeMid: '123456',
-    dailyVolume: 200,
-    operationDays: 7,
-    currentDay: 3,
-    status: 'running',
-    submittedAt: '2025-01-10T09:30:00',
-    totalCost: 14000,
-  },
-  {
-    id: '2',
-    businessName: '홍대 카페',
-    placeUrl: 'https://map.naver.com/p/place/234567',
-    placeMid: '234567',
-    dailyVolume: 100,
-    operationDays: 5,
-    currentDay: 0,
-    status: 'approved',
-    submittedAt: '2025-01-12T14:20:00',
-    totalCost: 5000,
-  },
-  {
-    id: '3',
-    businessName: '역삼 헬스장',
-    placeUrl: 'https://map.naver.com/p/place/345678',
-    placeMid: '345678',
-    dailyVolume: 150,
-    operationDays: 10,
-    currentDay: 0,
-    status: 'checking',
-    submittedAt: '2025-01-13T16:45:00',
-    totalCost: 15000,
-  },
-  {
-    id: '4',
-    businessName: '판교 레스토랑',
-    placeUrl: 'https://map.naver.com/p/place/456789',
-    placeMid: '456789',
-    dailyVolume: 300,
-    operationDays: 14,
-    currentDay: 14,
-    status: 'completed',
-    submittedAt: '2024-12-20T10:15:00',
-    totalCost: 42000,
-  },
-  {
-    id: '5',
-    businessName: '선릉 피부과',
-    placeUrl: 'https://map.naver.com/p/place/567890',
-    placeMid: '567890',
-    dailyVolume: 250,
-    operationDays: 7,
-    currentDay: 4,
-    status: 'cancelled',
-    submittedAt: '2025-01-08T11:30:00',
-    totalCost: 17500,
-  },
-];
-
 const statusConfig: Record<RewardStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  checking: { label: '확인중', variant: 'outline' },
+  pending: { label: '확인중', variant: 'outline' },
   approved: { label: '접수완료', variant: 'default' },
-  running: { label: '구동중', variant: 'secondary' },
+  in_progress: { label: '구동중', variant: 'secondary' },
   completed: { label: '완료', variant: 'secondary' },
   cancelled: { label: '중단됨', variant: 'destructive' },
 };
 
 export default function RewardStatusPage() {
-  const [submissions] = useState<RewardSubmission[]>(mockSubmissions);
+  const [submissions, setSubmissions] = useState<RewardSubmission[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<RewardStatus | 'all'>('all');
   const [sortBy, setSortBy] = useState<'date' | 'cost' | 'progress'>('date');
@@ -126,6 +66,28 @@ export default function RewardStatusPage() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<string | null>(null);
   const [agreedToCancel, setAgreedToCancel] = useState(false);
+
+  useEffect(() => {
+    fetchSubmissions();
+  }, []);
+
+  const fetchSubmissions = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/submissions/reward');
+      if (!response.ok) {
+        throw new Error('Failed to fetch submissions');
+      }
+
+      const data = await response.json();
+      setSubmissions(data.submissions || []);
+    } catch (error) {
+      console.error('Error fetching submissions:', error);
+      setSubmissions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCancelClick = (submissionId: string) => {
     setSelectedSubmission(submissionId);
@@ -139,6 +101,7 @@ export default function RewardStatusPage() {
       return;
     }
 
+    // TODO: 중단 API 호출
     console.log('중단 요청:', selectedSubmission);
     alert('중단 신청이 완료되었습니다.');
 
@@ -148,9 +111,7 @@ export default function RewardStatusPage() {
   };
 
   const calculateProgress = (submission: RewardSubmission) => {
-    if (submission.status === 'checking' || submission.status === 'approved') return 0;
-    if (submission.status === 'completed') return 100;
-    return (submission.currentDay / submission.operationDays) * 100;
+    return submission.progress_percentage || 0;
   };
 
   const formatDate = (dateString: string) => {
@@ -167,16 +128,16 @@ export default function RewardStatusPage() {
   // 필터링 및 검색
   const filteredSubmissions = submissions
     .filter((sub) => {
-      const matchesSearch = sub.businessName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           sub.placeMid.includes(searchQuery);
+      const matchesSearch = sub.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           sub.place_mid?.includes(searchQuery);
       const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
       return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
       if (sortBy === 'date') {
-        return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       } else if (sortBy === 'cost') {
-        return b.totalCost - a.totalCost;
+        return b.total_points - a.total_points;
       } else {
         return calculateProgress(b) - calculateProgress(a);
       }
@@ -185,88 +146,107 @@ export default function RewardStatusPage() {
   // 통계 계산
   const stats = {
     total: submissions.length,
-    checking: submissions.filter(s => s.status === 'checking').length,
-    approved: submissions.filter(s => s.status === 'approved').length,
-    running: submissions.filter(s => s.status === 'running').length,
+    pending: submissions.filter(s => s.status === 'pending').length,
+    in_progress: submissions.filter(s => s.status === 'in_progress' || s.status === 'approved').length,
     completed: submissions.filter(s => s.status === 'completed').length,
-    totalCost: submissions.reduce((sum, s) => sum + s.totalCost, 0),
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-white px-3 sm:px-4 lg:px-6 pt-4 pb-6">
-      <div className="max-w-7xl mx-auto space-y-4">
+    <div className="container mx-auto p-2 sm:p-3 lg:p-6">
+      <div className="space-y-3 sm:space-y-4">
+        {/* 헤더 */}
+        <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-lg p-3 sm:p-4 lg:p-6 text-white">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <Gift className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+                <h1 className="text-base sm:text-xl lg:text-2xl font-bold truncate">리워드 접수 현황</h1>
+              </div>
+              <p className="text-[11px] sm:text-sm text-emerald-100 truncate">리워드(플레이스 유입) 접수 내역을 관리하세요</p>
+            </div>
+            <Link href="/dashboard/reward/submit" className="flex-shrink-0">
+              <Button variant="secondary" size="sm" className="h-7 sm:h-8 text-xs sm:text-sm px-2 sm:px-3">
+                새 접수
+              </Button>
+            </Link>
+          </div>
+        </div>
+
         {/* 통계 카드 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="p-3 rounded-lg border border-gray-200 bg-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500">총 접수</p>
-                <p className="text-xl font-bold text-gray-900">{stats.total}</p>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="p-2.5 sm:p-3 rounded-lg border border-gray-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5">총 접수</p>
+                <p className="text-lg sm:text-xl font-bold text-gray-900">{stats.total}</p>
               </div>
-              <TrendingUp className="h-8 w-8 text-gray-400" />
+              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 flex-shrink-0" />
             </div>
           </div>
 
-          <div className="p-3 rounded-lg border border-sky-200 bg-sky-50">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-sky-600">진행중</p>
-                <p className="text-xl font-bold text-sky-900">{stats.checking + stats.approved + stats.running}</p>
+          <div className="p-2.5 sm:p-3 rounded-lg border border-emerald-200 bg-emerald-50 shadow-sm">
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] sm:text-xs text-emerald-600 mb-0.5">진행중</p>
+                <p className="text-lg sm:text-xl font-bold text-emerald-900">
+                  {stats.pending + stats.in_progress}
+                </p>
               </div>
-              <Calendar className="h-8 w-8 text-sky-400" />
+              <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-400 flex-shrink-0" />
             </div>
           </div>
 
-          <div className="p-3 rounded-lg border border-emerald-200 bg-emerald-50">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-emerald-600">완료</p>
-                <p className="text-xl font-bold text-emerald-900">{stats.completed}</p>
+          <div className="p-2.5 sm:p-3 rounded-lg border border-teal-200 bg-teal-50 shadow-sm">
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] sm:text-xs text-teal-600 mb-0.5">완료</p>
+                <p className="text-lg sm:text-xl font-bold text-teal-900">{stats.completed}</p>
               </div>
-              <TrendingUp className="h-8 w-8 text-emerald-400" />
-            </div>
-          </div>
-
-          <div className="p-3 rounded-lg border border-purple-200 bg-purple-50">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-purple-600">총 비용</p>
-                <p className="text-xl font-bold text-purple-900">{stats.totalCost.toLocaleString()}P</p>
-              </div>
-              <DollarSign className="h-8 w-8 text-purple-400" />
+              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-teal-400 flex-shrink-0" />
             </div>
           </div>
         </div>
 
         {/* 필터 및 검색 */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
             <Input
               placeholder="업체명 또는 MID로 검색..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9 text-sm"
+              className="pl-8 h-8 text-xs sm:text-sm"
             />
           </div>
 
           <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as RewardStatus | 'all')}>
-            <SelectTrigger className="w-full sm:w-40 h-9 text-sm">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="상태 필터" />
+            <SelectTrigger className="w-full sm:w-32 h-8 text-xs sm:text-sm">
+              <Filter className="h-3.5 w-3.5 mr-1.5" />
+              <SelectValue placeholder="전체" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">전체</SelectItem>
-              <SelectItem value="checking">확인중</SelectItem>
+              <SelectItem value="pending">확인중</SelectItem>
               <SelectItem value="approved">접수완료</SelectItem>
-              <SelectItem value="running">구동중</SelectItem>
+              <SelectItem value="in_progress">구동중</SelectItem>
               <SelectItem value="completed">완료</SelectItem>
               <SelectItem value="cancelled">중단됨</SelectItem>
             </SelectContent>
           </Select>
 
           <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'date' | 'cost' | 'progress')}>
-            <SelectTrigger className="w-full sm:w-40 h-9 text-sm">
+            <SelectTrigger className="w-full sm:w-32 h-8 text-xs sm:text-sm">
               <SelectValue placeholder="정렬" />
             </SelectTrigger>
             <SelectContent>
@@ -278,95 +258,94 @@ export default function RewardStatusPage() {
         </div>
 
         {/* 데이터 테이블 - 데스크톱 */}
-        <div className="hidden md:block border border-gray-200 rounded-lg overflow-hidden">
+        <div className="hidden md:block bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
                 <TableHead className="text-xs font-semibold">업체명</TableHead>
-                <TableHead className="text-xs font-semibold">MID</TableHead>
                 <TableHead className="text-xs font-semibold">일 접수량</TableHead>
                 <TableHead className="text-xs font-semibold">구동일수</TableHead>
-                <TableHead className="text-xs font-semibold">진행상태</TableHead>
+                <TableHead className="text-xs font-semibold text-center">상태</TableHead>
+                <TableHead className="text-xs font-semibold text-center">진행률</TableHead>
                 <TableHead className="text-xs font-semibold">접수일시</TableHead>
-                <TableHead className="text-xs font-semibold text-right">총 비용</TableHead>
                 <TableHead className="text-xs font-semibold text-center">액션</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredSubmissions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-sm text-gray-500">
-                    검색 결과가 없습니다.
+                  <TableCell colSpan={7} className="text-center py-12 text-sm text-gray-500">
+                    접수 내역이 없습니다.
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredSubmissions.map((submission) => {
-                  const status = statusConfig[submission.status];
+                  const statusDisplay = statusConfig[submission.status] || { label: submission.status, variant: 'outline' as const };
                   const progress = calculateProgress(submission);
-                  const canCancel = submission.status === 'checking' || submission.status === 'approved' || submission.status === 'running';
 
                   return (
                     <TableRow key={submission.id} className="hover:bg-gray-50">
-                      <TableCell className="font-medium text-sm">
+                      <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
-                          <span>{submission.businessName}</span>
+                          <span className="text-sm">{submission.company_name}</span>
                           <a
-                            href={submission.placeUrl}
+                            href={submission.place_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sky-500 hover:text-sky-600"
+                            className="text-emerald-500 hover:text-emerald-600"
                           >
                             <ExternalLink className="h-3.5 w-3.5" />
                           </a>
                         </div>
+                        {submission.place_mid && <p className="text-xs text-gray-500 mt-0.5">MID: {submission.place_mid}</p>}
                       </TableCell>
-                      <TableCell className="text-sm text-gray-600">{submission.placeMid}</TableCell>
-                      <TableCell className="text-sm">{submission.dailyVolume.toLocaleString()}타</TableCell>
-                      <TableCell className="text-sm">
-                        {submission.status === 'running' ? (
-                          <span className="text-sky-600 font-medium">
-                            {submission.currentDay}/{submission.operationDays}일
+                      <TableCell className="text-sm">{submission.daily_count.toLocaleString()}타</TableCell>
+                      <TableCell className="text-sm font-medium">
+                        {submission.total_days}일
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant={statusDisplay.variant} className="text-xs">
+                          {statusDisplay.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <div className="w-16 bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-emerald-500 rounded-full h-2 transition-all"
+                              style={{ width: `${Math.round(progress)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-medium text-emerald-600">
+                            {Math.round(progress)}%
                           </span>
-                        ) : (
-                          <span>{submission.operationDays}일</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <Badge variant={status.variant} className="text-xs">
-                            {status.label}
-                          </Badge>
-                          {submission.status === 'running' && (
-                            <div className="w-full">
-                              <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-sky-500 transition-all"
-                                  style={{ width: `${progress}%` }}
-                                />
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </TableCell>
                       <TableCell className="text-sm text-gray-600">
-                        {formatDate(submission.submittedAt)}
-                      </TableCell>
-                      <TableCell className="text-sm font-semibold text-right">
-                        {submission.totalCost.toLocaleString()}P
+                        {formatDate(submission.created_at)}
                       </TableCell>
                       <TableCell className="text-center">
-                        {canCancel ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleCancelClick(submission.id)}
-                            className="text-xs h-7 text-red-600 border-red-300 hover:bg-red-50"
-                          >
-                            중단
-                          </Button>
-                        ) : (
-                          <span className="text-xs text-gray-400">-</span>
-                        )}
+                        <div className="flex items-center justify-center gap-2">
+                          <Link href={`/dashboard/reward/status/${submission.id}`}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs text-emerald-600 border-emerald-300 hover:bg-emerald-50"
+                            >
+                              상세보기
+                            </Button>
+                          </Link>
+                          {(submission.status === 'pending' || submission.status === 'in_progress') && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCancelClick(submission.id)}
+                              className="h-7 text-xs text-red-600 border-red-300 hover:bg-red-50"
+                            >
+                              중단
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -377,50 +356,52 @@ export default function RewardStatusPage() {
         </div>
 
         {/* 카드 형태 - 모바일 */}
-        <div className="md:hidden space-y-3">
+        <div className="md:hidden space-y-2">
           {filteredSubmissions.length === 0 ? (
-            <div className="text-center py-12 bg-white border border-gray-200 rounded-lg">
-              <p className="text-sm text-gray-500">검색 결과가 없습니다.</p>
+            <div className="text-center py-8 bg-white border border-gray-200 rounded-lg">
+              <p className="text-xs text-gray-500">접수 내역이 없습니다.</p>
             </div>
           ) : (
             filteredSubmissions.map((submission) => {
-              const status = statusConfig[submission.status];
+              const statusDisplay = statusConfig[submission.status];
               const progress = calculateProgress(submission);
-              const canCancel = submission.status === 'checking' || submission.status === 'approved' || submission.status === 'running';
 
               return (
-                <div key={submission.id} className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+                <div
+                  key={submission.id}
+                  className="bg-white border border-gray-200 rounded-lg p-2.5 space-y-2 shadow-sm"
+                >
                   {/* 헤더 */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-sm">{submission.businessName}</h3>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <h3 className="font-semibold text-xs truncate">{submission.company_name}</h3>
                         <a
-                          href={submission.placeUrl}
+                          href={submission.place_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sky-500"
+                          className="text-emerald-500 flex-shrink-0"
                         >
-                          <ExternalLink className="h-3.5 w-3.5" />
+                          <ExternalLink className="h-3 w-3" />
                         </a>
                       </div>
-                      <p className="text-xs text-gray-500">MID: {submission.placeMid}</p>
+                      {submission.place_mid && <p className="text-[10px] text-gray-500 truncate">MID: {submission.place_mid}</p>}
                     </div>
-                    <Badge variant={status.variant} className="text-xs">
-                      {status.label}
+                    <Badge variant={statusDisplay.variant} className="text-[10px] px-1.5 py-0.5 flex-shrink-0">
+                      {statusDisplay.label}
                     </Badge>
                   </div>
 
-                  {/* 진행바 */}
-                  {submission.status === 'running' && (
+                  {/* 진행률 */}
+                  {submission.status === 'in_progress' && progress > 0 && (
                     <div>
-                      <div className="flex justify-between text-xs text-gray-600 mb-1">
+                      <div className="flex justify-between text-[10px] text-gray-600 mb-0.5">
                         <span>진행률</span>
-                        <span>{submission.currentDay}/{submission.operationDays}일</span>
+                        <span className="font-medium">{Math.round(progress)}%</span>
                       </div>
-                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-sky-500 transition-all"
+                          className="h-full bg-emerald-500 transition-all"
                           style={{ width: `${progress}%` }}
                         />
                       </div>
@@ -428,36 +409,43 @@ export default function RewardStatusPage() {
                   )}
 
                   {/* 상세 정보 */}
-                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
                     <div>
-                      <p className="text-xs text-gray-500">일 접수량</p>
-                      <p className="text-sm font-medium">{submission.dailyVolume.toLocaleString()}타</p>
+                      <p className="text-[10px] text-gray-500 mb-0.5">일 접수량</p>
+                      <p className="text-xs font-medium">{submission.daily_count.toLocaleString()}타</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">구동일수</p>
-                      <p className="text-sm font-medium">{submission.operationDays}일</p>
+                      <p className="text-[10px] text-gray-500 mb-0.5">구동일수</p>
+                      <p className="text-xs font-medium">{submission.total_days}일</p>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-500">접수일시</p>
-                      <p className="text-sm font-medium">{formatDate(submission.submittedAt)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">총 비용</p>
-                      <p className="text-sm font-semibold text-sky-600">{submission.totalCost.toLocaleString()}P</p>
+                    <div className="col-span-2">
+                      <p className="text-[10px] text-gray-500 mb-0.5">접수일시</p>
+                      <p className="text-xs font-medium">{formatDate(submission.created_at)}</p>
                     </div>
                   </div>
 
-                  {/* 액션 */}
-                  {canCancel && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleCancelClick(submission.id)}
-                      className="w-full text-xs h-8 text-red-600 border-red-300 hover:bg-red-50"
-                    >
-                      중단 신청
-                    </Button>
-                  )}
+                  {/* 액션 버튼 */}
+                  <div className="flex gap-1.5 pt-1">
+                    <Link href={`/dashboard/reward/status/${submission.id}`} className="flex-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-[11px] h-7 text-emerald-600 border-emerald-300 px-2"
+                      >
+                        상세보기
+                      </Button>
+                    </Link>
+                    {(submission.status === 'pending' || submission.status === 'in_progress') && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCancelClick(submission.id)}
+                        className="flex-1 text-[11px] h-7 text-red-600 border-red-300 px-2"
+                      >
+                        중단
+                      </Button>
+                    )}
+                  </div>
                 </div>
               );
             })

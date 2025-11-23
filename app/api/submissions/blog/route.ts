@@ -42,7 +42,7 @@ export async function GET() {
     const submissionsWithProgress = (submissions || []).map((sub: any) => {
       const completedCount = completedCountMap.get(sub.id) || 0;
       const progressPercentage = sub.total_count > 0
-        ? Math.round((completedCount / sub.total_count) * 100)
+        ? Math.min(100, Math.round((completedCount / sub.total_count) * 100))
         : 0;
 
       return {
@@ -240,6 +240,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Create point transaction record
+    const distributionTypeLabels: Record<string, string> = {
+      'reviewer': '리뷰어 배포',
+      'video': '영상 배포',
+      'automation': '자동화 배포',
+    };
+
     await supabase.from('point_transactions').insert({
       client_id: user.id,
       transaction_type: 'deduct',
@@ -247,7 +253,7 @@ export async function POST(request: NextRequest) {
       balance_after: newBalance,
       reference_type: 'blog_submission',
       reference_id: submission.id,
-      description: `블로그 배포 접수 (${company_name} - ${distribution_type})`,
+      description: `블로그 배포 접수 (${company_name} - ${distributionTypeLabels[distribution_type] || distribution_type})`,
     });
 
     // Revalidate all dashboard pages to show updated points immediately

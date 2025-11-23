@@ -79,9 +79,9 @@ export default async function KakaomapManagementPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">K맵 리뷰 관리</h1>
+        <h1 className="text-3xl font-bold tracking-tight">카카오맵 관리</h1>
         <p className="text-muted-foreground">
-          카카오맵 리뷰 캠페인을 관리하고 콘텐츠를 업로드하세요
+          카카오맵 캠페인을 관리하고 콘텐츠를 업로드하세요
         </p>
       </div>
 

@@ -68,7 +68,7 @@ export async function POST(
     // Check if submission exists
     const { data: submission, error: submissionError } = await supabase
       .from('cafe_marketing_submissions')
-      .select('id, total_count')
+      .select('id, total_count, status')
       .eq('id', id)
       .single();
 
@@ -103,6 +103,14 @@ export async function POST(
         { error: '일일 기록 저장 중 오류가 발생했습니다.' },
         { status: 500 }
       );
+    }
+
+    // Change status to in_progress if pending (regardless of first record or not)
+    if (submission.status === 'pending') {
+      await supabase
+        .from('cafe_marketing_submissions')
+        .update({ status: 'in_progress' })
+        .eq('id', id);
     }
 
     return NextResponse.json({

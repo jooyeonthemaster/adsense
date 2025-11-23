@@ -23,13 +23,16 @@ export interface ExperienceBlogger {
 export interface ExperienceSubmission {
   id: string;
   company_name: string;
+  place_url: string | null;
   experience_type: string;
   team_count: number;
   keywords: string[];
+  guide_text: string | null;
   available_days: string[] | null;
   available_time_start: string | null;
   available_time_end: string | null;
   provided_items: string | null;
+  image_urls: string[] | null;
   total_points: number;
   status: string;
   bloggers_registered: boolean;

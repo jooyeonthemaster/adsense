@@ -14,14 +14,14 @@ export default function ReviewMarketingPage() {
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">리뷰 마케팅 관리</h1>
         <p className="text-muted-foreground">
-          방문자 리뷰와 K맵 리뷰 캠페인을 관리하세요
+          네이버 영수증과 카카오맵 캠페인을 관리하세요
         </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="visitor">방문자 리뷰</TabsTrigger>
-          <TabsTrigger value="kmap">K맵 리뷰</TabsTrigger>
+          <TabsTrigger value="visitor">네이버 영수증</TabsTrigger>
+          <TabsTrigger value="kmap">카카오맵</TabsTrigger>
         </TabsList>
 
         <TabsContent value="visitor" className="space-y-6">

@@ -6,12 +6,12 @@ import { MessageSquare, MapPin } from 'lucide-react';
 
 const tabs = [
   {
-    name: '방문자 리뷰',
+    name: '네이버 영수증',
     href: '/dashboard/review/visitor',
     icon: MessageSquare,
   },
   {
-    name: 'K맵 리뷰',
+    name: '카카오맵',
     href: '/dashboard/review/kmap',
     icon: MapPin,
   },

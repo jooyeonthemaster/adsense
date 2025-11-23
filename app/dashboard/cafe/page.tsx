@@ -17,8 +17,9 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Coffee, Sparkles, Camera } from 'lucide-react';
+import { Coffee, Sparkles, Camera, CheckCircle2, Users, Info, AlertCircle, BookOpen, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ProductGuideSection } from '@/components/dashboard/ProductGuideSection';
 
 // 지역별 카페 데이터
 const cafesByRegion: Record<string, string[]> = {
@@ -209,6 +210,8 @@ export default function CafeMarketingPage() {
   return (
     <div className="min-h-screen bg-white px-3 sm:px-4 lg:px-6 pt-4 pb-6">
       <div className="max-w-7xl mx-auto">
+        <ProductGuideSection productKey="cafe-marketing" />
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 상단 2열 그리드 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

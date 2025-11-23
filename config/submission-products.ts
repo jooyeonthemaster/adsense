@@ -51,7 +51,7 @@ export const productConfig = {
     category: 'reward',
   },
   receipt: {
-    label: '방문자 리뷰',
+    label: '네이버 영수증',
     icon: Camera,
     bgColor: 'bg-purple-100',
     textColor: 'text-purple-600',
@@ -60,7 +60,7 @@ export const productConfig = {
     category: 'review',
   },
   kakaomap: {
-    label: 'K맵 리뷰',
+    label: '카카오맵',
     icon: MapPin,
     bgColor: 'bg-amber-100',
     textColor: 'text-amber-600',
@@ -108,7 +108,7 @@ export const productConfig = {
     category: 'cafe',
   },
   'experience-blog': {
-    label: '블로그',
+    label: '블로그 체험단',
     icon: Users,
     bgColor: 'bg-violet-100',
     textColor: 'text-violet-600',
@@ -118,7 +118,7 @@ export const productConfig = {
     category: 'experience',
   },
   'experience-xiaohongshu': {
-    label: '샤오홍슈',
+    label: '샤오홍슈(중국인 체험단)',
     icon: Users,
     bgColor: 'bg-violet-100',
     textColor: 'text-violet-600',
@@ -128,7 +128,7 @@ export const productConfig = {
     category: 'experience',
   },
   'experience-journalist': {
-    label: '실계정 기자단',
+    label: '블로그 기자단',
     icon: Users,
     bgColor: 'bg-violet-100',
     textColor: 'text-violet-600',
