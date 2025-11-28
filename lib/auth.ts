@@ -167,3 +167,105 @@ export async function requireAuth(
 
   return session.user;
 }
+
+// ============================================
+// 카카오 소셜 로그인 관련 함수
+// ============================================
+
+export interface KakaoUserInfo {
+  kakaoId: string;
+  email: string | null;
+  nickname: string;
+}
+
+/**
+ * 카카오 ID로 클라이언트 조회
+ */
+export async function findClientByKakaoId(
+  kakaoId: string
+): Promise<AuthUser | null> {
+  const supabase = await createClient();
+
+  const { data: client, error } = await supabase
+    .from('clients')
+    .select('*')
+    .eq('kakao_id', kakaoId)
+    .eq('is_active', true)
+    .single();
+
+  if (error || !client) {
+    return null;
+  }
+
+  return {
+    id: client.id,
+    username: client.username,
+    name: client.company_name,
+    type: 'client',
+    company_name: client.company_name,
+    points: client.points,
+  };
+}
+
+/**
+ * 카카오 사용자로 새 클라이언트 생성
+ */
+export async function createKakaoClient(
+  kakaoUser: KakaoUserInfo
+): Promise<AuthUser> {
+  const supabase = await createClient();
+
+  // username 생성: kakao_ + 랜덤 8자리
+  const randomSuffix = Math.random().toString(36).substring(2, 10);
+  const username = `kakao_${randomSuffix}`;
+
+  // company_name: 닉네임 또는 기본값
+  const companyName = kakaoUser.nickname || '카카오 사용자';
+
+  const { data: client, error } = await supabase
+    .from('clients')
+    .insert({
+      username,
+      password: null,
+      company_name: companyName,
+      email: kakaoUser.email,
+      kakao_id: kakaoUser.kakaoId,
+      auth_provider: 'kakao',
+      points: 0,
+      is_active: true,
+      auto_distribution_approved: false,
+      pending_charge_requests_count: 0,
+    })
+    .select()
+    .single();
+
+  if (error || !client) {
+    console.error('카카오 계정 생성 실패:', error);
+    throw new Error('카카오 계정 생성에 실패했습니다.');
+  }
+
+  return {
+    id: client.id,
+    username: client.username,
+    name: client.company_name,
+    type: 'client',
+    company_name: client.company_name,
+    points: client.points,
+  };
+}
+
+/**
+ * 카카오 로그인 처리 (조회 또는 생성)
+ */
+export async function authenticateKakaoClient(
+  kakaoUser: KakaoUserInfo
+): Promise<AuthUser> {
+  // 1. 기존 카카오 계정 조회
+  const existingUser = await findClientByKakaoId(kakaoUser.kakaoId);
+  if (existingUser) {
+    return existingUser;
+  }
+
+  // 2. 신규 계정 생성
+  return createKakaoClient(kakaoUser);
+}

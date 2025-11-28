@@ -9,6 +9,8 @@ interface PaymentInfoProps {
   totalCost: number;
   selectedService: ServiceConfig | undefined;
   isSubmitting: boolean;
+  isPriceConfigured?: boolean;
+  loadingPrice?: boolean;
 }
 
 export function PaymentInfo({
@@ -16,6 +18,8 @@ export function PaymentInfo({
   totalCost,
   selectedService,
   isSubmitting,
+  isPriceConfigured = true,
+  loadingPrice = false,
 }: PaymentInfoProps) {
   return (
     <Card className="border-gray-200">
@@ -82,9 +86,14 @@ export function PaymentInfo({
         </div>
 
         {/* 접수 신청 버튼 */}
+        {!isPriceConfigured && !loadingPrice && (
+          <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+            ⚠️ 가격이 설정되지 않았습니다. 관리자에게 문의하세요.
+          </div>
+        )}
         <Button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !isPriceConfigured || loadingPrice}
           className="w-full h-11 text-sm font-semibold bg-sky-500 hover:bg-sky-600 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? (
@@ -103,4 +112,7 @@ export function PaymentInfo({
     </Card>
   );
 }
+
+
+
 

@@ -1,5 +1,57 @@
 # CHANGELOG - 애드센스 마케팅 상품 접수 시스템
 
+## 2025-11-28 - [ADD] 카카오 소셜 로그인 기능 추가
+
+**Changed Files**:
+- supabase/migrations/20251128_add_kakao_auth.sql (신규 생성 - 24줄)
+- types/database.ts (수정 - 4줄 추가)
+- lib/auth.ts (수정 - Before: 170줄 → After: 271줄)
+- app/api/auth/kakao/route.ts (신규 생성 - 35줄)
+- app/api/auth/callback/route.ts (신규 생성 - 84줄)
+- app/login/page.tsx (수정 - Before: 388줄 → After: 438줄)
+
+**Changes**:
+
+1. **데이터베이스 스키마 확장**:
+   - clients 테이블에 `kakao_id` (VARCHAR 255) 컬럼 추가
+   - clients 테이블에 `auth_provider` (VARCHAR 50, 기본값 'local') 컬럼 추가
+   - password 컬럼 nullable로 변경 (카카오 사용자는 비밀번호 없음)
+   - 인덱스 추가: idx_clients_kakao_id, idx_clients_auth_provider
+
+2. **타입 정의 수정**:
+   - `AuthProvider` 타입 추가 ('local' | 'kakao')
+   - `Client` 타입에 `kakao_id`, `auth_provider` 필드 추가
+
+3. **인증 로직 추가 (lib/auth.ts)**:
+   - `findClientByKakaoId()` - 카카오 ID로 클라이언트 조회
+   - `createKakaoClient()` - 카카오 사용자 신규 생성
+   - `authenticateKakaoClient()` - 조회 또는 생성 통합 처리
+
+4. **API 라우트 추가**:
+   - `/api/auth/kakao` - 카카오 OAuth 시작 (Supabase signInWithOAuth)
+   - `/api/auth/callback` - OAuth 콜백 처리, 세션 생성
+
+5. **로그인 UI 수정**:
+   - 거래처 탭에 카카오 로그인 버튼 추가
+   - "또는" 구분선 추가
+   - URL 에러 파라미터 처리 (로그인 실패 메시지)
+
+**Reason**:
+- 거래처 사용자의 간편한 로그인/회원가입 지원
+- 카카오톡 사용률이 높은 한국 시장에 최적화
+- Supabase Auth 기반으로 보안성 확보
+
+**사전 설정 필요**:
+1. Kakao Developers 콘솔에서 앱 생성 및 설정
+2. Supabase Dashboard에서 Kakao Provider 활성화
+
+**Impact**:
+- 기존 username/password 로그인 영향 없음
+- 카카오로 가입한 계정도 관리자 대시보드에서 동일하게 관리 가능
+- 하이브리드 인증 구조로 유연성 확보
+
+---
+
 ## 2025-11-03 - [UPDATE] 카카오맵 리뷰 접수 스크립트 동의 체크박스 제거
 
 **Changed Files**:

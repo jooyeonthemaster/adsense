@@ -57,25 +57,17 @@ export async function POST(request: NextRequest) {
       .eq('is_visible', true)
       .single();
 
-    let pricePerTeam: number;
-    let totalPoints: number;
-
-    if (priceError) {
-      console.error('Error fetching price:', priceError);
-      // 가격 정보를 찾을 수 없는 경우 기본값 사용
-      const defaultPrices: Record<string, number> = {
-        'blog-experience': 50000,
-        'xiaohongshu': 70000,
-        'journalist': 60000,
-        'influencer': 80000,
-      };
-      pricePerTeam = defaultPrices[experienceType] || 50000;
-      totalPoints = teamCount * pricePerTeam;
-    } else {
-      // DB에서 가져온 가격 사용
-      pricePerTeam = priceData?.price_per_unit || 50000;
-      totalPoints = teamCount * pricePerTeam;
+    // 가격 정보가 없으면 에러 반환
+    if (priceError || !priceData?.price_per_unit) {
+      console.error('Price not configured for experience type:', experienceType);
+      return NextResponse.json(
+        { error: '상품 가격이 설정되지 않았습니다. 관리자에게 문의하세요.' },
+        { status: 400 }
+      );
     }
+
+    const pricePerTeam = priceData.price_per_unit;
+    const totalPoints = teamCount * pricePerTeam;
 
     // 키워드 배열 생성
     const keywordArray = keywords?.map((kw: any) => `${kw.main} ${kw.sub}`.trim()) || [];

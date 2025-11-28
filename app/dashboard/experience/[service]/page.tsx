@@ -82,11 +82,15 @@ export default function ExperienceServicePage() {
   }, []);
 
   const services: ServiceConfig[] = [
-    { id: 'blog', name: '블로그', icon: BookText, color: 'bg-blue-500', available: true, pricePerTeam: pricing['blog-experience'] || 50000, description: '2주 이내 블로거 리스트 제공' },
-    { id: 'xiaohongshu', name: '샤오홍슈', icon: Image, color: 'bg-rose-500', available: true, pricePerTeam: pricing['xiaohongshu'] || 70000, description: '중국 소셜 마케팅' },
-    { id: 'reporter', name: '실계정 기자단', icon: Users, color: 'bg-emerald-500', available: true, pricePerTeam: pricing['journalist'] || 60000, description: '실제 기자 계정 활용' },
-    { id: 'influencer', name: '블로그 인플루언서', icon: Star, color: 'bg-amber-500', available: true, pricePerTeam: pricing['influencer'] || 80000, description: '인플루언서 마케팅' },
+    { id: 'blog', name: '블로그', icon: BookText, color: 'bg-blue-500', available: !!pricing['blog-experience'], pricePerTeam: pricing['blog-experience'] || 0, description: '2주 이내 블로거 리스트 제공' },
+    { id: 'xiaohongshu', name: '샤오홍슈', icon: Image, color: 'bg-rose-500', available: !!pricing['xiaohongshu'], pricePerTeam: pricing['xiaohongshu'] || 0, description: '중국 소셜 마케팅' },
+    { id: 'reporter', name: '실계정 기자단', icon: Users, color: 'bg-emerald-500', available: !!pricing['journalist'], pricePerTeam: pricing['journalist'] || 0, description: '실제 기자 계정 활용' },
+    { id: 'influencer', name: '블로그 인플루언서', icon: Star, color: 'bg-amber-500', available: !!pricing['influencer'], pricePerTeam: pricing['influencer'] || 0, description: '인플루언서 마케팅' },
   ];
+
+  // 선택된 서비스의 가격이 설정되어 있는지 확인
+  const selectedServicePrice = services.find(s => s.id === selectedService)?.pricePerTeam;
+  const isPriceConfigured = !!(selectedServicePrice && selectedServicePrice > 0);
 
   const handleServiceChange = (serviceId: ServiceType) => {
     router.push(`/dashboard/experience/${mapServiceToUrl(serviceId)}`);
@@ -313,6 +317,8 @@ export default function ExperienceServicePage() {
               totalCost={calculateTotalCost()}
               selectedService={selectedServiceConfig}
               isSubmitting={isSubmitting}
+              isPriceConfigured={isPriceConfigured}
+              loadingPrice={loadingPrice}
             />
           </div>
 

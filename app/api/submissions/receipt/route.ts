@@ -112,8 +112,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify pricing (use default 5000 if not set by admin)
-    const pricePerUnit = await getProductPrice(user.id, 'receipt-review') || 5000;
+    // Verify pricing (가격이 설정되지 않으면 에러 반환)
+    const pricePerUnit = await getProductPrice(user.id, 'receipt-review');
+
+    if (!pricePerUnit) {
+      console.error('Price not configured for receipt-review, client:', user.id);
+      return NextResponse.json(
+        { error: '상품 가격이 설정되지 않았습니다. 관리자에게 문의하세요.' },
+        { status: 400 }
+      );
+    }
 
     const calculatedPoints = pricePerUnit * total_count;
     if (Math.abs(calculatedPoints - total_points) > 1) {

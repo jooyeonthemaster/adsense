@@ -1,0 +1,30 @@
+import { createClient } from '@/utils/supabase/server';
+import { NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth';
+
+// POST: 모든 알림 읽음 처리
+export async function POST() {
+  try {
+    const user = await requireAuth(['client']);
+    const supabase = await createClient();
+
+    // 모든 알림 읽음 처리
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('recipient_role', 'client')
+      .or(`recipient_id.eq.${user.id},recipient_id.is.null`)
+      .eq('read', false);
+
+    if (error) {
+      console.error('전체 알림 읽음 처리 오류:', error);
+      return NextResponse.json({ error: '전체 알림 읽음 처리에 실패했습니다' }, { status: 500 });
+    }
+
+    return NextResponse.json({ message: '모든 알림을 읽음 처리했습니다' });
+  } catch (error) {
+    console.error('서버 오류:', error);
+    return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 });
+  }
+}
+

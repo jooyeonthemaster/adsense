@@ -84,8 +84,8 @@ export default function BlogDistributionPage() {
       name: '영상 배포',
       icon: Video,
       color: 'bg-blue-500',
-      available: true,
-      pricePerPost: pricing['video-distribution'] || 15000,
+      available: !!pricing['video-distribution'],
+      pricePerPost: pricing['video-distribution'] || 0,
       description: '영상 블로그 배포 서비스'
     },
     {
@@ -93,8 +93,8 @@ export default function BlogDistributionPage() {
       name: '자동화 배포',
       icon: Zap,
       color: 'bg-emerald-500',
-      available: true,
-      pricePerPost: pricing['auto-distribution'] || 10000,
+      available: !!pricing['auto-distribution'],
+      pricePerPost: pricing['auto-distribution'] || 0,
       description: '자동화 블로그 배포'
     },
     {
@@ -102,11 +102,15 @@ export default function BlogDistributionPage() {
       name: '리뷰어 배포',
       icon: Users,
       color: 'bg-amber-500',
-      available: true,
-      pricePerPost: pricing['reviewer-distribution'] || 20000,
+      available: !!pricing['reviewer-distribution'],
+      pricePerPost: pricing['reviewer-distribution'] || 0,
       description: '실계정 리뷰어 배포'
     },
   ];
+
+  // 선택된 서비스의 가격이 설정되어 있는지 확인
+  const selectedServicePrice = services.find(s => s.id === selectedType)?.pricePerPost;
+  const isPriceConfigured = !!(selectedServicePrice && selectedServicePrice > 0);
 
   const handleDailyCountChange = (value: number) => {
     const total = value * formData.operationDays;
@@ -295,9 +299,14 @@ export default function BlogDistributionPage() {
           {/* 하단: 접수 신청 버튼 */}
           <Card className="border-gray-200">
             <CardContent className="pt-4">
+              {!isPriceConfigured && !pricingLoading && (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+                  ⚠️ 가격이 설정되지 않았습니다. 관리자에게 문의하세요.
+                </div>
+              )}
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !isPriceConfigured || pricingLoading}
                 className="w-full h-11 text-sm font-semibold bg-sky-500 hover:bg-sky-600 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (

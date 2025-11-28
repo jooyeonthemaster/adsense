@@ -27,9 +27,12 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pricePerHit, setPricePerHit] = useState<number>(10);
+  const [pricePerHit, setPricePerHit] = useState<number | null>(null);
   const [loadingPrice, setLoadingPrice] = useState(true);
   const [loadingBusinessName, setLoadingBusinessName] = useState(false);
+
+  // 가격 설정 여부 확인
+  const isPriceConfigured = pricePerHit !== null && pricePerHit > 0;
 
   // 가격 정보 불러오기
   useEffect(() => {
@@ -102,7 +105,7 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
   // 비용 계산 (백엔드 로직과 동일하게)
   const calculateTotalCost = () => {
     const totalCount = formData.dailyVolume * formData.operationDays;
-    return Math.round((totalCount / 100) * pricePerHit);
+    return Math.round((totalCount / 100) * (pricePerHit || 0));
   };
 
   const totalCost = calculateTotalCost();
@@ -349,18 +352,7 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
               <CardDescription className="text-gray-600 text-sm">예상 비용을 확인하고 접수하세요</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 pt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* 보유 포인트 */}
-                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
-                  <span className="text-xs font-medium text-gray-700">보유 포인트</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xl font-bold text-gray-900">
-                      {initialPoints.toLocaleString()}
-                    </span>
-                    <span className="text-xs text-gray-600">P</span>
-                  </div>
-                </div>
-
+              <div className="grid grid-cols-1 gap-3">
                 {/* 예상 비용 */}
                 <div className="p-3 rounded-lg bg-sky-500 shadow-md">
                   <div className="space-y-1">
@@ -384,9 +376,14 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
               </div>
 
               {/* 접수 신청 버튼 */}
+              {!isPriceConfigured && !loadingPrice && (
+                <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+                  ⚠️ 가격이 설정되지 않았습니다. 관리자에게 문의하세요.
+                </div>
+              )}
               <Button
                 type="submit"
-                disabled={isSubmitting || !formData.twopleSelected}
+                disabled={isSubmitting || !formData.twopleSelected || !isPriceConfigured || loadingPrice}
                 className="w-full h-11 text-sm font-semibold bg-sky-500 hover:bg-sky-600 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (

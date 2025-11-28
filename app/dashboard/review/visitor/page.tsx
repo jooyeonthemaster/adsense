@@ -33,9 +33,12 @@ export default function VisitorReviewPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pricePerReview, setPricePerReview] = useState<number>(5000);
+  const [pricePerReview, setPricePerReview] = useState<number | null>(null);
   const [loadingPrice, setLoadingPrice] = useState(true);
   const [loadingBusinessName, setLoadingBusinessName] = useState(false);
+
+  // 가격 설정 여부 확인
+  const isPriceConfigured = pricePerReview !== null && pricePerReview > 0;
 
   // 가격 정보 불러오기
   useEffect(() => {
@@ -169,7 +172,7 @@ export default function VisitorReviewPage() {
   };
 
   const calculateTotalCost = () => {
-    return formData.totalCount * pricePerReview;
+    return formData.totalCount * (pricePerReview || 0);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -582,9 +585,14 @@ export default function VisitorReviewPage() {
               </div>
 
               {/* 접수 신청 버튼 */}
+              {!isPriceConfigured && !loadingPrice && (
+                <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+                  ⚠️ 가격이 설정되지 않았습니다. 관리자에게 문의하세요.
+                </div>
+              )}
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !isPriceConfigured || loadingPrice}
                 className="w-full h-11 text-sm font-semibold bg-sky-500 hover:bg-sky-600 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (

@@ -1,7 +1,9 @@
+export type AuthProvider = 'local' | 'kakao';
+
 export type Client = {
   id: string;
   username: string;
-  password: string;
+  password: string | null; // nullable (카카오 사용자)
   company_name: string;
   contact_person: string | null;
   phone: string | null;
@@ -10,6 +12,8 @@ export type Client = {
   is_active: boolean;
   auto_distribution_approved: boolean;
   pending_charge_requests_count: number;
+  kakao_id: string | null; // 카카오 OAuth 사용자 ID
+  auth_provider: AuthProvider; // 인증 제공자
   created_at: string;
   updated_at: string;
 };

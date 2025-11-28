@@ -47,8 +47,11 @@ export default function CafeMarketingPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [basePricePerPost, setBasePricePerPost] = useState<number>(8000);
+  const [basePricePerPost, setBasePricePerPost] = useState<number | null>(null);
   const [loadingPrice, setLoadingPrice] = useState(true);
+
+  // 가격이 설정되어 있는지 확인
+  const isPriceConfigured = basePricePerPost !== null && basePricePerPost > 0;
 
   // 가격 정보 불러오기
   useEffect(() => {
@@ -98,7 +101,7 @@ export default function CafeMarketingPage() {
   };
 
   const calculateTotalCost = () => {
-    return calculateTotalCount() * basePricePerPost;
+    return calculateTotalCount() * (basePricePerPost || 0);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -442,7 +445,7 @@ export default function CafeMarketingPage() {
                       <span className="text-sm text-white/90">P</span>
                     </div>
                     <div className="text-xs text-white/80">
-                      건당 {basePricePerPost.toLocaleString()}P × {calculateTotalCount()}건
+                      건당 {(basePricePerPost || 0).toLocaleString()}P × {calculateTotalCount()}건
                     </div>
                   </div>
                 </div>
@@ -464,9 +467,14 @@ export default function CafeMarketingPage() {
               </div>
 
               {/* 접수 신청 버튼 */}
+              {!isPriceConfigured && !loadingPrice && (
+                <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+                  ⚠️ 가격이 설정되지 않았습니다. 관리자에게 문의하세요.
+                </div>
+              )}
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !isPriceConfigured || loadingPrice}
                 className="w-full h-11 text-sm font-semibold bg-sky-500 hover:bg-sky-600 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
