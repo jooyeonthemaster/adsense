@@ -20,7 +20,7 @@ type IconName = keyof typeof iconMap;
 
 interface RecentSubmission {
   id: string;
-  type: 'place' | 'receipt' | 'kakaomap' | 'blog' | 'dynamic';
+  type: 'place' | 'receipt' | 'kakaomap' | 'blog' | 'cafe' | 'experience' | 'dynamic';
   company_name: string;
   total_points: number;
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
@@ -86,12 +86,14 @@ const TYPE_LABELS: Record<string, string> = {
   receipt: '영수증 리뷰',
   kakaomap: '카카오맵 리뷰',
   blog: '블로그 배포',
+  cafe: '카페 침투',
+  experience: '체험단',
   dynamic: '동적 상품',
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: '대기중',
-  in_progress: '진행중',
+  pending: '확인중',
+  in_progress: '구동중',
   completed: '완료',
   cancelled: '취소',
 };
@@ -107,7 +109,7 @@ const STATUS_VARIANTS: Record<
 };
 
 const CHARGE_STATUS_LABELS: Record<string, string> = {
-  pending: '대기중',
+  pending: '확인중',
   approved: '승인됨',
   rejected: '거부됨',
 };

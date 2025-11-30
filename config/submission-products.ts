@@ -173,6 +173,7 @@ export const statusConfig: Record<
   in_progress: { label: '구동중', variant: 'default' },
   completed: { label: '완료', variant: 'secondary' },
   cancelled: { label: '중단됨', variant: 'destructive' },
+  as_in_progress: { label: 'AS 진행 중', variant: 'default' },
   script_writing: { label: '원고작성중', variant: 'outline' },
   script_completed: { label: '원고작업완료', variant: 'default' },
 };

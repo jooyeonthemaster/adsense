@@ -39,10 +39,10 @@ interface Progress {
 }
 
 const statusLabels: Record<string, string> = {
-  pending: '대기중',
-  in_progress: '진행중',
+  pending: '확인중',
+  in_progress: '구동중',
   completed: '완료',
-  cancelled: '중단',
+  cancelled: '중단됨',
 };
 
 const statusColors: Record<string, string> = {

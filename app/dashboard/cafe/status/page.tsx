@@ -39,6 +39,7 @@ import {
   ExternalLink,
   FileSpreadsheet,
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface CafeSubmission {
   id: string;
@@ -54,7 +55,7 @@ interface CafeSubmission {
   script_status: 'pending' | 'writing' | 'completed';
   script_url?: string | null;
   total_points: number;
-  status: 'pending' | 'approved' | 'script_writing' | 'script_completed' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'approved' | 'script_writing' | 'script_completed' | 'in_progress' | 'completed' | 'cancelled' | 'as_in_progress';
   notes?: string | null;
   created_at: string;
   updated_at: string;
@@ -62,14 +63,15 @@ interface CafeSubmission {
   progress_percentage?: number;
 }
 
-const statusConfig = {
-  pending: { label: '확인중', variant: 'outline' as const },
-  approved: { label: '접수완료', variant: 'default' as const },
-  script_writing: { label: '원고작성중', variant: 'default' as const },
-  script_completed: { label: '원고작업완료', variant: 'default' as const },
-  in_progress: { label: '구동중', variant: 'default' as const },
-  completed: { label: '완료', variant: 'secondary' as const },
-  cancelled: { label: '중단됨', variant: 'destructive' as const },
+const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+  pending: { label: '확인중', variant: 'outline' },
+  approved: { label: '접수완료', variant: 'default' },
+  script_writing: { label: '원고작성중', variant: 'default' },
+  script_completed: { label: '원고작업완료', variant: 'default' },
+  in_progress: { label: '구동중', variant: 'default' },
+  completed: { label: '완료', variant: 'secondary' },
+  cancelled: { label: '중단됨', variant: 'destructive' },
+  as_in_progress: { label: 'AS 진행 중', variant: 'default' },
 };
 
 const scriptStatusConfig = {
@@ -79,6 +81,7 @@ const scriptStatusConfig = {
 };
 
 export default function CafeMarketingStatusPage() {
+  const { toast } = useToast();
   const [submissions, setSubmissions] = useState<CafeSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,15 +118,56 @@ export default function CafeMarketingStatusPage() {
     setCancelDialogOpen(true);
   };
 
+  const [cancelLoading, setCancelLoading] = useState(false);
+
   const handleConfirmCancel = async () => {
     if (!agreedToCancel) {
-      alert('동의하지 않으면 중단 요청을 할 수 없습니다.');
+      toast({
+        variant: 'destructive',
+        title: '동의 필요',
+        description: '동의하지 않으면 중단 요청을 할 수 없습니다.',
+      });
       return;
     }
-    alert('중단 신청이 완료되었습니다.');
-    setCancelDialogOpen(false);
-    setSelectedSubmission(null);
-    fetchSubmissions();
+
+    if (!selectedSubmission) return;
+
+    setCancelLoading(true);
+    try {
+      const response = await fetch(`/api/submissions/cafe/${selectedSubmission.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel' }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '중단 처리 중 오류가 발생했습니다.');
+      }
+
+      const refundMessage = data.refund_amount > 0
+        ? `환불 금액: ${data.refund_amount.toLocaleString()}P (새 잔액: ${data.new_balance.toLocaleString()}P)`
+        : '';
+
+      toast({
+        title: '✅ 중단 신청 완료',
+        description: refundMessage || '이미 예약 구동된 수량 제외 환불이 진행됩니다.',
+      });
+      setCancelDialogOpen(false);
+      setSelectedSubmission(null);
+      setAgreedToCancel(false);
+      fetchSubmissions();
+    } catch (error) {
+      console.error('Cancel error:', error);
+      toast({
+        variant: 'destructive',
+        title: '오류 발생',
+        description: error instanceof Error ? error.message : '중단 처리 중 오류가 발생했습니다.',
+      });
+    } finally {
+      setCancelLoading(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -215,6 +259,8 @@ export default function CafeMarketingStatusPage() {
               <SelectItem value="pending">확인중</SelectItem>
               <SelectItem value="in_progress">구동중</SelectItem>
               <SelectItem value="completed">완료</SelectItem>
+              <SelectItem value="cancelled">중단됨</SelectItem>
+              <SelectItem value="as_in_progress">AS 진행 중</SelectItem>
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'date' | 'cost')}>
@@ -394,8 +440,8 @@ export default function CafeMarketingStatusPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setCancelDialogOpen(false); setAgreedToCancel(false); }}>동의하지 않습니다</Button>
-            <Button onClick={handleConfirmCancel} disabled={!agreedToCancel} className="bg-red-600 hover:bg-red-700 text-white">중단 신청</Button>
+            <Button variant="outline" onClick={() => { setCancelDialogOpen(false); setAgreedToCancel(false); }} disabled={cancelLoading}>동의하지 않습니다</Button>
+            <Button onClick={handleConfirmCancel} disabled={!agreedToCancel || cancelLoading} className="bg-red-600 hover:bg-red-700 text-white">{cancelLoading ? '처리 중...' : '중단 신청'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

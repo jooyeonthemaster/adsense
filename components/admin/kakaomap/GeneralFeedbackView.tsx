@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircleMore, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { MessageCircleMore, Loader2, Send } from 'lucide-react';
 
 interface Feedback {
   id: string;
@@ -20,6 +22,8 @@ interface GeneralFeedbackViewProps {
 export function GeneralFeedbackView({ submissionId }: GeneralFeedbackViewProps) {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
+  const [newMessage, setNewMessage] = useState('');
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     fetchFeedbacks();
@@ -36,6 +40,31 @@ export function GeneralFeedbackView({ submissionId }: GeneralFeedbackViewProps) 
       console.error('Error fetching general feedbacks:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || sending) return;
+
+    setSending(true);
+    try {
+      const response = await fetch(`/api/submissions/kakaomap/${submissionId}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: newMessage.trim() }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+
+      setNewMessage('');
+      await fetchFeedbacks(); // 목록 새로고침
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('메시지 전송에 실패했습니다.');
+    } finally {
+      setSending(false);
     }
   };
 
@@ -74,13 +103,14 @@ export function GeneralFeedbackView({ submissionId }: GeneralFeedbackViewProps) 
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {/* 메시지 목록 */}
         {feedbacks.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-8 text-muted-foreground mb-4">
             <MessageCircleMore className="h-12 w-12 mx-auto mb-2 opacity-30" />
             <p className="text-sm">아직 공통 피드백이 없습니다</p>
           </div>
         ) : (
-          <div className="space-y-3 max-h-[400px] overflow-y-auto">
+          <div className="space-y-3 max-h-[400px] overflow-y-auto mb-4">
             {feedbacks.map((feedback) => (
               <div
                 key={feedback.id}
@@ -113,6 +143,40 @@ export function GeneralFeedbackView({ submissionId }: GeneralFeedbackViewProps) 
             ))}
           </div>
         )}
+
+        {/* 관리자 답장 입력 */}
+        <div className="space-y-2 pt-4 border-t">
+          <Textarea
+            placeholder="클라이언트에게 답장을 입력하세요..."
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            className="min-h-[80px]"
+            disabled={sending}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
+          />
+          <Button
+            onClick={handleSendMessage}
+            disabled={!newMessage.trim() || sending}
+            className="w-full"
+          >
+            {sending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                전송 중...
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4 mr-2" />
+                답장 보내기
+              </>
+            )}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

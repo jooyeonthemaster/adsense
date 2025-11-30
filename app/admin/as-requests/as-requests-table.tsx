@@ -46,10 +46,12 @@ interface AsRequest {
   admin_response: string | null;
   created_at: string;
   clients?: { company_name: string };
+  business_name?: string | null;
+  place_name?: string | null;
 }
 
 const STATUS_LABELS: Record<AsRequestStatus, string> = {
-  pending: '대기중',
+  pending: '확인중',
   approved: '승인',
   rejected: '거절',
 };
@@ -68,6 +70,8 @@ const SUBMISSION_TYPE_LABELS: Record<string, string> = {
   receipt: '영수증 리뷰',
   kakaomap: '카카오맵 리뷰',
   blog: '블로그 배포',
+  cafe: '카페 마케팅',
+  reward: '리워드',
 };
 
 export function AsRequestsTable() {
@@ -206,6 +210,11 @@ export function AsRequestsTable() {
                         <p className="font-semibold text-sm truncate">
                           {request.clients?.company_name || '-'}
                         </p>
+                        {(request.business_name || request.place_name) && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {request.business_name || request.place_name}
+                          </p>
+                        )}
                         <p className="text-xs text-muted-foreground font-mono">
                           {formatDate(request.created_at)}
                         </p>
@@ -266,6 +275,7 @@ export function AsRequestsTable() {
                     <TableRow>
                       <TableHead className="text-xs lg:text-sm whitespace-nowrap">요청일시</TableHead>
                       <TableHead className="text-xs lg:text-sm whitespace-nowrap">거래처</TableHead>
+                      <TableHead className="text-xs lg:text-sm whitespace-nowrap">업체명(플레이스명)</TableHead>
                       <TableHead className="text-xs lg:text-sm whitespace-nowrap">상품유형</TableHead>
                       <TableHead className="text-xs lg:text-sm whitespace-nowrap">예정/실제</TableHead>
                       <TableHead className="text-xs lg:text-sm whitespace-nowrap">미달률</TableHead>
@@ -281,6 +291,15 @@ export function AsRequestsTable() {
                         </TableCell>
                         <TableCell className="font-medium text-xs lg:text-sm whitespace-nowrap">
                           {request.clients?.company_name || '-'}
+                        </TableCell>
+                        <TableCell className="text-xs lg:text-sm whitespace-nowrap">
+                          {request.business_name || request.place_name ? (
+                            <span>
+                              {request.business_name || request.place_name}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           <Badge variant="outline" className="text-xs">
@@ -431,6 +450,16 @@ export function AsRequestsTable() {
                   <p className="font-mono text-sm">{formatDate(detailRequest.created_at)}</p>
                 </div>
               </div>
+
+              {/* 업체명(플레이스명) 추가 */}
+              {(detailRequest.business_name || detailRequest.place_name) && (
+                <div className="p-3 bg-muted border rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">업체명(플레이스명)</p>
+                  <p className="font-medium">
+                    {detailRequest.business_name || detailRequest.place_name}
+                  </p>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">

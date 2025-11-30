@@ -30,16 +30,18 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { 
-  Megaphone, 
-  Plus, 
-  Edit, 
-  Trash2, 
+import {
+  Megaphone,
+  Plus,
+  Edit,
+  Trash2,
   AlertCircle,
   CheckCircle2,
   Users,
   User,
-  Shield
+  Shield,
+  Link as LinkIcon,
+  ExternalLink,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -56,6 +58,8 @@ interface Announcement {
   updated_at: string;
   expires_at: string | null;
   created_by?: string | null;
+  link_url?: string | null;
+  link_text?: string | null;
 }
 
 export default function AnnouncementsPage() {
@@ -71,6 +75,8 @@ export default function AnnouncementsPage() {
     priority: 'normal' as 'low' | 'normal' | 'high' | 'urgent',
     target_audience: 'client' as 'all' | 'client' | 'admin',
     expires_at: '',
+    link_url: '',
+    link_text: '',
   });
 
   // 공지사항 목록 불러오기
@@ -209,6 +215,8 @@ export default function AnnouncementsPage() {
       expires_at: announcement.expires_at
         ? format(new Date(announcement.expires_at), "yyyy-MM-dd'T'HH:mm")
         : '',
+      link_url: announcement.link_url || '',
+      link_text: announcement.link_text || '',
     });
     setDialogOpen(true);
   };
@@ -222,6 +230,8 @@ export default function AnnouncementsPage() {
       priority: 'normal',
       target_audience: 'client',
       expires_at: '',
+      link_url: '',
+      link_text: '',
     });
   };
 
@@ -361,7 +371,12 @@ export default function AnnouncementsPage() {
                 <TableRow key={announcement.id}>
                   <TableCell className="font-medium max-w-md">
                     <div>
-                      <p className="truncate">{announcement.title}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="truncate">{announcement.title}</p>
+                        {announcement.link_url && (
+                          <ExternalLink className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
+                        )}
+                      </div>
                       <p className="text-sm text-muted-foreground truncate">
                         {announcement.content.substring(0, 50)}
                         {announcement.content.length > 50 && '...'}
@@ -512,6 +527,38 @@ export default function AnnouncementsPage() {
               />
               <p className="text-sm text-muted-foreground mt-1">
                 만료일을 설정하지 않으면 영구적으로 표시됩니다
+              </p>
+            </div>
+
+            {/* 링크 설정 */}
+            <div className="col-span-2 border-t pt-4 mt-2">
+              <div className="flex items-center gap-2 mb-3">
+                <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                <Label className="text-base font-medium">링크 첨부 (선택)</Label>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="link_url">링크 URL</Label>
+                  <Input
+                    id="link_url"
+                    type="url"
+                    value={formData.link_url}
+                    onChange={(e) => setFormData({ ...formData, link_url: e.target.value })}
+                    placeholder="https://example.com 또는 /dashboard/..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="link_text">링크 버튼 텍스트</Label>
+                  <Input
+                    id="link_text"
+                    value={formData.link_text}
+                    onChange={(e) => setFormData({ ...formData, link_text: e.target.value })}
+                    placeholder="자세히 보기"
+                  />
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                외부 링크(https://)나 내부 경로(/dashboard/...)를 입력할 수 있습니다
               </p>
             </div>
           </div>

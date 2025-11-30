@@ -57,6 +57,7 @@ const statusConfig = {
   in_progress: { label: '구동중', color: 'bg-blue-100 text-blue-800' },
   completed: { label: '완료', color: 'bg-green-100 text-green-800' },
   cancelled: { label: '중단', color: 'bg-red-100 text-red-800' },
+  as_in_progress: { label: 'AS 진행 중', color: 'bg-amber-100 text-amber-800' },
 };
 
 export default function AdminBlogDistributionPage() {
@@ -463,7 +464,7 @@ export default function AdminBlogDistributionPage() {
                             <div className="flex-1 max-w-[100px] bg-gray-200 rounded-full h-2">
                               <div
                                 className="bg-blue-600 h-2 rounded-full transition-all"
-                                style={{ width: `${sub.progress_percentage || 0}%` }}
+                                style={{ width: `${Math.min(sub.progress_percentage || 0, 100)}%` }}
                               />
                             </div>
                             <span className="text-sm font-medium text-blue-600 min-w-[40px]">
@@ -560,7 +561,7 @@ export default function AdminBlogDistributionPage() {
                           <div className="flex-1 bg-gray-200 rounded-full h-1.5">
                             <div
                               className="bg-blue-600 h-1.5 rounded-full transition-all"
-                              style={{ width: `${sub.progress_percentage || 0}%` }}
+                              style={{ width: `${Math.min(sub.progress_percentage || 0, 100)}%` }}
                             />
                           </div>
                           <span className="text-xs font-medium text-blue-600">

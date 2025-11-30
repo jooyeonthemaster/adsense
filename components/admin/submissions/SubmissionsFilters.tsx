@@ -85,8 +85,8 @@ export function SubmissionsFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">전체</SelectItem>
-                <SelectItem value="pending">대기중</SelectItem>
-                <SelectItem value="in_progress">진행중</SelectItem>
+                <SelectItem value="pending">확인중</SelectItem>
+                <SelectItem value="in_progress">구동중</SelectItem>
                 <SelectItem value="completed">완료</SelectItem>
                 <SelectItem value="cancelled">취소</SelectItem>
               </SelectContent>

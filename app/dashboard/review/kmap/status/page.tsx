@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CheckCircle, Clock, ImageIcon, FileText, AlertCircle, Send } from 'lucide-react';
+import { CheckCircle, Clock, ImageIcon, FileText, AlertCircle, Send, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { KakaomapSubmission, Message } from '@/types/review/kmap-status';
 import { StatusPageHeader } from '@/components/dashboard/review/kmap/StatusPageHeader';
@@ -33,6 +33,8 @@ export default function KakaomapReviewStatusPage() {
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [currentMessages, setCurrentMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
+
+  const [asConditionDialogOpen, setAsConditionDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchSubmissions();
@@ -169,11 +171,22 @@ export default function KakaomapReviewStatusPage() {
     }
   };
 
-  const handleOpenMessages = (submission: KakaomapSubmission) => {
-    setCurrentMessages(submission.messages || []);
+  const handleOpenMessages = async (submission: KakaomapSubmission) => {
     setSelectedSubmission(submission);
     setNewMessage('');
+    setCurrentMessages([]);
     setMessageDialogOpen(true);
+
+    // API에서 메시지 fetch
+    try {
+      const response = await fetch(`/api/submissions/kakaomap/${submission.id}/messages`);
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentMessages(data.messages || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch messages:', error);
+    }
   };
 
   const handleSendMessage = async () => {
@@ -196,7 +209,8 @@ export default function KakaomapReviewStatusPage() {
 
       const message: Message = {
         id: data.data?.id || Date.now().toString(),
-        sender: 'client',
+        sender_type: 'client',
+        sender_id: data.data?.sender_id || '',
         sender_name: data.data?.sender_name || '고객',
         content: newMessage,
         created_at: data.data?.created_at || new Date().toISOString(),
@@ -238,6 +252,7 @@ export default function KakaomapReviewStatusPage() {
           onViewContent={handleViewContent}
           onOpenMessages={handleOpenMessages}
           onCancelClick={handleCancelClick}
+          onAsConditionClick={() => setAsConditionDialogOpen(true)}
         />
 
         {/* 모바일 카드 */}
@@ -254,6 +269,7 @@ export default function KakaomapReviewStatusPage() {
                 onViewContent={handleViewContent}
                 onOpenMessages={handleOpenMessages}
                 onCancelClick={handleCancelClick}
+                onAsConditionClick={() => setAsConditionDialogOpen(true)}
               />
             ))
           )}
@@ -261,6 +277,38 @@ export default function KakaomapReviewStatusPage() {
       </div>
 
       {/* Dialogs */}
+      {/* AS 조건 안내 모달 */}
+      <Dialog open={asConditionDialogOpen} onOpenChange={setAsConditionDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="h-5 w-5" />
+              AS 신청 조건 안내
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex-shrink-0 w-6 h-6 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-sm font-semibold">1</div>
+                <p className="text-sm text-gray-700">작업이 <span className="font-semibold text-gray-900">완료된 상태</span>여야 합니다.</p>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex-shrink-0 w-6 h-6 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-sm font-semibold">2</div>
+                <p className="text-sm text-gray-700">예정 수량 대비 실제 달성 수량이 <span className="font-semibold text-gray-900">20% 이상 부족</span>해야 합니다.</p>
+              </div>
+            </div>
+            <div className="p-3 bg-red-50 border border-red-100 rounded-lg">
+              <p className="text-sm text-red-600 font-medium">현재 작업이 아직 완료되지 않았습니다.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setAsConditionDialogOpen(false)} className="w-full sm:w-auto">
+              확인
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -395,11 +443,11 @@ export default function KakaomapReviewStatusPage() {
               </div>
             ) : (
               currentMessages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.sender === 'client' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[70%] rounded-lg p-3 ${msg.sender === 'client' ? 'bg-amber-500 text-white' : 'bg-white border shadow-sm'}`}>
+                <div key={msg.id} className={`flex ${msg.sender_type === 'client' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[70%] rounded-lg p-3 ${msg.sender_type === 'client' ? 'bg-amber-500 text-white' : 'bg-white border shadow-sm'}`}>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-semibold">{msg.sender === 'client' ? '나' : msg.sender_name}</span>
-                      <span className={`text-xs ${msg.sender === 'client' ? 'text-amber-100' : 'text-gray-400'}`}>
+                      <span className="text-xs font-semibold">{msg.sender_type === 'client' ? '나' : msg.sender_name}</span>
+                      <span className={`text-xs ${msg.sender_type === 'client' ? 'text-amber-100' : 'text-gray-400'}`}>
                         {formatDate(msg.created_at)}
                       </span>
                     </div>

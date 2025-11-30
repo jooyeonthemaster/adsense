@@ -11,6 +11,7 @@ export const KAKAOMAP_STATUS_LABELS = {
   in_progress: { label: '구동중', variant: 'default' as const },
   completed: { label: '완료', variant: 'secondary' as const },
   cancelled: { label: '중단됨', variant: 'destructive' as const },
+  as_in_progress: { label: 'AS 진행 중', variant: 'default' as const },
 } as const;
 
 export type KakaomapStatus = keyof typeof KAKAOMAP_STATUS_LABELS;

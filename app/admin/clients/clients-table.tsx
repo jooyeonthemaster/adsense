@@ -21,12 +21,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Edit, Trash2, DollarSign, Settings, Key } from 'lucide-react';
+import { Edit, Trash2, DollarSign, Settings, Key, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { EditClientDialog } from './edit-client-dialog';
 import { DeleteClientDialog } from './delete-client-dialog';
 import { PointManagementDialog } from './point-management-dialog';
 import { ResetPasswordDialog } from './reset-password-dialog';
+import { ClientDetailDialog } from './client-detail-dialog';
 
 interface ClientsTableProps {
   clients: Client[];
@@ -38,6 +39,7 @@ export function ClientsTable({ clients }: ClientsTableProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pointDialogOpen, setPointDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [filteredClients, setFilteredClients] = useState<Client[]>(clients);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -181,6 +183,18 @@ export function ClientsTable({ clients }: ClientsTableProps) {
                     )}
                   </div>
                   <div className="flex gap-0.5">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      title="상세보기"
+                      onClick={() => {
+                        setSelectedClient(client);
+                        setDetailDialogOpen(true);
+                      }}
+                    >
+                      <Eye className="h-3 w-3" />
+                    </Button>
                     <Link href={`/admin/clients/${client.id}/pricing`}>
                       <Button variant="ghost" size="icon" className="h-7 w-7" title="가격 설정">
                         <Settings className="h-3 w-3" />
@@ -286,6 +300,18 @@ export function ClientsTable({ clients }: ClientsTableProps) {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          title="상세보기"
+                          onClick={() => {
+                            setSelectedClient(client);
+                            setDetailDialogOpen(true);
+                          }}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
                         <Link href={`/admin/clients/${client.id}/pricing`}>
                           <Button variant="ghost" size="icon" className="h-8 w-8" title="가격 설정">
                             <Settings className="h-3.5 w-3.5" />
@@ -370,6 +396,11 @@ export function ClientsTable({ clients }: ClientsTableProps) {
             client={selectedClient}
             open={passwordDialogOpen}
             onOpenChange={setPasswordDialogOpen}
+          />
+          <ClientDetailDialog
+            client={selectedClient}
+            open={detailDialogOpen}
+            onOpenChange={setDetailDialogOpen}
           />
         </>
       )}

@@ -17,9 +17,10 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Coffee, Sparkles, Camera, CheckCircle2, Users, Info, AlertCircle, BookOpen, ChevronDown } from 'lucide-react';
+import { Coffee, Sparkles, Camera, CheckCircle2, Users, Info, AlertCircle, BookOpen, ChevronDown, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ProductGuideSection } from '@/components/dashboard/ProductGuideSection';
+import { extractNaverPlaceMID, fetchBusinessInfoByMID } from '@/utils/naver-place';
 
 // 지역별 카페 데이터
 const cafesByRegion: Record<string, string[]> = {
@@ -39,6 +40,7 @@ export default function CafeMarketingPage() {
   const [formData, setFormData] = useState({
     businessName: '',
     placeUrl: '',
+    placeMid: '',
     contentType: 'review' as 'review' | 'info',
     region: '',
     cafeDetails: [] as Array<{ name: string; count: number }>,
@@ -49,6 +51,46 @@ export default function CafeMarketingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [basePricePerPost, setBasePricePerPost] = useState<number | null>(null);
   const [loadingPrice, setLoadingPrice] = useState(true);
+  const [isExtractingMid, setIsExtractingMid] = useState(false);
+
+  // 플레이스 링크에서 MID 자동 추출 및 업체명 가져오기
+  const handlePlaceUrlChange = async (url: string) => {
+    setFormData(prev => ({ ...prev, placeUrl: url }));
+
+    if (!url.trim()) {
+      setFormData(prev => ({ ...prev, placeMid: '', businessName: '' }));
+      return;
+    }
+
+    // MID 추출
+    const mid = extractNaverPlaceMID(url);
+    if (!mid) {
+      setFormData(prev => ({ ...prev, placeMid: '' }));
+      return;
+    }
+
+    setFormData(prev => ({ ...prev, placeMid: mid }));
+    setIsExtractingMid(true);
+
+    try {
+      // 업체명 자동 가져오기
+      const businessInfo = await fetchBusinessInfoByMID(mid);
+      if (businessInfo) {
+        setFormData(prev => ({
+          ...prev,
+          businessName: businessInfo.businessName,
+        }));
+        toast({
+          title: '✅ 업체 정보 확인',
+          description: `${businessInfo.businessName} (MID: ${mid})`,
+        });
+      }
+    } catch (error) {
+      console.error('업체 정보 가져오기 실패:', error);
+    } finally {
+      setIsExtractingMid(false);
+    }
+  };
 
   // 가격이 설정되어 있는지 확인
   const isPriceConfigured = basePricePerPost !== null && basePricePerPost > 0;
@@ -158,6 +200,7 @@ export default function CafeMarketingPage() {
         body: JSON.stringify({
           company_name: formData.businessName,
           place_url: formData.placeUrl,
+          place_mid: formData.placeMid || null,
           content_type: formData.contentType,
           region: formData.region,
           cafe_details: formData.cafeDetails,
@@ -264,14 +307,27 @@ export default function CafeMarketingPage() {
                 <Label htmlFor="placeUrl" className="text-xs font-medium text-gray-700">
                   플레이스 링크 <span className="text-rose-500">*</span>
                 </Label>
-                <Input
-                  id="placeUrl"
-                  type="url"
-                  value={formData.placeUrl}
-                  onChange={(e) => setFormData(prev => ({ ...prev, placeUrl: e.target.value }))}
-                  placeholder="https://m.place.naver.com/place/..."
-                  className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
-                />
+                <div className="relative">
+                  <Input
+                    id="placeUrl"
+                    type="url"
+                    value={formData.placeUrl}
+                    onChange={(e) => handlePlaceUrlChange(e.target.value)}
+                    placeholder="https://m.place.naver.com/place/..."
+                    className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm pr-10"
+                  />
+                  {isExtractingMid && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="h-4 w-4 animate-spin text-sky-500" />
+                    </div>
+                  )}
+                </div>
+                {formData.placeMid && (
+                  <p className="text-xs text-emerald-600 flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    MID: {formData.placeMid} (자동 추출됨)
+                  </p>
+                )}
               </div>
 
               {/* 콘텐츠 종류 */}

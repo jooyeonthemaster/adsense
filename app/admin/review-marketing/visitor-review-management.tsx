@@ -67,6 +67,7 @@ const statusConfig: Record<string, { label: string; variant: 'outline' | 'defaul
   in_progress: { label: '구동중', variant: 'default' },
   completed: { label: '완료', variant: 'secondary' },
   cancelled: { label: '중단됨', variant: 'destructive' },
+  as_in_progress: { label: 'AS 진행 중', variant: 'default' },
 };
 
 export function VisitorReviewManagement() {
@@ -113,6 +114,11 @@ export function VisitorReviewManagement() {
     if (sub.total_count === 0) return 0;
     const actualCount = sub.actual_count_total || 0;
     return Math.round((actualCount / sub.total_count) * 100);
+  };
+
+  // Progress bar width (capped at 100%)
+  const getProgressBarWidth = (sub: ReceiptReviewSubmission) => {
+    return Math.min(getProgressPercentage(sub), 100);
   };
 
   // Calculate deadline
@@ -399,7 +405,7 @@ export function VisitorReviewManagement() {
                                   <div className="w-16 bg-muted rounded-full h-2">
                                     <div
                                       className="bg-blue-600 rounded-full h-2 transition-all"
-                                      style={{ width: `${getProgressPercentage(sub)}%` }}
+                                      style={{ width: `${getProgressBarWidth(sub)}%` }}
                                     />
                                   </div>
                                   <span className="text-xs font-medium text-blue-600">
@@ -531,7 +537,7 @@ export function VisitorReviewManagement() {
                             <div className="w-16 bg-muted rounded-full h-2">
                               <div
                                 className="bg-blue-600 rounded-full h-2 transition-all"
-                                style={{ width: `${getProgressPercentage(sub)}%` }}
+                                style={{ width: `${getProgressBarWidth(sub)}%` }}
                               />
                             </div>
                             <span className="text-xs font-medium text-blue-600">

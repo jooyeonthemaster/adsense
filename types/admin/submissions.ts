@@ -54,8 +54,8 @@ export interface UnifiedSubmission {
 }
 
 export const STATUS_LABELS: Record<string, string> = {
-  pending: '대기중',
-  in_progress: '진행중',
+  pending: '확인중',
+  in_progress: '구동중',
   completed: '완료',
   cancelled: '취소',
   waiting_content: '콘텐츠 대기',
@@ -64,6 +64,7 @@ export const STATUS_LABELS: Record<string, string> = {
   approved: '승인됨',
   script_writing: '원고 작성중',
   script_completed: '원고 완료',
+  as_in_progress: 'AS 진행 중',
 };
 
 export const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -77,6 +78,7 @@ export const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'destruct
   approved: 'default',
   script_writing: 'default',
   script_completed: 'secondary',
+  as_in_progress: 'default',
 };
 
 export const TYPE_LABELS: Record<string, string> = {
@@ -87,6 +89,8 @@ export const TYPE_LABELS: Record<string, string> = {
   cafe: '카페 침투',
   experience: '체험단 마케팅',
 };
+
+
 
 
 

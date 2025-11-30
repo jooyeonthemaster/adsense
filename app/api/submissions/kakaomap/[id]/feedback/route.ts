@@ -48,9 +48,44 @@ export async function GET(
       );
     }
 
+    // 1:1 문의 메시지도 함께 조회
+    const { data: messages, error: messagesError } = await serviceSupabase
+      .from('kakaomap_messages')
+      .select('*')
+      .eq('submission_id', submissionId)
+      .order('created_at', { ascending: true });
+
+    if (messagesError) {
+      console.error('Error fetching messages:', messagesError);
+    }
+
+    // 메시지를 피드백 형식으로 변환하여 합치기
+    const messagesAsFeedback = (messages || []).map((msg: any) => ({
+      id: msg.id,
+      submission_id: msg.submission_id,
+      content_item_id: null,
+      sender_type: msg.sender_type,
+      sender_id: msg.sender_id,
+      sender_name: msg.sender_name,
+      message: msg.content,
+      created_at: msg.created_at,
+      source: 'message', // 출처 구분용
+    }));
+
+    // 기존 피드백에 source 추가
+    const feedbacksWithSource = (feedbacks || []).map((fb: any) => ({
+      ...fb,
+      source: 'feedback',
+    }));
+
+    // 두 배열 합치고 시간순 정렬
+    const combined = [...feedbacksWithSource, ...messagesAsFeedback].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+
     return NextResponse.json({
       success: true,
-      feedbacks: feedbacks || [],
+      feedbacks: combined,
     });
   } catch (error) {
     console.error('Error in GET general feedback:', error);
@@ -81,16 +116,16 @@ export async function POST(
 
     const supabase = await createClient();
 
+    // Get submission info for notification
+    const { data: submission } = await supabase
+      .from('kakaomap_review_submissions')
+      .select('id, client_id, company_name')
+      .eq('id', submissionId)
+      .single();
+
     // Verify access
     if (user.type === 'client') {
-      const { data: submission } = await supabase
-        .from('kakaomap_review_submissions')
-        .select('id')
-        .eq('id', submissionId)
-        .eq('client_id', user.id)
-        .single();
-
-      if (!submission) {
+      if (!submission || submission.client_id !== user.id) {
         return NextResponse.json(
           { error: '권한이 없습니다.' },
           { status: 403 }
@@ -127,6 +162,43 @@ export async function POST(
         },
         { status: 500 }
       );
+    }
+
+    // 상대방에게 알림 발송
+    if (submission) {
+      if (user.type === 'admin') {
+        // 관리자가 피드백 → 클라이언트에게 알림
+        await serviceSupabase.from('notifications').insert({
+          recipient_id: submission.client_id,
+          recipient_role: 'client',
+          type: 'kakaomap_feedback_added',
+          title: '카카오맵 새 피드백',
+          message: `${submission.company_name} 카카오맵 리뷰에 관리자 피드백이 추가되었습니다.`,
+          data: {
+            submission_id: submissionId,
+            submission_type: 'kakaomap_review_submissions',
+            feedback_id: feedback.id,
+            link: `/dashboard/review/kmap/status`,
+          },
+          read: false,
+        });
+      } else {
+        // 클라이언트가 피드백 → 관리자 전체에게 알림
+        await serviceSupabase.from('notifications').insert({
+          recipient_id: null,
+          recipient_role: 'admin',
+          type: 'kakaomap_feedback_added',
+          title: '카카오맵 새 피드백',
+          message: `${submission.company_name} 카카오맵 리뷰에 고객 피드백이 추가되었습니다.`,
+          data: {
+            submission_id: submissionId,
+            submission_type: 'kakaomap_review_submissions',
+            feedback_id: feedback.id,
+            link: `/admin/kakaomap/${submissionId}`,
+          },
+          read: false,
+        });
+      }
     }
 
     return NextResponse.json({

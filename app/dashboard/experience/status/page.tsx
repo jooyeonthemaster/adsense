@@ -53,9 +53,10 @@ interface ExperienceSubmission {
 
 const statusConfig: Record<string, { label: string; variant: 'outline' | 'default' | 'secondary' | 'destructive' }> = {
   pending: { label: '확인중', variant: 'outline' },
-  in_progress: { label: '진행중', variant: 'default' },
+  in_progress: { label: '구동중', variant: 'default' },
   completed: { label: '완료', variant: 'secondary' },
   cancelled: { label: '중단됨', variant: 'destructive' },
+  as_in_progress: { label: 'AS 진행 중', variant: 'default' },
 };
 
 const experienceTypeConfig: Record<string, { label: string; color: string }> = {
@@ -228,6 +229,8 @@ export default function ExperienceMarketingStatusPage() {
               <SelectItem value="pending">확인중</SelectItem>
               <SelectItem value="in_progress">진행중</SelectItem>
               <SelectItem value="completed">완료</SelectItem>
+              <SelectItem value="cancelled">중단됨</SelectItem>
+              <SelectItem value="as_in_progress">AS 진행 중</SelectItem>
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'date' | 'cost')}>

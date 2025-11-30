@@ -178,6 +178,16 @@ export default function VisitorReviewPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // 최소 주문건수 검증을 가장 먼저 수행 (화면에 경고가 보이므로 사용자가 이해하기 쉬움)
+    if (formData.totalCount < 30) {
+      toast({
+        variant: 'destructive',
+        title: '⚠️ 최소 주문건수 미달',
+        description: `방문자 리뷰는 최소 30건 이상 주문하셔야 합니다. (현재: ${formData.totalCount}건)`,
+      });
+      return;
+    }
+
     if (!formData.businessName || !formData.placeUrl) {
       toast({
         variant: 'destructive',
@@ -201,15 +211,6 @@ export default function VisitorReviewPage() {
         variant: 'destructive',
         title: '입력 오류',
         description: '일 발행수량은 최소 1건, 최대 10건입니다.',
-      });
-      return;
-    }
-
-    if (formData.totalCount < 30) {
-      toast({
-        variant: 'destructive',
-        title: '최소 주문건수 미달',
-        description: '방문자 리뷰는 최소 30건 이상 주문하셔야 합니다.',
       });
       return;
     }

@@ -47,6 +47,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { WORKFLOW_CONFIG } from '@/types/experience-blogger';
 import { getWorkflowSteps } from '@/lib/experience-deadline-utils';
+import { KakaoInquiryModal } from '@/components/kakao-inquiry-modal';
 
 interface ExperienceSubmission {
   id: string;
@@ -117,6 +118,9 @@ export default function ClientExperienceDetailPage({ params }: { params: Promise
   // Schedule confirmation (Step 4)
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
+
+  // 카카오 문의 모달
+  const [kakaoInquiryOpen, setKakaoInquiryOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -629,12 +633,10 @@ export default function ClientExperienceDetailPage({ params }: { params: Promise
                 <CheckCircle2 className="h-4 w-4 mr-2" />
                 일정 확인 및 승인
               </Button>
-              <Link href="/dashboard/cs">
-                <Button variant="outline">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  일정 조율 요청 (1:1 문의)
-                </Button>
-              </Link>
+              <Button variant="outline" onClick={() => setKakaoInquiryOpen(true)}>
+                <MessageCircle className="h-4 w-4 mr-2" />
+                일정 조율 요청 (1:1 문의)
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -965,12 +967,17 @@ export default function ClientExperienceDetailPage({ params }: { params: Promise
             <Button variant="outline" onClick={() => setConfirmDialogOpen(false)} className="w-full sm:w-auto">
               취소
             </Button>
-            <Link href="/dashboard/cs" className="w-full sm:w-auto">
-              <Button variant="outline" className="w-full">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                조율 요청
-              </Button>
-            </Link>
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => {
+                setConfirmDialogOpen(false);
+                setKakaoInquiryOpen(true);
+              }}
+            >
+              <MessageCircle className="h-4 w-4 mr-2" />
+              조율 요청
+            </Button>
             <Button
               onClick={handleConfirmSchedule}
               disabled={confirmLoading}
@@ -991,6 +998,14 @@ export default function ClientExperienceDetailPage({ params }: { params: Promise
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 카카오 문의 모달 */}
+      <KakaoInquiryModal
+        open={kakaoInquiryOpen}
+        onOpenChange={setKakaoInquiryOpen}
+        title="일정 조율 문의"
+        description="일정 변경이 필요하시면 카카오톡으로 문의해주세요"
+      />
     </div>
   );
 }

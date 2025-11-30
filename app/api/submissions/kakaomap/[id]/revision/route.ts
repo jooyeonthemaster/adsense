@@ -90,6 +90,23 @@ export async function POST(
       is_read: false,
     });
 
+    // 관리자 전체에게 알림 발송
+    await supabase.from('notifications').insert({
+      recipient_id: null, // null = 전체 관리자
+      recipient_role: 'admin',
+      type: 'kakaomap_revision_requested',
+      title: '카카오맵 수정 요청',
+      message: `${submission.company_name} 카카오맵 리뷰에서 수정 요청이 접수되었습니다.`,
+      data: {
+        submission_id: id,
+        submission_type: 'kakaomap_review_submissions',
+        revision_request_id: revisionRequest.id,
+        request_content: request_content,
+        link: `/admin/kakaomap/${id}`,
+      },
+      read: false,
+    });
+
     revalidatePath('/dashboard', 'layout');
 
     return NextResponse.json({

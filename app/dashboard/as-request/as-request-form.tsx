@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AnySubmission } from '@/types/submission';
 import { calculateExpectedCount, formatSubmissionLabel } from '@/lib/submission-utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface AsRequestFormProps {
   clientId: string;
@@ -31,9 +32,15 @@ const SUBMISSION_TYPE_LABELS: Record<string, string> = {
 
 export function AsRequestForm({ clientId }: AsRequestFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [fetchingSubmissions, setFetchingSubmissions] = useState(true);
   const [error, setError] = useState('');
+
+  // URL 파라미터에서 submission_id와 type 읽기
+  const preselectedSubmissionId = searchParams.get('submission_id');
+  const preselectedType = searchParams.get('type');
 
   // 완료된 접수 내역 목록
   const [completedSubmissions, setCompletedSubmissions] = useState<AnySubmission[]>([]);
@@ -74,6 +81,17 @@ export function AsRequestForm({ clientId }: AsRequestFormProps) {
 
     fetchCompletedSubmissions();
   }, []);
+
+  // URL 파라미터로 전달된 submission_id가 있으면 자동 선택
+  useEffect(() => {
+    if (preselectedSubmissionId && completedSubmissions.length > 0 && !selectedSubmissionId) {
+      const submission = completedSubmissions.find((s) => s.id === preselectedSubmissionId);
+      if (submission) {
+        handleSubmissionSelect(preselectedSubmissionId);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preselectedSubmissionId, completedSubmissions]);
 
   // 접수 내역 선택 시 자동으로 데이터 채우기
   const handleSubmissionSelect = (submissionId: string) => {
@@ -152,7 +170,10 @@ export function AsRequestForm({ clientId }: AsRequestFormProps) {
       }
 
       // Success
-      alert('AS 신청이 완료되었습니다.');
+      toast({
+        title: '✅ AS 신청 완료',
+        description: '담당자 확인 후 처리해 드리겠습니다.',
+      });
       router.push('/dashboard');
       router.refresh();
     } catch (err) {

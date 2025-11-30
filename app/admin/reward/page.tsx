@@ -70,6 +70,7 @@ const statusConfig: Record<string, { label: string; variant: 'outline' | 'defaul
   in_progress: { label: '구동중', variant: 'default' },
   completed: { label: '완료', variant: 'secondary' },
   cancelled: { label: '중단됨', variant: 'destructive' },
+  as_in_progress: { label: 'AS 진행 중', variant: 'default' },
 };
 
 export default function RewardManagementPage() {
@@ -360,7 +361,7 @@ export default function RewardManagementPage() {
                           <div className="w-16 bg-gray-200 rounded-full h-2">
                             <div
                               className="bg-emerald-500 rounded-full h-2 transition-all"
-                              style={{ width: `${Math.round(progress)}%` }}
+                              style={{ width: `${Math.min(Math.round(progress), 100)}%` }}
                             />
                           </div>
                           <span className="text-xs font-medium text-emerald-600">
@@ -504,7 +505,7 @@ export default function RewardManagementPage() {
                                     <div className="w-16 bg-gray-200 rounded-full h-2">
                                       <div
                                         className="bg-emerald-500 rounded-full h-2 transition-all"
-                                        style={{ width: `${Math.round(progress)}%` }}
+                                        style={{ width: `${Math.min(Math.round(progress), 100)}%` }}
                                       />
                                     </div>
                                     <span className="text-xs font-medium text-emerald-600">

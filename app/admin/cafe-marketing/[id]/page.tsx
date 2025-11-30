@@ -56,6 +56,7 @@ const statusConfig: Record<string, { label: string; variant: 'outline' | 'defaul
   in_progress: { label: '구동중', variant: 'default' },
   completed: { label: '완료', variant: 'secondary' },
   cancelled: { label: '중단', variant: 'destructive' },
+  as_in_progress: { label: 'AS 진행 중', variant: 'default' },
 };
 
 const contentTypeConfig: Record<string, string> = {

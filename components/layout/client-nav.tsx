@@ -202,6 +202,15 @@ function NavContent({
                   통합 접수 현황
                 </Button>
               </Link>
+              <Link href="/dashboard/notifications" onClick={() => onClose?.()} className="block">
+                <Button
+                  variant="outline"
+                  className="w-full border-gray-300 hover:bg-gray-100 text-gray-700 font-medium px-3 py-1.5 rounded-lg text-xs h-8 flex items-center justify-center gap-1.5"
+                >
+                  <Bell className="h-3.5 w-3.5" />
+                  공지사항 / 알림
+                </Button>
+              </Link>
             </div>
           </>
         ) : (
@@ -294,7 +303,16 @@ function NavContent({
                     <div className="py-1">
                       <p className="px-3 py-1.5 text-xs font-semibold text-gray-500">{section.title}</p>
                       {section.items?.map((item) => {
-                        const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+                        // 다른 항목이 더 구체적으로 매칭되는지 확인
+                        const hasMoreSpecificMatch = section.items?.some(
+                          (other) =>
+                            other.href !== item.href &&
+                            pathname?.startsWith(other.href) &&
+                            other.href.length > item.href.length
+                        );
+                        const isActive =
+                          pathname === item.href ||
+                          (pathname?.startsWith(item.href + '/') && !hasMoreSpecificMatch);
                         const ItemIcon = item.icon;
 
                         return (
@@ -342,7 +360,17 @@ function NavContent({
                 </CollapsibleTrigger>
                 <CollapsibleContent className="bg-gray-50">
                   {section.items?.map((item) => {
-                    const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+                    // 다른 항목이 더 구체적으로 매칭되는지 확인
+                    const hasMoreSpecificMatch = section.items?.some(
+                      (other) =>
+                        other.href !== item.href &&
+                        pathname?.startsWith(other.href) &&
+                        other.href.length > item.href.length
+                    );
+                    // 정확히 일치하거나, 하위 경로이면서 더 구체적인 매칭이 없을 때만 활성화
+                    const isActive =
+                      pathname === item.href ||
+                      (pathname?.startsWith(item.href + '/') && !hasMoreSpecificMatch);
                     const ItemIcon = item.icon;
 
                     return (

@@ -14,6 +14,14 @@ export type Client = {
   pending_charge_requests_count: number;
   kakao_id: string | null; // 카카오 OAuth 사용자 ID
   auth_provider: AuthProvider; // 인증 제공자
+  // 마이페이지 - 사업자 정보
+  business_license_url: string | null; // 사업자등록증 파일 URL
+  business_license_name: string | null; // 사업자등록증 파일명
+  business_number: string | null; // 사업자등록번호
+  representative_name: string | null; // 대표자명
+  business_address: string | null; // 사업장 주소
+  tax_email: string | null; // 세금계산서 수령 이메일
+  profile_updated_at: string | null; // 프로필 정보 최종 수정일
   created_at: string;
   updated_at: string;
 };

@@ -9,7 +9,7 @@ export const revalidate = 0;
 async function getClientStats(clientId: string) {
   const supabase = await createClient();
 
-  const [placeResult, receiptResult, kakaomapResult, blogResult] =
+  const [placeResult, receiptResult, kakaomapResult, blogResult, cafeResult, experienceResult] =
     await Promise.all([
       supabase
         .from('place_submissions')
@@ -27,13 +27,23 @@ async function getClientStats(clientId: string) {
         .from('blog_distribution_submissions')
         .select('id', { count: 'exact', head: true })
         .eq('client_id', clientId),
+      supabase
+        .from('cafe_marketing_submissions')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', clientId),
+      supabase
+        .from('experience_submissions')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', clientId),
     ]);
 
   const totalSubmissions =
     (placeResult.count || 0) +
     (receiptResult.count || 0) +
     (kakaomapResult.count || 0) +
-    (blogResult.count || 0);
+    (blogResult.count || 0) +
+    (cafeResult.count || 0) +
+    (experienceResult.count || 0);
 
   return { totalSubmissions };
 }
@@ -70,7 +80,7 @@ async function getClientProducts(clientId: string) {
 async function getRecentSubmissions(clientId: string) {
   const supabase = await createClient();
 
-  const [placeResults, receiptResults, kakaomapResults, blogResults] =
+  const [placeResults, receiptResults, kakaomapResults, blogResults, cafeResults, experienceResults] =
     await Promise.all([
       supabase
         .from('place_submissions')
@@ -96,6 +106,18 @@ async function getRecentSubmissions(clientId: string) {
         .eq('client_id', clientId)
         .order('created_at', { ascending: false })
         .limit(3),
+      supabase
+        .from('cafe_marketing_submissions')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(3),
+      supabase
+        .from('experience_submissions')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(3),
     ]);
 
   const allSubmissions = [
@@ -103,6 +125,8 @@ async function getRecentSubmissions(clientId: string) {
     ...(receiptResults.data || []).map((s) => ({ ...s, type: 'receipt' as const })),
     ...(kakaomapResults.data || []).map((s) => ({ ...s, type: 'kakaomap' as const })),
     ...(blogResults.data || []).map((s) => ({ ...s, type: 'blog' as const })),
+    ...(cafeResults.data || []).map((s) => ({ ...s, type: 'cafe' as const })),
+    ...(experienceResults.data || []).map((s) => ({ ...s, type: 'experience' as const })),
   ];
 
   // 최신순 정렬 후 최대 5개

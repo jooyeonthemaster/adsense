@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, ChevronRight } from 'lucide-react';
+import { MessageSquare, ChevronRight, AlertTriangle } from 'lucide-react';
 import { KAKAOMAP_STATUS_LABELS } from '@/config/kakaomap-status';
 import { KakaomapSubmission } from '@/types/review/kmap-status';
 import { calculateProgress, formatDate, canCancelSubmission } from '@/utils/review/kmap-status-helpers';
@@ -11,6 +11,7 @@ interface StatusMobileCardProps {
   onViewContent: (submission: KakaomapSubmission) => void;
   onOpenMessages: (submission: KakaomapSubmission) => void;
   onCancelClick: (submission: KakaomapSubmission) => void;
+  onAsConditionClick?: () => void;
 }
 
 export function StatusMobileCard({
@@ -18,6 +19,7 @@ export function StatusMobileCard({
   onViewContent,
   onOpenMessages,
   onCancelClick,
+  onAsConditionClick,
 }: StatusMobileCardProps) {
   const statusDisplay = KAKAOMAP_STATUS_LABELS[submission.status as keyof typeof KAKAOMAP_STATUS_LABELS] || { 
     label: submission.status, 
@@ -107,6 +109,21 @@ export function StatusMobileCard({
             문의
           </Button>
         )}
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 min-w-[100px] text-[11px] h-7 text-amber-600 border-amber-300 px-2"
+          onClick={() => {
+            if (submission.status === 'completed') {
+              window.location.href = `/dashboard/as-request?submission_id=${submission.id}&type=kakaomap`;
+            } else if (onAsConditionClick) {
+              onAsConditionClick();
+            }
+          }}
+        >
+          <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
+          AS신청
+        </Button>
         {canCancelSubmission(submission) && (
           <Button
             variant="outline"

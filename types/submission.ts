@@ -1,6 +1,6 @@
 // Submission types for all product categories
 
-export type SubmissionStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
+export type SubmissionStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'as_in_progress';
 
 export interface PlaceSubmission {
   id: string;

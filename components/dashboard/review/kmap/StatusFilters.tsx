@@ -50,6 +50,8 @@ export function StatusFilters({
           <SelectItem value="revision_requested">{KAKAOMAP_STATUS_LABELS.revision_requested.label}</SelectItem>
           <SelectItem value="in_progress">{KAKAOMAP_STATUS_LABELS.in_progress.label}</SelectItem>
           <SelectItem value="completed">{KAKAOMAP_STATUS_LABELS.completed.label}</SelectItem>
+          <SelectItem value="cancelled">{KAKAOMAP_STATUS_LABELS.cancelled.label}</SelectItem>
+          <SelectItem value="as_in_progress">{KAKAOMAP_STATUS_LABELS.as_in_progress.label}</SelectItem>
         </SelectContent>
       </Select>
       <Select value={sortBy} onValueChange={onSortByChange}>

@@ -64,7 +64,8 @@
       "Bash(tree:*)",
       "Bash(if not exist claudedocs mkdir claudedocs)",
       "Bash(node scripts/check-image-urls-column.js:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

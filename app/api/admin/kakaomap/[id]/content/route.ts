@@ -108,6 +108,7 @@ export async function POST(
         .single();
 
       if (client) {
+        // 메시지 추가
         await supabase.from('kakaomap_messages').insert({
           submission_id: id,
           sender_type: 'admin',
@@ -115,6 +116,22 @@ export async function POST(
           sender_name: user.name,
           content: `콘텐츠 ${submission.total_count}개가 모두 업로드되었습니다. 검수를 진행해주세요.`,
           is_read: false,
+        });
+
+        // 클라이언트에게 알림 발송
+        await supabase.from('notifications').insert({
+          recipient_id: submission.client_id,
+          recipient_role: 'client',
+          type: 'kakaomap_content_uploaded',
+          title: '카카오맵 콘텐츠 업로드 완료',
+          message: `${client.company_name} 카카오맵 리뷰 콘텐츠 ${submission.total_count}개가 모두 업로드되었습니다. 검수를 진행해주세요.`,
+          data: {
+            submission_id: id,
+            submission_type: 'kakaomap_review_submissions',
+            total_count: submission.total_count,
+            link: `/dashboard/review/kmap/status`,
+          },
+          read: false,
         });
       }
     } else {

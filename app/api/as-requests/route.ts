@@ -94,7 +94,48 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ asRequests: data || [] });
+    // 각 AS 요청에 대해 submission의 업체명(플레이스명) 가져오기
+    const asRequestsWithBusinessName = await Promise.all(
+      (data || []).map(async (asRequest) => {
+        let businessName = null;
+        let placeName = null;
+
+        try {
+          // submission_type에 따라 해당 테이블에서 업체명 조회
+          const tableMap: Record<string, string> = {
+            place: 'place_submissions',
+            receipt: 'receipt_review_submissions',
+            kakaomap: 'kakaomap_review_submissions',
+            blog: 'blog_distribution_submissions',
+            cafe: 'cafe_marketing_submissions',
+            reward: 'place_submissions', // 리워드는 place_submissions 사용
+          };
+
+          const tableName = tableMap[asRequest.submission_type];
+          if (tableName) {
+            const { data: submission } = await supabase
+              .from(tableName)
+              .select('company_name')
+              .eq('id', asRequest.submission_id)
+              .single();
+
+            if (submission) {
+              businessName = submission.company_name || null;
+            }
+          }
+        } catch (e) {
+          console.error('업체명 조회 실패:', e);
+        }
+
+        return {
+          ...asRequest,
+          business_name: businessName,
+          place_name: placeName,
+        };
+      })
+    );
+
+    return NextResponse.json({ asRequests: asRequestsWithBusinessName });
   } catch (error) {
     console.error('Error in GET /api/as-requests:', error);
     return NextResponse.json(

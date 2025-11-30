@@ -80,16 +80,16 @@ export async function POST(
 
     const supabase = await createClient();
 
+    // Get submission info for notification
+    const { data: submission } = await supabase
+      .from('kakaomap_review_submissions')
+      .select('id, client_id, company_name')
+      .eq('id', submissionId)
+      .single();
+
     // Verify access
     if (user.type === 'client') {
-      const { data: submission } = await supabase
-        .from('kakaomap_review_submissions')
-        .select('id')
-        .eq('id', submissionId)
-        .eq('client_id', user.id)
-        .single();
-
-      if (!submission) {
+      if (!submission || submission.client_id !== user.id) {
         return NextResponse.json(
           { error: '권한이 없습니다.' },
           { status: 403 }
@@ -135,6 +135,45 @@ export async function POST(
         },
         { status: 500 }
       );
+    }
+
+    // 상대방에게 알림 발송
+    if (submission) {
+      if (user.type === 'admin') {
+        // 관리자가 피드백 → 클라이언트에게 알림
+        await serviceSupabase.from('notifications').insert({
+          recipient_id: submission.client_id,
+          recipient_role: 'client',
+          type: 'kakaomap_feedback_added',
+          title: '카카오맵 콘텐츠 피드백',
+          message: `${submission.company_name} 카카오맵 리뷰 콘텐츠에 관리자 피드백이 추가되었습니다.`,
+          data: {
+            submission_id: submissionId,
+            content_item_id: itemId,
+            submission_type: 'kakaomap_review_submissions',
+            feedback_id: feedback.id,
+            link: `/dashboard/review/kmap/status`,
+          },
+          read: false,
+        });
+      } else {
+        // 클라이언트가 피드백 → 관리자 전체에게 알림
+        await serviceSupabase.from('notifications').insert({
+          recipient_id: null,
+          recipient_role: 'admin',
+          type: 'kakaomap_feedback_added',
+          title: '카카오맵 콘텐츠 피드백',
+          message: `${submission.company_name} 카카오맵 리뷰 콘텐츠에 고객 피드백이 추가되었습니다.`,
+          data: {
+            submission_id: submissionId,
+            content_item_id: itemId,
+            submission_type: 'kakaomap_review_submissions',
+            feedback_id: feedback.id,
+            link: `/admin/kakaomap/${submissionId}`,
+          },
+          read: false,
+        });
+      }
     }
 
     return NextResponse.json({

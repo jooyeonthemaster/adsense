@@ -46,7 +46,7 @@ async function getRecentSubmissions() {
   oneDayAgo.setDate(oneDayAgo.getDate() - 1);
   const oneDayAgoISO = oneDayAgo.toISOString();
 
-  const [placeResults, receiptResults, kakaomapResults, blogResults, dynamicResults] =
+  const [placeResults, receiptResults, kakaomapResults, blogResults, cafeResults, experienceResults, dynamicResults] =
     await Promise.all([
       supabase
         .from('place_submissions')
@@ -68,6 +68,18 @@ async function getRecentSubmissions() {
         .limit(5),
       supabase
         .from('blog_distribution_submissions')
+        .select('*, clients(company_name)')
+        .gte('created_at', oneDayAgoISO)
+        .order('created_at', { ascending: false })
+        .limit(5),
+      supabase
+        .from('cafe_marketing_submissions')
+        .select('*, clients(company_name)')
+        .gte('created_at', oneDayAgoISO)
+        .order('created_at', { ascending: false })
+        .limit(5),
+      supabase
+        .from('experience_submissions')
         .select('*, clients(company_name)')
         .gte('created_at', oneDayAgoISO)
         .order('created_at', { ascending: false })
@@ -99,6 +111,16 @@ async function getRecentSubmissions() {
     ...(blogResults.data || []).map((s) => ({
       ...s,
       type: 'blog' as const,
+      client_name: s.clients?.company_name || '',
+    })),
+    ...(cafeResults.data || []).map((s) => ({
+      ...s,
+      type: 'cafe' as const,
+      client_name: s.clients?.company_name || '',
+    })),
+    ...(experienceResults.data || []).map((s) => ({
+      ...s,
+      type: 'experience' as const,
       client_name: s.clients?.company_name || '',
     })),
     ...(dynamicResults.data || []).map((s) => ({

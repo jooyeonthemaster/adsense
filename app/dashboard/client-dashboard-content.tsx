@@ -68,8 +68,8 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: '대기중',
-  in_progress: '진행중',
+  pending: '확인중',
+  in_progress: '구동중',
   completed: '완료',
   cancelled: '취소',
 };

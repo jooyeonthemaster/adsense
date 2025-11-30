@@ -148,6 +148,11 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
     return Math.round((sub.content_items_count / sub.total_count) * 100);
   };
 
+  // 진행률 바 너비용 (최대 100%로 제한)
+  const getProgressBarWidth = (sub: KakaomapSubmission) => {
+    return Math.min(getProgressPercentage(sub), 100);
+  };
+
   const grouped = groupedData();
 
   return (
@@ -358,7 +363,7 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
                                   <div className="w-full bg-muted rounded-full h-1.5">
                                     <div
                                       className="bg-primary rounded-full h-1.5 transition-all"
-                                      style={{ width: `${getProgressPercentage(sub)}%` }}
+                                      style={{ width: `${getProgressBarWidth(sub)}%` }}
                                     />
                                   </div>
                                   <span className="text-xs text-muted-foreground">
@@ -502,7 +507,7 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
                             <div className="w-full bg-muted rounded-full h-1.5">
                               <div
                                 className="bg-primary rounded-full h-1.5 transition-all"
-                                style={{ width: `${getProgressPercentage(sub)}%` }}
+                                style={{ width: `${getProgressBarWidth(sub)}%` }}
                               />
                             </div>
                             <span className="text-xs text-muted-foreground">

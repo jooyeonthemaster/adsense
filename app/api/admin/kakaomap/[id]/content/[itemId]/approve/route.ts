@@ -37,6 +37,13 @@ export async function POST(
       );
     }
 
+    // Get submission info for notification
+    const { data: submission } = await supabase
+      .from('kakaomap_review_submissions')
+      .select('client_id, company_name, total_count')
+      .eq('id', submissionId)
+      .single();
+
     // 승인 및 배포 (use service role to bypass RLS)
     const { data: updatedItem, error: updateError } = await serviceSupabase
       .from('kakaomap_content_items')
@@ -79,6 +86,33 @@ export async function POST(
       }, {
         onConflict: 'submission_id,date'
       });
+
+    // 클라이언트에게 콘텐츠 승인 알림 발송
+    if (submission) {
+      // 현재까지 승인된 콘텐츠 수 확인
+      const { count: approvedCount } = await serviceSupabase
+        .from('kakaomap_content_items')
+        .select('*', { count: 'exact', head: true })
+        .eq('submission_id', submissionId)
+        .eq('review_status', 'approved');
+
+      await serviceSupabase.from('notifications').insert({
+        recipient_id: submission.client_id,
+        recipient_role: 'client',
+        type: 'kakaomap_content_approved',
+        title: '카카오맵 콘텐츠 승인',
+        message: `${submission.company_name} 카카오맵 리뷰 콘텐츠가 승인되었습니다. (${approvedCount}/${submission.total_count})`,
+        data: {
+          submission_id: submissionId,
+          content_item_id: itemId,
+          submission_type: 'kakaomap_review_submissions',
+          approved_count: approvedCount,
+          total_count: submission.total_count,
+          link: `/dashboard/review/kmap/status`,
+        },
+        read: false,
+      });
+    }
 
     return NextResponse.json({
       success: true,

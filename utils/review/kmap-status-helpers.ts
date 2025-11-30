@@ -26,11 +26,13 @@ export const calculateStats = (submissions: KakaomapSubmission[]) => {
   return {
     total: submissions.length,
     in_progress: submissions.filter((s) =>
-      ['pending', 'waiting_content', 'review', 'revision_requested', 'in_progress'].includes(s.status)
+      ['pending', 'waiting_content', 'review', 'revision_requested', 'in_progress', 'as_in_progress'].includes(s.status)
     ).length,
     completed: submissions.filter((s) => s.status === 'completed').length,
   };
 };
+
+
 
 
 

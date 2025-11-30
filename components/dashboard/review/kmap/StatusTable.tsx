@@ -14,6 +14,7 @@ interface StatusTableProps {
   onViewContent: (submission: KakaomapSubmission) => void;
   onOpenMessages: (submission: KakaomapSubmission) => void;
   onCancelClick: (submission: KakaomapSubmission) => void;
+  onAsConditionClick?: () => void;
 }
 
 export function StatusTable({
@@ -21,6 +22,7 @@ export function StatusTable({
   onViewContent,
   onOpenMessages,
   onCancelClick,
+  onAsConditionClick,
 }: StatusTableProps) {
   return (
     <div className="hidden md:block bg-white border rounded-lg overflow-hidden shadow-sm">
@@ -51,6 +53,7 @@ export function StatusTable({
                 onViewContent={onViewContent}
                 onOpenMessages={onOpenMessages}
                 onCancelClick={onCancelClick}
+                onAsConditionClick={onAsConditionClick}
               />
             ))
           )}
@@ -59,6 +62,8 @@ export function StatusTable({
     </div>
   );
 }
+
+
 
 
 

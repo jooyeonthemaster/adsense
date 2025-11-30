@@ -11,7 +11,7 @@ export async function GET() {
     // 활성 공지사항 조회 (전체 또는 거래처 대상)
     const { data: announcements, error } = await supabase
       .from('announcements')
-      .select('id, title, content, priority, created_at, expires_at')
+      .select('id, title, content, priority, created_at, expires_at, link_url, link_text')
       .eq('is_active', true)
       .in('target_audience', ['all', 'client'])
       .or(`expires_at.is.null,expires_at.gte.${new Date().toISOString()}`)

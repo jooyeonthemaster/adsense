@@ -75,6 +75,7 @@ const STATUS_LABELS: Record<SubmissionStatus, string> = {
   in_progress: '진행중',
   completed: '완료',
   cancelled: '취소',
+  as_in_progress: 'AS 진행중',
 };
 
 const STATUS_VARIANTS: Record<
@@ -85,6 +86,7 @@ const STATUS_VARIANTS: Record<
   in_progress: 'default',
   completed: 'secondary',
   cancelled: 'destructive',
+  as_in_progress: 'default',
 };
 
 const TYPE_LABELS: Record<string, string> = {

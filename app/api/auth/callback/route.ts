@@ -93,8 +93,8 @@ export async function GET(request: NextRequest) {
     // 5. 커스텀 세션 생성 (기존 시스템과 통합)
     await createSession(clientUser);
 
-    // 6. 대시보드로 리다이렉트
-    return NextResponse.redirect(`${origin}/dashboard`);
+    // 6. 알림 페이지로 리다이렉트
+    return NextResponse.redirect(`${origin}/dashboard/notifications`);
 
   } catch (err) {
     console.error('카카오 콜백 처리 에러:', err);

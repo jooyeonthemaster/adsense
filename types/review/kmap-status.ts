@@ -29,10 +29,13 @@ export interface UploadedImage {
 
 export interface Message {
   id: string;
-  sender: 'admin' | 'client';
+  sender_type: 'admin' | 'client';
+  sender_id: string;
   sender_name: string;
   content: string;
   created_at: string;
+  is_read?: boolean;
+  read_at?: string;
 }
 
 export interface StatusStats {

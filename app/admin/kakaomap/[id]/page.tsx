@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Download, Package, Image as ImageIcon, Loader2, Send } from 'lucide-react';
+import { ArrowLeft, Download, Package, Image as ImageIcon, Loader2, Send, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -30,6 +30,7 @@ import { ExcelUpload } from '@/components/admin/kakaomap/ExcelUpload';
 import { ContentItemsList, type ContentItem } from '@/components/admin/kakaomap/ContentItemsList';
 import { FeedbackManagement } from '@/components/admin/kakaomap/FeedbackManagement';
 import { GeneralFeedbackView } from '@/components/admin/kakaomap/GeneralFeedbackView';
+import { AIReviewGenerator } from '@/components/admin/kakaomap/AIReviewGenerator';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
@@ -73,6 +74,7 @@ const statusConfig: Record<string, { label: string; variant: 'outline' | 'defaul
   in_progress: { label: '진행중', variant: 'default' },
   completed: { label: '완료', variant: 'secondary' },
   cancelled: { label: '취소됨', variant: 'destructive' },
+  as_in_progress: { label: 'AS 진행 중', variant: 'default' },
 };
 
 const starRatingConfig: Record<string, { label: string }> = {
@@ -413,8 +415,12 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full max-w-2xl grid-cols-4">
+          <TabsList className="grid w-full max-w-3xl grid-cols-5">
             <TabsTrigger value="overview">개요</TabsTrigger>
+            <TabsTrigger value="ai-generate" className="gap-1">
+              <Sparkles className="h-3.5 w-3.5" />
+              AI 생성
+            </TabsTrigger>
             <TabsTrigger value="content">콘텐츠 관리</TabsTrigger>
             <TabsTrigger value="feedback">피드백 관리</TabsTrigger>
             <TabsTrigger value="daily">일별 기록</TabsTrigger>
@@ -486,6 +492,20 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          {/* AI 리뷰 생성 탭 */}
+          <TabsContent value="ai-generate" className="space-y-6">
+            <AIReviewGenerator
+              submissionId={unwrappedParams.id}
+              companyName={submission.company_name}
+              currentCount={contentItems.length}
+              totalCount={submission.total_count}
+              onSaveComplete={() => {
+                fetchContentItems();
+                fetchSubmissionDetail();
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="content" className="space-y-6">

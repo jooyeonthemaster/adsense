@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     const supabase = await createClient();
 
     const body = await request.json();
-    const { title, content, priority, target_audience, expires_at } = body;
+    const { title, content, priority, target_audience, expires_at, link_url, link_text } = body;
 
     // 유효성 검사
     if (!title || !content || !target_audience) {
@@ -68,7 +68,9 @@ export async function POST(request: Request) {
         target_audience,
         expires_at: expires_at || null,
         created_by: user.id,
-        is_active: true
+        is_active: true,
+        link_url: link_url || null,
+        link_text: link_text || null,
       })
       .select('*')
       .single();
@@ -92,7 +94,7 @@ export async function PUT(request: Request) {
     const supabase = await createClient();
 
     const body = await request.json();
-    const { id, title, content, priority, target_audience, is_active, expires_at } = body;
+    const { id, title, content, priority, target_audience, is_active, expires_at, link_url, link_text } = body;
 
     if (!id) {
       return NextResponse.json({ error: '공지사항 ID가 필요합니다' }, { status: 400 });
@@ -109,6 +111,8 @@ export async function PUT(request: Request) {
     if (target_audience !== undefined) updateData.target_audience = target_audience;
     if (is_active !== undefined) updateData.is_active = is_active;
     if (expires_at !== undefined) updateData.expires_at = expires_at;
+    if (link_url !== undefined) updateData.link_url = link_url || null;
+    if (link_text !== undefined) updateData.link_text = link_text || null;
 
     // 공지사항 수정
     const { data: announcement, error } = await supabase

@@ -93,16 +93,16 @@ export async function POST(
 
     const supabase = await createClient();
 
+    // Get submission info for notification
+    const { data: submission, error: fetchError } = await supabase
+      .from('kakaomap_review_submissions')
+      .select('id, client_id, company_name')
+      .eq('id', id)
+      .single();
+
     // Verify submission access
     if (user.type === 'client') {
-      const { data: submission, error: fetchError } = await supabase
-        .from('kakaomap_review_submissions')
-        .select('id')
-        .eq('id', id)
-        .eq('client_id', user.id)
-        .single();
-
-      if (fetchError || !submission) {
+      if (fetchError || !submission || submission.client_id !== user.id) {
         return NextResponse.json(
           { error: '접수 내역을 찾을 수 없습니다.' },
           { status: 404 }
@@ -110,12 +110,6 @@ export async function POST(
       }
     } else {
       // Admin can access any submission
-      const { data: submission, error: fetchError } = await supabase
-        .from('kakaomap_review_submissions')
-        .select('id')
-        .eq('id', id)
-        .single();
-
       if (fetchError || !submission) {
         return NextResponse.json(
           { error: '접수 내역을 찾을 수 없습니다.' },
@@ -146,6 +140,46 @@ export async function POST(
         { error: '메시지 전송 중 오류가 발생했습니다.' },
         { status: 500 }
       );
+    }
+
+    // 상대방에게 메시지 수신 알림 발송
+    if (submission) {
+      // 메시지 내용 미리보기 (50자 제한)
+      const messagePreview = content.length > 50 ? content.substring(0, 50) + '...' : content;
+
+      if (user.type === 'admin') {
+        // 관리자가 메시지 → 클라이언트에게 알림
+        await supabase.from('notifications').insert({
+          recipient_id: submission.client_id,
+          recipient_role: 'client',
+          type: 'kakaomap_message_received',
+          title: '카카오맵 새 메시지',
+          message: `${submission.company_name} 카카오맵 리뷰에 관리자 메시지가 도착했습니다: "${messagePreview}"`,
+          data: {
+            submission_id: id,
+            submission_type: 'kakaomap_review_submissions',
+            message_id: message.id,
+            link: `/dashboard/review/kmap/status`,
+          },
+          read: false,
+        });
+      } else {
+        // 클라이언트가 메시지 → 관리자 전체에게 알림
+        await supabase.from('notifications').insert({
+          recipient_id: null,
+          recipient_role: 'admin',
+          type: 'kakaomap_message_received',
+          title: '카카오맵 새 메시지',
+          message: `${submission.company_name}에서 카카오맵 리뷰 메시지가 도착했습니다: "${messagePreview}"`,
+          data: {
+            submission_id: id,
+            submission_type: 'kakaomap_review_submissions',
+            message_id: message.id,
+            link: `/admin/kakaomap/${id}`,
+          },
+          read: false,
+        });
+      }
     }
 
     revalidatePath('/dashboard', 'layout');

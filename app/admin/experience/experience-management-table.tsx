@@ -64,6 +64,7 @@ const statusConfig: Record<string, { label: string; variant: 'outline' | 'defaul
   in_progress: { label: '진행중', variant: 'default' },
   completed: { label: '완료', variant: 'secondary' },
   cancelled: { label: '중단됨', variant: 'destructive' },
+  as_in_progress: { label: 'AS 진행 중', variant: 'default' },
 };
 
 const experienceTypeConfig: Record<string, { label: string; color: string }> = {
