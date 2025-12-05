@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
-import { Slider } from '@/components/ui/slider';
+import { useMemo, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -11,6 +10,7 @@ interface RatioSliderProps {
   title: string;
   icon?: string;
   items: RatioSliderConfig[];
+  totalCount: number; // 전체 개수
   onChange: (items: RatioSliderConfig[]) => void;
   disabled?: boolean;
 }
@@ -19,106 +19,60 @@ export function RatioSlider({
   title,
   icon,
   items,
+  totalCount,
   onChange,
   disabled = false,
 }: RatioSliderProps) {
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
-
-  const totalPercentage = useMemo(
-    () => items.reduce((sum, item) => sum + item.percentage, 0),
+  // 할당된 총 개수
+  const assignedCount = useMemo(
+    () => items.reduce((sum, item) => sum + item.count, 0),
     [items]
   );
 
-  const isValid = useMemo(
-    () => Math.abs(totalPercentage - 100) < 1,
-    [totalPercentage]
+  // 남은 개수
+  const remainingCount = useMemo(
+    () => Math.max(0, totalCount - assignedCount),
+    [totalCount, assignedCount]
   );
 
-  // 슬라이더 또는 입력값 변경 시 다른 항목들 자동 조정
-  const handlePercentageChange = useCallback(
-    (index: number, newValue: number) => {
+  // 유효성 (할당된 개수 = 전체 개수)
+  const isValid = useMemo(
+    () => assignedCount === totalCount,
+    [assignedCount, totalCount]
+  );
+
+  // 개수 변경 핸들러
+  const handleCountChange = useCallback(
+    (index: number, newCount: number) => {
       if (disabled) return;
 
-      const clampedValue = Math.max(0, Math.min(100, newValue));
-      const currentItem = items[index];
-      const diff = clampedValue - currentItem.percentage;
+      // 음수 방지
+      const clampedCount = Math.max(0, newCount);
 
-      if (diff === 0) return;
-
-      const newItems = [...items];
-      newItems[index] = { ...currentItem, percentage: clampedValue };
-
-      // 다른 항목들의 합계
-      const otherItems = newItems.filter((_, i) => i !== index);
-      const otherTotal = otherItems.reduce((sum, item) => sum + item.percentage, 0);
-
-      // 나머지 항목들 비율대로 조정
-      if (otherTotal > 0 && diff !== 0) {
-        const targetOtherTotal = 100 - clampedValue;
-        const scale = targetOtherTotal / otherTotal;
-
-        let runningTotal = clampedValue;
-        newItems.forEach((item, i) => {
-          if (i !== index) {
-            if (i === newItems.length - 1 || (i === newItems.length - 2 && index === newItems.length - 1)) {
-              // 마지막 항목은 나머지로 처리 (반올림 오차 방지)
-              newItems[i] = { ...item, percentage: Math.max(0, 100 - runningTotal) };
-            } else {
-              const newPercentage = Math.round(item.percentage * scale);
-              newItems[i] = { ...item, percentage: Math.max(0, newPercentage) };
-              runningTotal += newPercentage;
-            }
-          }
-        });
-      } else if (otherTotal === 0 && clampedValue < 100) {
-        // 다른 항목들이 모두 0일 때
-        const remaining = 100 - clampedValue;
-        const perItem = Math.floor(remaining / (items.length - 1));
-        let distributed = 0;
-        newItems.forEach((item, i) => {
-          if (i !== index) {
-            if (i === newItems.length - 1) {
-              newItems[i] = { ...item, percentage: remaining - distributed };
-            } else {
-              newItems[i] = { ...item, percentage: perItem };
-              distributed += perItem;
-            }
-          }
-        });
-      }
+      const newItems = items.map((item, i) => {
+        if (i === index) {
+          const percentage = totalCount > 0 ? Math.round((clampedCount / totalCount) * 100) : 0;
+          return { ...item, count: clampedCount, percentage };
+        }
+        return item;
+      });
 
       onChange(newItems);
     },
-    [items, onChange, disabled]
+    [items, onChange, disabled, totalCount]
   );
 
-  // 직접 입력 핸들러
+  // 입력값 변경 핸들러
   const handleInputChange = useCallback(
     (index: number, value: string) => {
       const numValue = parseInt(value, 10);
       if (!isNaN(numValue)) {
-        handlePercentageChange(index, numValue);
+        handleCountChange(index, numValue);
+      } else if (value === '') {
+        handleCountChange(index, 0);
       }
     },
-    [handlePercentageChange]
-  );
-
-  // 입력 blur 시 유효성 검사
-  const handleInputBlur = useCallback(
-    (index: number) => {
-      setActiveIndex(null);
-      // 전체 합이 100이 아니면 조정
-      if (!isValid) {
-        const diff = 100 - totalPercentage;
-        const newItems = [...items];
-        newItems[index] = {
-          ...newItems[index],
-          percentage: Math.max(0, newItems[index].percentage + diff),
-        };
-        onChange(newItems);
-      }
-    },
-    [isValid, totalPercentage, items, onChange]
+    [handleCountChange]
   );
 
   return (
@@ -129,127 +83,132 @@ export function RatioSlider({
           {icon && <span>{icon}</span>}
           {title}
         </Label>
-        <span
-          className={cn(
-            'text-xs font-medium px-2 py-1 rounded-full transition-colors',
-            isValid
-              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-              : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              'text-xs font-medium px-2 py-1 rounded-full transition-colors',
+              isValid
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+            )}
+          >
+            {assignedCount}/{totalCount}개 할당
+          </span>
+          {!isValid && (
+            <span className="text-xs font-medium px-2 py-1 rounded-full bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400">
+              {remainingCount}개 남음
+            </span>
           )}
-        >
-          합계: {totalPercentage}%
-        </span>
+        </div>
       </div>
 
-      {/* 슬라이더 목록 */}
-      <div className="space-y-4">
-        {items.map((item, index) => (
-          <div key={item.id} className="space-y-2">
-            {/* 라벨과 입력 */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {item.color && (
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                )}
-                <span className="text-sm font-medium">{item.label}</span>
-                {item.description && (
-                  <span className="text-xs text-muted-foreground hidden sm:inline">
-                    ({item.description})
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={item.percentage}
-                  onChange={(e) => handleInputChange(index, e.target.value)}
-                  onFocus={() => setActiveIndex(index)}
-                  onBlur={() => handleInputBlur(index)}
-                  disabled={disabled}
-                  className={cn(
-                    'w-16 h-8 text-center text-sm font-medium',
-                    activeIndex === index && 'ring-2 ring-primary'
+      {/* 개수 입력 목록 */}
+      <div className="space-y-3">
+        {items.map((item, index) => {
+          const percentage = totalCount > 0 ? Math.round((item.count / totalCount) * 100) : 0;
+
+          return (
+            <div key={item.id} className="space-y-1.5">
+              {/* 라벨과 입력 */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {item.color && (
+                    <div
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: item.color }}
+                    />
                   )}
+                  <span className="text-sm font-medium truncate">{item.label}</span>
+                  {item.description && (
+                    <span className="text-xs text-muted-foreground hidden sm:inline truncate">
+                      ({item.description})
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Input
+                    type="number"
+                    min={0}
+                    value={item.count}
+                    onChange={(e) => handleInputChange(index, e.target.value)}
+                    disabled={disabled}
+                    className="w-16 h-8 text-center text-sm font-medium"
+                  />
+                  <span className="text-sm text-muted-foreground w-8">개</span>
+                  <span
+                    className="text-xs font-medium w-12 text-right"
+                    style={{ color: item.color || '#6b7280' }}
+                  >
+                    {percentage}%
+                  </span>
+                </div>
+              </div>
+
+              {/* 비율 바 시각화 */}
+              <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{
+                    width: `${percentage}%`,
+                    backgroundColor: item.color || '#3b82f6',
+                  }}
                 />
-                <span className="text-sm text-muted-foreground">%</span>
               </div>
             </div>
-
-            {/* 슬라이더 */}
-            <div className="px-1">
-              <Slider
-                value={[item.percentage]}
-                min={0}
-                max={100}
-                step={1}
-                disabled={disabled}
-                onValueChange={([val]: number[]) => handlePercentageChange(index, val)}
-                className={cn(
-                  'cursor-pointer',
-                  disabled && 'opacity-50 cursor-not-allowed'
-                )}
-                style={
-                  {
-                    '--slider-color': item.color || '#3b82f6',
-                  } as React.CSSProperties
-                }
-              />
-            </div>
-
-            {/* 비율 바 시각화 */}
-            <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-300"
-                style={{
-                  width: `${item.percentage}%`,
-                  backgroundColor: item.color || '#3b82f6',
-                }}
-              />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* 전체 비율 시각화 바 */}
       <div className="mt-4 pt-3 border-t">
-        <div className="flex h-4 rounded-lg overflow-hidden">
-          {items.map((item, index) => (
-            <div
-              key={item.id}
-              className="transition-all duration-300 flex items-center justify-center"
-              style={{
-                width: `${item.percentage}%`,
-                backgroundColor: item.color || `hsl(${index * 60}, 70%, 50%)`,
-                minWidth: item.percentage > 0 ? '20px' : '0',
-              }}
-            >
-              {item.percentage >= 10 && (
-                <span className="text-[10px] font-bold text-white drop-shadow">
-                  {item.percentage}%
-                </span>
-              )}
-            </div>
-          ))}
+        <div className="flex h-4 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+          {items.map((item, index) => {
+            const percentage = totalCount > 0 ? (item.count / totalCount) * 100 : 0;
+
+            return (
+              <div
+                key={item.id}
+                className="transition-all duration-300 flex items-center justify-center"
+                style={{
+                  width: `${percentage}%`,
+                  backgroundColor: item.color || `hsl(${index * 60}, 70%, 50%)`,
+                  minWidth: item.count > 0 ? '20px' : '0',
+                }}
+              >
+                {percentage >= 10 && (
+                  <span className="text-[10px] font-bold text-white drop-shadow">
+                    {item.count}개
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
         <div className="flex mt-2 gap-3 flex-wrap">
-          {items.map((item) => (
-            <div key={item.id} className="flex items-center gap-1.5 text-xs">
-              <div
-                className="w-2.5 h-2.5 rounded-sm"
-                style={{ backgroundColor: item.color }}
-              />
-              <span className="text-muted-foreground">
-                {item.label}: {item.percentage}%
-              </span>
-            </div>
-          ))}
+          {items.map((item) => {
+            const percentage = totalCount > 0 ? Math.round((item.count / totalCount) * 100) : 0;
+
+            return (
+              <div key={item.id} className="flex items-center gap-1.5 text-xs">
+                <div
+                  className="w-2.5 h-2.5 rounded-sm"
+                  style={{ backgroundColor: item.color }}
+                />
+                <span className="text-muted-foreground">
+                  {item.label}: {item.count}개 ({percentage}%)
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
+
+      {/* 경고 메시지 */}
+      {assignedCount > totalCount && (
+        <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">
+          ⚠️ 할당된 개수({assignedCount}개)가 전체 개수({totalCount}개)를 초과했습니다.
+        </div>
+      )}
     </div>
   );
 }

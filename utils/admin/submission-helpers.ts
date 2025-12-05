@@ -75,7 +75,9 @@ export const applySubmissionFilters = (
   typeFilter: string,
   statusFilter: string,
   dateFilter: string,
-  sortBy: string
+  sortBy: string,
+  createdDateFilter?: Date,
+  startDateFilter?: Date
 ): UnifiedSubmission[] => {
   let filtered = [...submissions];
 
@@ -99,7 +101,7 @@ export const applySubmissionFilters = (
     filtered = filtered.filter((s) => s.status === statusFilter);
   }
 
-  // Date filter
+  // Date filter (preset options)
   if (dateFilter !== 'all') {
     const now = new Date();
     const filterDate = new Date();
@@ -113,6 +115,36 @@ export const applySubmissionFilters = (
     }
 
     filtered = filtered.filter((s) => new Date(s.created_at) >= filterDate);
+  }
+
+  // Created Date Calendar Filter (접수일 지정)
+  if (createdDateFilter) {
+    const filterStart = new Date(createdDateFilter);
+    filterStart.setHours(0, 0, 0, 0);
+    const filterEnd = new Date(createdDateFilter);
+    filterEnd.setHours(23, 59, 59, 999);
+
+    filtered = filtered.filter((s) => {
+      const createdAt = new Date(s.created_at);
+      return createdAt >= filterStart && createdAt <= filterEnd;
+    });
+  }
+
+  // Start Date Calendar Filter (구동일 지정)
+  if (startDateFilter) {
+    const filterStart = new Date(startDateFilter);
+    filterStart.setHours(0, 0, 0, 0);
+    const filterEnd = new Date(startDateFilter);
+    filterEnd.setHours(23, 59, 59, 999);
+
+    filtered = filtered.filter((s) => {
+      // start_date 필드가 있는 경우 해당 필드 사용
+      if (s.start_date) {
+        const startDate = new Date(s.start_date);
+        return startDate >= filterStart && startDate <= filterEnd;
+      }
+      return false;
+    });
   }
 
   // Sort
@@ -169,6 +201,11 @@ const TYPE_LABELS: Record<string, string> = {
   cafe: '카페 침투',
   experience: '체험단 마케팅',
 };
+
+
+
+
+
 
 
 

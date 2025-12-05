@@ -1,5 +1,583 @@
 # CHANGELOG - 애드센스 마케팅 상품 접수 시스템
 
+## 2025-12-06 - [UPDATE] 카카오맵 리뷰 접수 시 이메일 관련 UI 임시 비활성화
+
+**Changed Files**:
+- app/dashboard/review/kmap/page.tsx (수정 - 이메일 관련 UI 주석 처리)
+
+**Changes**:
+1. **이메일 안내 섹션 주석 처리** (523-576줄):
+   - 사진 포함 옵션 선택 시 표시되던 "사진은 이메일로 보내주세요" 안내 UI
+   - 이메일 전송 확인 체크박스
+
+2. **사진 포함 시 다이얼로그 표시 로직 주석 처리** (216-221줄):
+   - `if (formData.hasPhoto)` 조건부 다이얼로그 표시 로직 비활성화
+   - 사진 포함 여부와 관계없이 바로 제출되도록 변경
+
+3. **이메일 확인 다이얼로그 주석 처리** (733-795줄):
+   - "이메일로 사진은 보내셨나요?" AlertDialog 전체 비활성화
+
+**Reason**:
+- 사용자 요청: 사진 포함 옵션 선택해도 이메일 안내 UI 안 뜨게, 체크 안 해도 접수 가능하게
+- 삭제하지 말고 주석(숨김) 처리만 요청
+
+**Impact**:
+- 카카오맵 리뷰 접수 시 사진 포함 옵션 선택해도 이메일 관련 UI가 표시되지 않음
+- 사진 포함 체크박스 체크 안 해도 접수 가능
+- 나중에 필요 시 주석 해제하여 복원 가능
+
+---
+
+## 2025-12-06 - [ADD] 클라이언트용 콘텐츠 목록 + 엑셀 다운로드 기능 추가
+
+**Changed Files**:
+- app/api/submissions/receipt/[id]/content/route.ts (신규 - 방문자 리뷰 콘텐츠 API)
+- app/api/submissions/kakaomap/[id]/content/route.ts (수정 - 전체 콘텐츠 조회로 변경)
+- app/dashboard/review/kmap/status/[id]/page.tsx (수정 - 콘텐츠 목록 탭 + 엑셀 다운로드 추가)
+- app/dashboard/review/visitor/status/[id]/page.tsx (수정 - 콘텐츠 목록 탭 + 엑셀 다운로드 추가)
+- components/dashboard/review/kmap/StatusTableRow.tsx (수정 - 리포트 다운로드 버튼 추가)
+
+**Changes**:
+1. **방문자 리뷰 콘텐츠 API 생성**:
+   - `/api/submissions/receipt/[id]/content` 엔드포인트 생성
+   - 클라이언트가 자신의 접수 콘텐츠 목록 조회 가능
+
+2. **K맵 클라이언트 상세 페이지 개선**:
+   - "콘텐츠 목록" 탭 추가 (관리자와 동일한 테이블 형식)
+   - 진행률 표시 카드 추가
+   - 엑셀 다운로드 버튼 추가
+   - 기존 검수 기능은 "검수하기" 탭으로 분리
+
+3. **방문자 리뷰 클라이언트 상세 페이지 개선**:
+   - "콘텐츠 목록" 탭 추가 (첫 번째 탭으로 설정)
+   - 콘텐츠 등록 진행률 표시
+   - 엑셀 다운로드 버튼 추가
+
+4. **K맵 접수 현황 목록에 리포트 다운로드 버튼 추가**:
+   - StatusTableRow 컴포넌트에 "리포트" 버튼 추가
+   - 클릭 시 해당 접수의 콘텐츠 목록을 엑셀로 다운로드
+
+**Reason**:
+- 사용자 요청: 고객사(광고주)가 관리자처럼 콘텐츠 목록과 진행률을 볼 수 있도록 구현
+
+**Impact**:
+- 클라이언트가 자신의 K맵/방문자 리뷰 콘텐츠 목록 확인 가능
+- 클라이언트가 직접 엑셀 리포트 다운로드 가능
+- 접수 현황 목록에서 바로 리포트 다운로드 가능
+
+---
+
+## 2025-12-06 - [UPDATE] 카카오맵 일별 기록 엑셀 데이터 기준으로 변경
+
+**Changed Files**:
+- app/api/admin/kakaomap/[id]/daily-records/route.ts (수정)
+
+**Changes**:
+- 기존: `is_published` + `updated_at` 기준으로 집계
+- 변경: `review_registered_date` 기준으로 집계 (방문자 리뷰와 동일)
+
+**Reason**:
+- 사용자 요청: 엑셀에 등록한 데이터(리뷰등록날짜)로 일별 기록 표시
+
+**Impact**:
+- 카카오맵 일별 기록이 엑셀 업로드된 리뷰등록날짜 기준으로 표시됨
+
+---
+
+## 2025-12-06 - [UPDATE] 카카오맵 콘텐츠 목록 테이블 방문자 리뷰와 동일하게 수정
+
+**Changed Files**:
+- components/admin/kakaomap/ContentItemsList.tsx (수정 - ContentItem 타입에 새 필드 추가)
+- app/admin/kakaomap/[id]/page.tsx (수정 - 테이블 컬럼 및 엑셀 다운로드 수정)
+
+**Changes**:
+1. **ContentItem 타입 확장**:
+   - `review_registered_date`, `receipt_date`, `review_link`, `review_id` 필드 추가
+
+2. **테이블 컬럼 변경** (방문자 리뷰와 동일):
+   - 순번, 리뷰원고, 리뷰등록날짜, 영수증날짜, 상태, 리뷰링크, 리뷰아이디
+
+3. **엑셀 다운로드 양식 변경**:
+   - 방문자 리뷰와 동일한 컬럼 구조로 변경
+
+**Reason**:
+- 사용자 요청: "네이버 리뷰처럼 하라니깐"
+
+**Impact**:
+- 카카오맵 콘텐츠 목록이 방문자 리뷰와 동일한 형태로 표시됨
+
+---
+
+## 2025-12-06 - [ADD] 카카오맵 테이블에 날짜 필드 마이그레이션 추가
+
+**Changed Files**:
+- supabase/migrations/20251206_kakaomap_content_dates.sql (신규)
+- app/api/admin/data-management/bulk-daily-records/route.ts (수정 - 공통 필드 구조로 복원)
+
+**Changes**:
+1. **마이그레이션 생성**: `kakaomap_content_items` 테이블에 날짜 필드 추가
+   - `review_registered_date` (리뷰 등록 날짜)
+   - `receipt_date` (영수증 날짜)
+
+2. **API 코드 정리**: 카카오맵과 방문자 리뷰가 동일한 필드 구조 사용
+   - 공통: `review_registered_date`, `receipt_date`, `review_link`, `review_id`
+   - 상태만 분리: 카카오맵=`status`, 방문자=`review_status`
+
+**Reason**:
+- 에러: `Could not find the 'receipt_date' column of 'kakaomap_content_items' in the schema cache`
+- 카카오맵 테이블에 해당 컬럼이 없었음
+
+**Tried But Failed Approaches**:
+- ❌ 필드 제외 방식: 카카오맵에서 날짜 필드 제외 → 사용자 요구사항 미충족
+
+**Impact**:
+- ⚠️ Supabase에서 아래 SQL 실행 필요:
+```sql
+ALTER TABLE kakaomap_content_items
+ADD COLUMN IF NOT EXISTS review_registered_date TEXT,
+ADD COLUMN IF NOT EXISTS receipt_date TEXT;
+```
+
+---
+
+## 2025-12-06 - [FIX] 카카오맵 엑셀 업로드 시 status 필드 오류 수정
+
+**Changed Files**:
+- app/api/admin/data-management/bulk-daily-records/route.ts (수정 - 카카오맵/방문자 분리 처리)
+- app/admin/kakaomap/[id]/page.tsx (수정 - rejected 상태 추가)
+
+**Changes**:
+1. **카카오맵과 방문자 리뷰 테이블 필드 차이 대응**:
+   - 카카오맵: `status` 필드 사용 (pending, approved, rejected)
+   - 방문자 리뷰: `review_status` 필드 사용 (pending, approved, revision_requested)
+
+2. **mapKakaomapStatus 함수 추가**:
+   - 카카오맵 전용 상태 매핑 함수
+   - "수정요청" → `rejected`로 변환
+
+3. **상태 config에 rejected 추가**:
+   - 콘텐츠 목록 테이블에서 "반려" 상태 표시 지원
+
+**Reason**:
+- 카카오맵 엑셀 업로드 시 `review_status` 필드가 없어서 데이터가 저장되지 않던 문제
+
+**Impact**:
+- 카카오맵 엑셀 업로드 시 콘텐츠가 정상적으로 저장됨
+- 콘텐츠 목록 및 진행률이 올바르게 표시됨
+
+---
+
+## 2025-12-06 - [ADD] 카카오맵 상세 페이지 콘텐츠 목록 탭 추가
+
+**Changed Files**:
+- app/admin/kakaomap/[id]/page.tsx (수정 - 콘텐츠 목록 탭 및 엑셀 다운로드 기능 추가)
+
+**Changes**:
+1. **콘텐츠 목록 탭 추가**:
+   - 업로드된 모든 리뷰 콘텐츠를 테이블 형태로 표시
+   - 순번, 리뷰원고, 상태, 배포여부, 이미지링크, 등록일시 컬럼
+
+2. **엑셀 다운로드 기능**:
+   - 콘텐츠 목록을 엑셀 파일로 다운로드 가능
+   - 업체명_콘텐츠목록_날짜.xlsx 형식으로 저장
+
+**Reason**:
+- 방문자 리뷰와 동일하게 카카오맵에서도 콘텐츠 현황을 표 형태로 확인 필요
+
+**Impact**:
+- 관리자가 카카오맵 리뷰 콘텐츠를 편리하게 조회 및 내보내기 가능
+
+---
+
+## 2025-12-06 - [FIX] 방문자 리뷰 상태 배지 표시 수정
+
+**Changed Files**:
+- app/admin/review-marketing/visitor/[id]/page.tsx (수정 - 배지 CSS 수정)
+
+**Changes**:
+- 상태 배지("승인됨", "대기", "수정요청")가 두 줄로 줄바꿈되는 문제 수정
+- Badge에 `whitespace-nowrap` 클래스 추가
+- 상태 컬럼 너비 `w-20` → `w-24`로 확대
+
+**Reason**:
+- "승인됨" 등 배지 텍스트가 두 줄로 표시되어 보기 불편
+
+**Impact**:
+- 콘텐츠 목록 테이블에서 상태 배지가 한 줄로 깔끔하게 표시
+
+---
+
+## 2025-12-06 - [UPDATE] 방문자 리뷰 상세 페이지 개선
+
+**Changed Files**:
+- app/api/admin/review-marketing/visitor/[id]/daily-records/route.ts (수정 - content_items 기반으로 변경)
+- app/api/admin/review-marketing/visitor/[id]/content-items/route.ts (추가 - 콘텐츠 목록 API)
+- app/admin/review-marketing/visitor/[id]/page.tsx (수정 - 파일 탭을 콘텐츠 목록 탭으로 변경)
+
+**Changes**:
+
+1. **일별 유입 기록 자동 집계**:
+   - `receipt_content_items.review_registered_date` 기준으로 날짜별 건수 자동 계산
+   - 캘린더에 해당 날짜에 등록된 리뷰 수가 자동 표시
+
+2. **콘텐츠 목록 탭 추가**:
+   - 기존 "파일" 탭을 "콘텐츠 목록" 탭으로 변경
+   - 엑셀로 업로드된 모든 리뷰 콘텐츠를 표 형태로 표시
+   - 순번, 리뷰원고, 리뷰등록날짜, 영수증날짜, 상태, 리뷰링크, 리뷰아이디 컬럼
+
+3. **엑셀 다운로드 기능**:
+   - 콘텐츠 목록을 엑셀 파일로 다운로드 가능
+   - 업로드 양식과 동일한 형식으로 내보내기
+
+**Reason**:
+- 엑셀로 업로드한 데이터를 상세 페이지에서 확인 필요
+- 일별 진행 현황을 자동으로 집계하여 운영 편의성 향상
+
+**Impact**:
+- 관리자가 각 접수건의 콘텐츠 현황을 쉽게 파악 가능
+- 데이터 누적 시 표에 자동 반영
+
+---
+
+## 2025-12-06 - [FIX] 진행률 업데이트 디버그 로깅 추가
+
+**Changed Files**:
+- app/api/admin/data-management/bulk-daily-records/route.ts (수정 - 진행률 디버그 정보 추가)
+- components/admin/data-management/DailyRecordsBulkUpload.tsx (수정 - 디버그 정보 표시 UI)
+
+**Changes**:
+- 엑셀 업로드 시 진행률 업데이트 과정을 디버그 정보로 반환
+- 콘텐츠 아이템 수, 목표 수, 계산된 진행률, 상태, 에러 메시지 표시
+- 프론트엔드에서 디버그 정보를 보기 쉽게 표시
+
+**Reason**:
+- 진행률이 0%로 유지되는 문제 디버깅
+- 어느 단계에서 문제가 발생하는지 파악 필요
+
+**Impact**:
+- 배포 결과 화면에 상세한 진행률 업데이트 과정 표시
+
+---
+
+## 2025-12-06 - [ADD] 리뷰 업로드 시 진행률 자동 계산 및 상태 변경
+
+**Changed Files**:
+- app/api/admin/data-management/bulk-daily-records/route.ts (수정 - 진행률 자동 업데이트)
+- app/api/admin/review-marketing/visitor/route.ts (수정 - content_items 기반 진행률)
+- app/api/submissions/receipt/route.ts (수정 - 클라이언트 API도 content_items 기반)
+- app/admin/review-marketing/visitor-review-management.tsx (수정 - progress_percentage 사용)
+- components/admin/data-management/DailyRecordsBulkUpload.tsx (수정 - 진행률 업데이트 메시지 표시)
+
+**Changes**:
+
+1. **자동 진행률 계산**:
+   - 엑셀로 리뷰 데이터 업로드 시 자동으로 진행률 계산
+   - 진행률 = (콘텐츠 아이템 수 / total_count) × 100
+   - 진행률이 100%면 자동으로 'completed' 상태로 변경
+
+2. **자동 상태 변경**:
+   - 콘텐츠 아이템이 처음 생성되면 'pending' → 'in_progress' 자동 변경
+   - 구동중(in_progress) 상태로 자동 전환
+
+3. **API 진행률 표시 개선**:
+   - 관리자 페이지: content_items 기반 진행률 표시
+   - 클라이언트 페이지: 동일하게 content_items 기반 진행률 표시
+
+**Reason**:
+- 수동으로 상태를 변경하지 않아도 자동으로 진행 상태 반영
+- 고객도 실시간으로 진행률 확인 가능
+- 운영 효율성 향상
+
+**Impact**:
+- 관리자가 리뷰 업로드 시 자동으로 진행률/상태 업데이트
+- 관리자 페이지와 클라이언트 페이지 모두 동일한 진행률 표시
+
+---
+
+## 2025-12-06 - [UPDATE] K맵/방문자 리뷰 양식 통일 (콘텐츠 아이템 관리)
+
+**Changed Files**:
+- components/admin/data-management/DailyRecordsBulkUpload.tsx (수정 - 방문자 리뷰 양식을 K맵과 동일하게 변경)
+- app/api/admin/data-management/bulk-daily-records/route.ts (수정 - 방문자 리뷰도 content_items 테이블로 저장)
+- supabase/migrations/20251206_kakaomap_content_review_link.sql (추가 - K맵 콘텐츠 테이블 컬럼)
+- supabase/migrations/20251206_receipt_content_items.sql (추가 - 방문자 리뷰 콘텐츠 아이템 테이블)
+
+**Changes**:
+
+1. **양식 통일**:
+   - K맵 리뷰와 방문자 리뷰가 동일한 엑셀 양식 사용
+   - 통일된 양식: 접수번호 | 업체명 | 리뷰원고 | 리뷰등록날짜 | 영수증날짜 | 상태 | 리뷰링크 | 리뷰아이디
+
+2. **방문자 리뷰 데이터 저장 방식 변경**:
+   - 기존: receipt_review_daily_records (일별 유입 기록)
+   - 변경: receipt_content_items (개별 리뷰 콘텐츠 관리)
+   - K맵과 동일하게 리뷰 콘텐츠 아이템으로 관리
+
+3. **DB 테이블 추가**:
+   - receipt_content_items: 방문자(네이버) 리뷰 콘텐츠 아이템 테이블 생성
+   - kakaomap_content_items와 동일한 구조 (script_text, review_status, review_link, review_id 등)
+
+**Reason**:
+- K맵 리뷰와 방문자(네이버) 리뷰 모두 "개별 리뷰 콘텐츠 관리"가 필요
+- 일관된 양식으로 운영 효율성 향상
+- 리뷰 원고, 상태, 링크 등을 동일하게 관리
+
+**Impact**:
+- 방문자 리뷰도 K맵과 동일한 콘텐츠 아이템 관리 체계로 변경
+- 기존 방문자 리뷰 daily_records 기능과 별개로 content_items 기능 추가
+- DB 마이그레이션 필요 (receipt_content_items 테이블 생성)
+
+---
+
+## 2025-12-06 - [UPDATE] K맵 리뷰 엑셀 양식 변경 (유입수 → 리뷰 콘텐츠 관리)
+
+**Changed Files**:
+- supabase/migrations/20251206_kakaomap_content_dates.sql (추가 - 날짜 컬럼 마이그레이션)
+- components/admin/data-management/DailyRecordsBulkUpload.tsx (수정 - K맵 템플릿/파싱/UI 변경)
+- app/api/admin/data-management/bulk-daily-records/route.ts (수정 - K맵 전용 처리 로직)
+
+**Changes**:
+
+1. **K맵 리뷰 엑셀 양식 변경**:
+   - 기존: 접수번호 | 업체명 | 날짜 | 유입수 | 리뷰원고 | 메모
+   - 변경: 접수번호 | 업체명 | 리뷰원고 | 리뷰등록날짜 | 영수증날짜 | 상태
+   - 상태값: 대기, 승인됨, 수정요청 (기존 review_status 시스템 유지)
+
+2. **DB 컬럼 추가 (kakaomap_content_items 테이블)**:
+   - `review_registered_date`: 카카오맵에 리뷰가 실제 등록된 날짜
+   - `receipt_date`: 영수증에 표시된 방문 날짜
+   - 상태는 기존 `review_status` 필드 사용 (pending, approved, revision_requested)
+
+3. **API 로직 변경**:
+   - K맵 리뷰: daily_records 테이블이 아닌 kakaomap_content_items 테이블에 직접 저장
+   - 기존 리뷰 원고가 있으면 업데이트, 없으면 새로 생성
+   - 한글 상태값 → DB review_status 값으로 자동 변환 (대기→pending, 승인됨→approved, 수정요청→revision_requested)
+   - 다른 상품 (방문자리뷰, 블로그, 카페)은 기존대로 daily_records에 저장
+
+**Reason**:
+- K맵 리뷰는 "일별 유입 수"가 아닌 "개별 리뷰 콘텐츠" 관리가 필요
+- 리뷰 등록 날짜와 영수증 날짜를 별도로 추적해야 함
+- 기존 review_status 시스템 유지로 일관성 보장
+
+**Impact**:
+- K맵 리뷰 마케팅 데이터 관리 방식 변경
+- 기존 K맵 일별 유입 기록과 별개로 리뷰 콘텐츠 관리 가능
+
+---
+
+## 2025-12-06 - [UPDATE] 클라이언트 대시보드에서 MID 대신 접수번호 표시
+
+**Changed Files**:
+- types/submission.ts (수정 - UnifiedSubmission interface에 submission_number 추가)
+- app/dashboard/review/visitor/status/page.tsx (수정 - MID → submission_number 표시)
+- app/dashboard/reward/status/page.tsx (수정 - MID → submission_number 표시)
+- components/dashboard/submissions/SubmissionCard.tsx (수정 - place_mid → submission_number 표시)
+- components/dashboard/submissions/SubmissionTableRow.tsx (수정 - place_mid → submission_number 표시)
+- app/api/submissions/all/route.ts (수정 - 6개 상품 타입에 submission_number 반환 추가)
+- app/api/submissions/reward/route.ts (수정 - 접수 생성 시 submission_number 자동 생성)
+
+**Changes**:
+
+1. **클라이언트 대시보드 UI 수정**:
+   - 방문자 리뷰 현황 페이지: "MID: 2010744992" → "RR-2025-0015" 형식으로 변경
+   - 리워드 현황 페이지: "MID: ..." → "PL-2025-0001" 형식으로 변경
+   - SubmissionCard, SubmissionTableRow 공통 컴포넌트도 동일하게 수정
+   - font-mono 클래스 적용으로 고정폭 폰트 사용
+
+2. **API 수정**:
+   - `/api/submissions/all`: 6개 상품 타입 모두 submission_number 필드 반환
+   - `/api/submissions/reward`: POST 시 generate_submission_number RPC로 접수번호 자동 생성
+
+**Reason**:
+- 클라이언트가 자신의 접수 내역에서 MID 값이 아닌 관리자 페이지와 동일한 접수번호를 확인할 수 있도록 함
+- 고객-관리자 간 소통 시 동일한 식별자(접수번호) 사용 가능
+
+**Impact**:
+- 클라이언트 대시보드에서 접수번호가 표시됨
+- 관리자 페이지와 클라이언트 페이지에서 동일한 접수번호로 접수 건 식별 가능
+
+---
+
+## 2025-12-06 - [FIX] 신규 접수 시 접수번호(submission_number) 자동 생성 기능 추가
+
+**Changed Files**:
+- app/api/submissions/receipt/route.ts (수정 - generate_submission_number RPC 호출 추가)
+- app/api/submissions/kakaomap/route.ts (수정 - generate_submission_number RPC 호출 추가)
+- app/api/submissions/place/route.ts (수정 - generate_submission_number RPC 호출 추가)
+- app/api/submissions/blog/route.ts (수정 - generate_submission_number RPC 호출 추가)
+- app/api/submissions/cafe/route.ts (수정 - generate_submission_number RPC 호출 추가)
+- app/api/submissions/experience/submit/route.ts (수정 - generate_submission_number RPC 호출 추가)
+
+**Changes**:
+
+1. **접수번호 자동 생성 로직 추가**:
+   - 각 submission API의 POST 메서드에서 `generate_submission_number` DB 함수 호출
+   - 포인트 차감 후, 접수 생성 전에 접수번호 생성
+   - 접수번호 생성 실패 시 포인트 롤백 처리
+
+2. **상품별 접수번호 코드**:
+   - PL: 리워드 (place_submissions)
+   - RR: 방문자 리뷰 (receipt_review_submissions)
+   - KM: 카카오맵 리뷰 (kakaomap_review_submissions)
+   - BD: 블로그 배포 (blog_distribution_submissions)
+   - CM: 카페 침투 (cafe_marketing_submissions)
+   - EX: 체험단 (experience_submissions)
+
+**Reason**:
+- 기존에는 migration에서 backfill만 했고, 새 접수에는 접수번호가 생성되지 않았음
+- 최근 접수한 데이터에 접수번호가 "-"로 표시되는 문제 발생
+- 모든 신규 접수에 자동으로 접수번호가 부여되도록 수정
+
+**Impact**:
+- 이후 모든 신규 접수에 자동으로 접수번호 부여 (예: KM-2025-0015)
+- 관리자 페이지에서 모든 접수의 접수번호 확인 가능
+
+---
+
+## 2025-12-06 - [ADD] 관리자 페이지 접수번호(submission_number) 노출 기능 추가
+
+**Changed Files**:
+- app/admin/kakaomap/kakaomap-management-table.tsx (수정 - 접수번호 컬럼 추가)
+- app/admin/review-marketing/kmap-review-management.tsx (수정 - interface에 submission_number 추가)
+- app/admin/review-marketing/visitor-review-management.tsx (수정 - 접수번호 컬럼 추가)
+
+**Changes**:
+
+1. **카카오맵 리뷰 관리 테이블 (kakaomap-management-table.tsx)**:
+   - `submission_number` 필드를 interface에 추가
+   - 테이블에 '접수번호' 컬럼 추가 (List View, Group View 모두)
+   - 접수번호 복사 버튼 추가 (클릭 시 클립보드에 복사)
+   - 복사 완료 시 체크 아이콘으로 피드백 제공
+
+2. **방문자 리뷰 관리 테이블 (visitor-review-management.tsx)**:
+   - `submission_number` 필드를 interface에 추가
+   - 테이블에 '접수번호' 컬럼 추가 (List View, Group View 모두)
+   - 접수번호 복사 버튼 추가 (클릭 시 클립보드에 복사)
+   - 복사 완료 시 체크 아이콘으로 피드백 제공
+
+**Reason**:
+- 외부 엑셀 데이터와 시스템 연동을 위해 접수번호 확인 필요
+- 관리자가 각 접수 건의 접수번호를 쉽게 복사하여 외부 시스템/엑셀에 활용 가능
+
+**Impact**:
+- 카카오맵 리뷰 마케팅 관리 페이지 테이블 컬럼 추가
+- 방문자 리뷰 마케팅 관리 페이지 테이블 컬럼 추가
+
+---
+
+## 2025-12-05 - [UPDATE] 데이터 관리 - 대분류별 엑셀 업로드 분리
+
+**Changed Files**:
+- app/admin/data-management/page.tsx (수정 - 탭 구조로 대분류 선택)
+- components/admin/data-management/DailyRecordsBulkUpload.tsx (수정 - category prop 추가)
+
+**Changes**:
+
+1. **업로드 방식 선택 UI (page.tsx)**:
+   - 탭 4개: 통합 업로드 | 리뷰 마케팅 | 블로그 배포 | 카페 침투
+   - 기존 통합 업로드 기능 유지
+   - 대분류별 별도 업로드 기능 추가
+
+2. **컴포넌트 리팩토링 (DailyRecordsBulkUpload.tsx)**:
+   - `category` prop 추가 (all | review | blog | cafe)
+   - 대분류별 템플릿 다운로드 기능
+   - 대분류별 시트만 파싱하도록 필터링
+
+**Reason**:
+- 대분류별로 담당자가 다를 수 있어 별도 관리 필요
+- 특정 대분류만 업로드할 때 편의성 향상
+
+**Impact**:
+- 데이터 관리 페이지 UI 변경
+- 기존 통합 업로드 기능은 그대로 유지
+
+---
+
+## 2025-12-05 - [ADD] 전체 접수 내역 - 캘린더 기반 날짜 필터링 기능
+
+**Changed Files**:
+- components/admin/submissions/SubmissionsFilters.tsx (수정 - 캘린더 UI 추가)
+- app/admin/submissions/admin-submissions-table.tsx (수정 - 날짜 상태 추가)
+- utils/admin/submission-helpers.ts (수정 - 필터링 로직 확장)
+- types/admin/submissions.ts (수정 - start_date 필드 추가)
+
+**Changes**:
+
+1. **캘린더 필터 UI (SubmissionsFilters.tsx)**:
+   - 접수일 지정 캘린더 Popover 추가
+   - 구동일 지정 캘린더 Popover 추가
+   - 날짜 선택 후 X 버튼으로 필터 해제 가능
+   - date-fns와 한국어 로케일 적용
+
+2. **상태 관리 (admin-submissions-table.tsx)**:
+   - `createdDateFilter` state 추가 (접수일 필터)
+   - `startDateFilter` state 추가 (구동일 필터)
+   - useEffect 의존성에 날짜 필터 추가
+
+3. **필터링 로직 (submission-helpers.ts)**:
+   - `applySubmissionFilters` 함수에 날짜 파라미터 추가
+   - 접수일(created_at) 지정일 필터링
+   - 구동일(start_date) 지정일 필터링
+   - 기존 기간 필터(오늘/7일/30일)와 병행 가능
+
+4. **타입 확장 (submissions.ts)**:
+   - UnifiedSubmission에 `start_date?: string` 필드 추가
+
+**Reason**:
+- 관리자가 특정 날짜의 접수 내역을 빠르게 조회
+- 구동일 기준으로 업무 계획 수립 가능
+- 클라이언트 요구사항 #9 해결
+
+**Impact**:
+- 전체 접수 내역 페이지에서 날짜 지정 필터링 가능
+- 기존 기간 필터와 함께 사용 가능
+
+---
+
+## 2025-12-05 - [ADD] 카카오맵 리뷰 - 업체명 자동 추출 기능
+
+**Changed Files**:
+- utils/kakao-place.ts (신규 생성 - 115줄)
+- app/api/kakao-place/[mid]/route.ts (신규 생성 - 149줄)
+- app/dashboard/review/kmap/page.tsx (수정 - 자동 추출 연동)
+
+**Changes**:
+
+1. **URL 파싱 유틸리티 (utils/kakao-place.ts)**:
+   - `extractKakaoPlaceMID()` - 카카오맵 URL에서 MID 추출
+   - `fetchKakaoBusinessInfoByMID()` - MID로 업체 정보 API 호출
+   - `isValidKakaoPlaceUrl()` - URL 유효성 검증
+   - `normalizeKakaoPlaceUrl()` - URL 정규화
+   - 지원 형식: `https://place.map.kakao.com/[MID]`
+
+2. **업체 정보 조회 API (app/api/kakao-place/[mid]/route.ts)**:
+   - 카카오맵 플레이스 페이지 HTML 스크래핑
+   - 업체명 추출 방법 (우선순위):
+     1. og:title 메타태그
+     2. title 태그
+     3. JSON-LD 구조화 데이터
+     4. og:site_name 메타태그
+     5. data-name 속성
+   - 업체명 후처리 (카카오맵 접미사 제거)
+
+3. **카카오맵 리뷰 페이지 연동 (kmap/page.tsx)**:
+   - `handleKmapUrlChange` 핸들러 추가
+   - URL 입력 시 자동으로 업체명 추출 및 입력
+   - 로딩 인디케이터 표시 (`fetchingBusinessName` state)
+   - 토스트 알림으로 업체명 자동 입력 안내
+   - 이미 업체명이 입력된 경우 덮어쓰지 않음
+
+**Reason**:
+- 네이버 플레이스와 동일한 사용자 경험 제공
+- 수동 입력 오류 방지 및 편의성 향상
+- 클라이언트 요구사항 #10 해결
+
+**Impact**:
+- 카카오맵 리뷰 접수 페이지에서 URL 입력 시 업체명 자동 입력
+- 기존 수동 입력 기능 유지 (자동 입력 후 수정 가능)
+
+---
+
 ## 2025-11-28 - [ADD] 카카오 소셜 로그인 기능 추가
 
 **Changed Files**:

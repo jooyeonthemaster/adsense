@@ -349,7 +349,9 @@ export default function RewardDetailPage({ params }: { params: Promise<{ id: str
                   records={dailyRecords}
                   totalCount={totalExpected}
                   dailyCount={submission.daily_count}
+                  totalDays={submission.total_days}
                   createdAt={submission.created_at}
+                  startDateStr={submission.start_date}
                   onRecordSave={fetchDailyRecords}
                   apiEndpoint={`/api/admin/reward/${unwrappedParams.id}/daily-records`}
                 />

@@ -9,11 +9,23 @@ import { Textarea } from '@/components/ui/textarea';
 import { CheckboxRadioGroup, CheckboxRadioItem } from '@/components/ui/checkbox-radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Sparkles, CheckCircle2, Info, AlertCircle, BookOpen, ChevronDown } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+import { Sparkles, CheckCircle2, AlertTriangle, CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { createClient } from '@/utils/supabase/client';
 import { extractNaverPlaceMID, fetchBusinessInfoByMID } from '@/utils/naver-place';
 import { ProductGuideSection } from '@/components/dashboard/ProductGuideSection';
+import { format, addDays, differenceInDays } from 'date-fns';
+import { ko } from 'date-fns/locale';
 
 export default function VisitorReviewPage() {
   const router = useRouter();
@@ -23,19 +35,64 @@ export default function VisitorReviewPage() {
     placeUrl: '',
     placeMid: '',
     dailyCount: 1,
-    totalDays: 10,
-    totalCount: 10,
+    startDate: null as Date | null,
+    endDate: null as Date | null,
     photoOption: 'with', // 'with' | 'without'
     scriptOption: 'custom', // 'custom' | 'ai'
     guideline: '',
-    businessLicense: null as File | null,
-    photos: [] as File[],
+    emailDocConfirmed: false, // 이메일로 서류 전송 확인
   });
+
+  // 주말/금요일 18시 이후 접수 시 최소 시작일 계산
+  const getMinStartDate = () => {
+    const now = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dayOfWeek = now.getDay(); // 0=일, 1=월, ..., 5=금, 6=토
+    const hour = now.getHours();
+
+    // 금요일 18시 이후, 토요일, 일요일 접수 시 → 화요일부터 시작 가능
+    const isWeekendSubmission =
+      dayOfWeek === 6 || // 토요일
+      dayOfWeek === 0 || // 일요일
+      (dayOfWeek === 5 && hour >= 18); // 금요일 18시 이후
+
+    if (isWeekendSubmission) {
+      // 다음 화요일까지 남은 일수 계산
+      let daysUntilTuesday = 0;
+      if (dayOfWeek === 5) daysUntilTuesday = 4; // 금→화: 4일
+      else if (dayOfWeek === 6) daysUntilTuesday = 3; // 토→화: 3일
+      else if (dayOfWeek === 0) daysUntilTuesday = 2; // 일→화: 2일
+
+      return addDays(today, daysUntilTuesday);
+    }
+
+    // 평일 접수 시 내일부터 가능
+    return addDays(today, 1);
+  };
+
+  const minStartDate = getMinStartDate();
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const hour = now.getHours();
+  const isWeekendSubmission =
+    dayOfWeek === 6 || dayOfWeek === 0 || (dayOfWeek === 5 && hour >= 18);
+
+  // 총 작업일 계산 (캘린더 기반)
+  const totalDays = formData.startDate && formData.endDate
+    ? differenceInDays(formData.endDate, formData.startDate) + 1
+    : 0;
+
+  // 총 건수 계산
+  const totalCount = formData.dailyCount * totalDays;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pricePerReview, setPricePerReview] = useState<number | null>(null);
   const [loadingPrice, setLoadingPrice] = useState(true);
   const [loadingBusinessName, setLoadingBusinessName] = useState(false);
+  const [showEmailConfirmDialog, setShowEmailConfirmDialog] = useState(false);
+  const [dialogEmailConfirmed, setDialogEmailConfirmed] = useState(false);
 
   // 가격 설정 여부 확인
   const isPriceConfigured = pricePerReview !== null && pricePerReview > 0;
@@ -109,90 +166,53 @@ export default function VisitorReviewPage() {
   };
 
   const handleDailyCountChange = (value: number) => {
-    const total = value * formData.totalDays;
     setFormData(prev => ({
       ...prev,
       dailyCount: value,
-      totalCount: total,
     }));
-  };
-
-  const handleTotalDaysChange = (value: number) => {
-    const total = formData.dailyCount * value;
-    setFormData(prev => ({
-      ...prev,
-      totalDays: value,
-      totalCount: total,
-    }));
-  };
-
-  const handleBusinessLicenseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData(prev => ({ ...prev, businessLicense: e.target.files![0] }));
-    }
-  };
-
-  const handlePhotosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const filesArray = Array.from(e.target.files);
-      setFormData(prev => ({ ...prev, photos: filesArray }));
-    }
-  };
-
-  // Supabase Storage에 파일 업로드
-  const uploadFileToStorage = async (file: File, folder: string): Promise<string | null> => {
-    try {
-      const supabase = createClient();
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `receipts/${folder}/${fileName}`;
-
-      const { data, error } = await supabase.storage
-        .from('submissions')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-
-      if (error) {
-        console.error('파일 업로드 실패:', error);
-        return null;
-      }
-
-      // Public URL 가져오기
-      const { data: urlData } = supabase.storage
-        .from('submissions')
-        .getPublicUrl(filePath);
-
-      return urlData.publicUrl;
-    } catch (error) {
-      console.error('파일 업로드 중 오류:', error);
-      return null;
-    }
   };
 
   const calculateTotalCost = () => {
-    return formData.totalCount * (pricePerReview || 0);
+    return totalCount * (pricePerReview || 0);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // 최소 주문건수 검증을 가장 먼저 수행 (화면에 경고가 보이므로 사용자가 이해하기 쉬움)
-    if (formData.totalCount < 30) {
-      toast({
-        variant: 'destructive',
-        title: '⚠️ 최소 주문건수 미달',
-        description: `방문자 리뷰는 최소 30건 이상 주문하셔야 합니다. (현재: ${formData.totalCount}건)`,
-      });
-      return;
-    }
 
     if (!formData.businessName || !formData.placeUrl) {
       toast({
         variant: 'destructive',
         title: '입력 오류',
         description: '필수 항목을 모두 입력해주세요.',
+      });
+      return;
+    }
+
+    if (!formData.startDate || !formData.endDate) {
+      toast({
+        variant: 'destructive',
+        title: '입력 오류',
+        description: '시작일과 종료일을 선택해주세요.',
+      });
+      return;
+    }
+
+    // 구동일수 최소 3일 검증 (클라이언트 요청 - 2025-12-05)
+    if (totalDays < 3) {
+      toast({
+        variant: 'destructive',
+        title: '⚠️ 구동일수 부족',
+        description: '구동일수는 3일 이상부터 접수가 가능합니다.',
+      });
+      return;
+    }
+
+    // 최소 주문건수 검증을 가장 먼저 수행 (화면에 경고가 보이므로 사용자가 이해하기 쉬움)
+    if (totalCount < 30) {
+      toast({
+        variant: 'destructive',
+        title: '⚠️ 최소 주문건수 미달',
+        description: `방문자 리뷰는 최소 30건 이상 주문하셔야 합니다. (현재: ${totalCount}건)`,
       });
       return;
     }
@@ -215,42 +235,17 @@ export default function VisitorReviewPage() {
       return;
     }
 
-    if (!formData.businessLicense && formData.photos.length === 0) {
-      toast({
-        variant: 'destructive',
-        title: '입력 오류',
-        description: '사업자등록증 또는 샘플 영수증을 첨부해주세요.',
-      });
-      return;
-    }
+    // 이메일 확인 다이얼로그 표시
+    setDialogEmailConfirmed(false);
+    setShowEmailConfirmDialog(true);
+  };
 
+  const executeSubmit = async () => {
+    setShowEmailConfirmDialog(false);
     setIsSubmitting(true);
 
     try {
-      // 파일 업로드 처리
-      let businessLicenseUrl: string | null = null;
-      const photoUrls: string[] = [];
-
-      // 사업자등록증 업로드
-      if (formData.businessLicense) {
-        const url = await uploadFileToStorage(formData.businessLicense, 'business-licenses');
-        if (url) {
-          businessLicenseUrl = url;
-        } else {
-          throw new Error('사업자등록증 업로드에 실패했습니다.');
-        }
-      }
-
-      // 샘플 영수증 업로드
-      for (const photo of formData.photos) {
-        const url = await uploadFileToStorage(photo, 'receipt-photos');
-        if (url) {
-          photoUrls.push(url);
-        } else {
-          throw new Error('샘플 영수증 업로드에 실패했습니다.');
-        }
-      }
-
+      // 서류는 이메일로 받음 (sense-ad@naver.com)
       const response = await fetch('/api/submissions/receipt', {
         method: 'POST',
         headers: {
@@ -260,11 +255,12 @@ export default function VisitorReviewPage() {
           company_name: formData.businessName,
           place_url: formData.placeUrl,
           daily_count: formData.dailyCount,
-          total_days: formData.totalDays,
-          total_count: formData.totalCount,
+          total_days: totalDays,
+          total_count: totalCount,
           total_points: calculateTotalCost(),
-          business_license_url: businessLicenseUrl,
-          photo_urls: photoUrls.length > 0 ? photoUrls : null,
+          start_date: formData.startDate ? format(formData.startDate, 'yyyy-MM-dd') : null,
+          photo_option: formData.photoOption,
+          script_option: formData.scriptOption,
           notes: formData.guideline || null,
         }),
       });
@@ -392,21 +388,96 @@ export default function VisitorReviewPage() {
                   <span className="text-xs text-gray-500">최소 1건, 최대 10건</span>
                 </div>
 
-                {/* 총 작업일 */}
+                {/* 구동 시작일 */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="totalDays" className="text-xs font-medium text-gray-700">
-                    총 작업일 <span className="text-rose-500">*</span>
+                  <Label className="text-xs font-medium text-gray-700">
+                    구동 시작일 <span className="text-rose-500">*</span>
                   </Label>
-                  <Input
-                    id="totalDays"
-                    type="number"
-                    min="1"
-                    value={formData.totalDays}
-                    onChange={(e) => handleTotalDaysChange(Number(e.target.value))}
-                    className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
-                  />
-                  <span className="text-xs text-gray-500">작업 진행 일수</span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={`w-full justify-start text-left font-normal h-9 text-sm ${
+                          !formData.startDate ? 'text-gray-400' : 'text-gray-900'
+                        }`}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.startDate
+                          ? format(formData.startDate, 'yyyy년 M월 d일 (EEE)', { locale: ko })
+                          : '시작일 선택'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.startDate || undefined}
+                        onSelect={(date) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            startDate: date || null,
+                            endDate: date && prev.endDate && date > prev.endDate ? null : prev.endDate,
+                          }));
+                        }}
+                        disabled={(date) => date < minStartDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <span className="text-xs text-gray-500">
+                    {isWeekendSubmission
+                      ? `주말 접수 확인 불가로 인해 ${format(minStartDate, 'M월 d일 (EEE)', { locale: ko })}부터 가능`
+                      : '내일부터 선택 가능'}
+                  </span>
                 </div>
+
+                {/* 구동 종료일 */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-gray-700">
+                    구동 종료일 <span className="text-rose-500">*</span>
+                  </Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={!formData.startDate}
+                        className={`w-full justify-start text-left font-normal h-9 text-sm ${
+                          !formData.endDate ? 'text-gray-400' : 'text-gray-900'
+                        }`}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.endDate
+                          ? format(formData.endDate, 'yyyy년 M월 d일 (EEE)', { locale: ko })
+                          : '종료일 선택'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.endDate || undefined}
+                        onSelect={(date) => setFormData(prev => ({ ...prev, endDate: date || null }))}
+                        disabled={(date) => !formData.startDate || date < formData.startDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <span className="text-xs text-gray-500">시작일 이후 날짜 선택 (최소 3일)</span>
+                </div>
+
+                {/* 총 작업일 표시 */}
+                {formData.startDate && formData.endDate && (
+                  <div className="p-2.5 bg-sky-50 rounded-lg border border-sky-200">
+                    <span className="text-xs text-sky-700">총 작업일: </span>
+                    <span className="text-base font-bold text-sky-900">{totalDays}일</span>
+                    <span className="text-xs text-sky-600 ml-1">
+                      ({format(formData.startDate, 'M/d', { locale: ko })} ~ {format(formData.endDate, 'M/d', { locale: ko })})
+                    </span>
+                    {totalDays < 3 && (
+                      <p className="text-xs text-rose-600 mt-1">⚠️ 최소 3일 이상 필요</p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -459,69 +530,59 @@ export default function VisitorReviewPage() {
                   />
                 </div>
 
-                {/* 사업자등록증 */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="businessLicense" className="text-xs font-medium text-gray-700">
-                    사업자등록증
-                  </Label>
-                  <label
-                    htmlFor="businessLicense"
-                    className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 cursor-pointer transition-colors"
-                  >
-                    <Upload className="h-4 w-4 text-gray-400" />
-                    <span className="text-xs text-gray-600">
-                      {formData.businessLicense
-                        ? formData.businessLicense.name
-                        : 'PDF, JPG, PNG 파일 업로드'}
-                    </span>
-                    <input
-                      id="businessLicense"
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={handleBusinessLicenseChange}
-                      className="hidden"
-                    />
-                  </label>
-                  {formData.businessLicense && (
-                    <div className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
-                      • {formData.businessLicense.name} ({(formData.businessLicense.size / 1024).toFixed(1)}KB)
+                {/* 필수 서류 안내 - 이메일 제출 */}
+                <div className="space-y-3 p-4 bg-sky-50 border border-sky-200 rounded-lg">
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <div className="bg-sky-100 p-2 rounded-full shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-sky-600" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-sky-800">
+                          필수 서류를 이메일로 보내주세요
+                        </p>
+                        <p className="text-xs text-sky-700 mt-1">
+                          사업자등록증 or 샘플 영수증을 아래 이메일로 전송해 주세요.
+                        </p>
+                        <p className="text-sm font-bold text-sky-900 mt-2 bg-white px-3 py-1.5 rounded border border-sky-200 inline-block">
+                          sense-ad@naver.com
+                        </p>
+                        <p className="text-xs text-sky-600 mt-2">
+                          📌 이메일 제목은 <span className="font-semibold">업체명 or 대행사명</span>으로 작성해 주세요.
+                        </p>
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </div>
 
-                {/* 샘플 영수증 */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="photos" className="text-xs font-medium text-gray-700">
-                    샘플 영수증
-                  </Label>
-                  <label
-                    htmlFor="photos"
-                    className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 cursor-pointer transition-colors"
-                  >
-                    <Upload className="h-4 w-4 text-gray-400" />
-                    <span className="text-xs text-gray-600">
-                      {formData.photos.length > 0
-                        ? `${formData.photos.length}개 파일 선택됨`
-                        : 'JPG, PNG, PDF 파일 업로드 (여러 개 가능)'}
-                    </span>
-                    <input
-                      id="photos"
-                      type="file"
-                      multiple
-                      accept=".jpg,.jpeg,.png,.pdf"
-                      onChange={handlePhotosChange}
-                      className="hidden"
-                    />
-                  </label>
-                  {formData.photos.length > 0 && (
-                    <div className="space-y-0.5 mt-1.5">
-                      {formData.photos.map((file, index) => (
-                        <div key={index} className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
-                          • {file.name} ({(file.size / 1024).toFixed(1)}KB)
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {/* 이메일 전송 확인 체크박스 (필수) */}
+                  <div className="flex items-center gap-2 pt-3 border-t border-sky-200">
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={formData.emailDocConfirmed}
+                      onClick={() => setFormData(prev => ({ ...prev, emailDocConfirmed: !prev.emailDocConfirmed }))}
+                      className={`relative flex items-center justify-center h-6 w-6 rounded border-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 ${
+                        formData.emailDocConfirmed
+                          ? 'bg-sky-500 border-sky-500 shadow-lg'
+                          : 'bg-white border-gray-300 hover:border-sky-400'
+                      }`}
+                    >
+                      {formData.emailDocConfirmed && (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-white">
+                          <path d="M20 6 9 17l-5-5"></path>
+                        </svg>
+                      )}
+                    </button>
+                    <label
+                      onClick={() => setFormData(prev => ({ ...prev, emailDocConfirmed: !prev.emailDocConfirmed }))}
+                      className="text-sm font-medium cursor-pointer select-none text-sky-800"
+                    >
+                      위 이메일 주소로 서류를 전송했습니다 <span className="text-rose-500">*</span>
+                    </label>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -538,25 +599,25 @@ export default function VisitorReviewPage() {
                 {/* 총 작업수량 */}
                 <div className="space-y-1.5">
                   <div className={`flex items-center justify-between p-3 rounded-lg ${
-                    formData.totalCount < 30
+                    totalCount < 30
                       ? 'bg-rose-50 border border-rose-200'
                       : 'bg-gray-50 border border-gray-200'
                   }`}>
                     <span className={`text-xs font-medium ${
-                      formData.totalCount < 30 ? 'text-rose-700' : 'text-gray-700'
+                      totalCount < 30 ? 'text-rose-700' : 'text-gray-700'
                     }`}>총 작업수량</span>
                     <div className="flex items-baseline gap-1">
                       <span className={`text-xl font-bold ${
-                        formData.totalCount < 30 ? 'text-rose-900' : 'text-gray-900'
+                        totalCount < 30 ? 'text-rose-900' : 'text-gray-900'
                       }`}>
-                        {formData.totalCount}
+                        {totalCount}
                       </span>
                       <span className={`text-xs ${
-                        formData.totalCount < 30 ? 'text-rose-600' : 'text-gray-600'
+                        totalCount < 30 ? 'text-rose-600' : 'text-gray-600'
                       }`}>건</span>
                     </div>
                   </div>
-                  {formData.totalCount < 30 && (
+                  {totalCount < 30 && (
                     <p className="text-xs text-rose-600 px-1">
                       ⚠️ 최소 30건 이상 필요
                     </p>
@@ -569,7 +630,7 @@ export default function VisitorReviewPage() {
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-white">예상 비용</span>
                       <Badge variant="secondary" className="bg-white/20 text-white border-0 text-xs px-2 py-0">
-                        {formData.totalCount}건
+                        {totalCount}건
                       </Badge>
                     </div>
                     <div className="flex items-baseline gap-1">
@@ -579,7 +640,7 @@ export default function VisitorReviewPage() {
                       <span className="text-sm text-white/90">P</span>
                     </div>
                     <div className="text-xs text-white/80">
-                      일 {formData.dailyCount}건 × {formData.totalDays}일
+                      일 {formData.dailyCount}건 × {totalDays}일
                     </div>
                   </div>
                 </div>
@@ -612,6 +673,73 @@ export default function VisitorReviewPage() {
           </Card>
         </form>
       </div>
+
+      {/* 이메일 확인 다이얼로그 */}
+      <AlertDialog open={showEmailConfirmDialog} onOpenChange={setShowEmailConfirmDialog}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="h-5 w-5" />
+              잠깐!
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <p className="text-base text-gray-700 font-medium">
+                  이메일로 필수 서류는 보내셨나요?
+                </p>
+                <p className="text-sm text-gray-600">
+                  보내셔야 주문이 정상적으로 처리됩니다.
+                </p>
+                <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg">
+                  <p className="text-xs text-sky-700 mb-1">전송 이메일 주소</p>
+                  <p className="text-sm font-bold text-sky-900">sense-ad@naver.com</p>
+                  <p className="text-xs text-sky-600 mt-2">
+                    📌 이메일 제목은 <span className="font-semibold">업체명 or 대행사명</span>으로 작성해 주세요.
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    📎 필수 서류: 사업자등록증 or 샘플 영수증 (둘 중 하나)
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 pt-2">
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={dialogEmailConfirmed}
+                    onClick={() => setDialogEmailConfirmed(!dialogEmailConfirmed)}
+                    className={`relative flex items-center justify-center h-6 w-6 rounded border-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 ${
+                      dialogEmailConfirmed
+                        ? 'bg-sky-500 border-sky-500 shadow-lg'
+                        : 'bg-white border-gray-300 hover:border-sky-400'
+                    }`}
+                  >
+                    {dialogEmailConfirmed && (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-white">
+                        <path d="M20 6 9 17l-5-5"></path>
+                      </svg>
+                    )}
+                  </button>
+                  <label
+                    onClick={() => setDialogEmailConfirmed(!dialogEmailConfirmed)}
+                    className="text-sm font-medium cursor-pointer select-none text-gray-700"
+                  >
+                    네, 서류를 이메일로 보냈습니다
+                  </label>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="flex-1">취소</AlertDialogCancel>
+            <Button
+              onClick={executeSubmit}
+              disabled={!dialogEmailConfirmed || isSubmitting}
+              className="flex-1 bg-sky-500 hover:bg-sky-600 text-white"
+            >
+              {isSubmitting ? '접수 중...' : '접수하기'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

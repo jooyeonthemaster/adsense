@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Calendar, TrendingUp } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { DailyRecordCalendar } from '@/components/admin/review-marketing/DailyRecordCalendar';
 
@@ -38,6 +39,36 @@ const statusConfig: Record<string, { label: string; variant: 'outline' | 'defaul
   completed: { label: '완료', variant: 'secondary' },
   cancelled: { label: '중단됨', variant: 'destructive' },
 };
+
+// 일자 기준 자동 진행률 계산 함수
+function calculateAutoProgress(startDate: string | null, totalDays: number) {
+  if (!startDate) {
+    return { currentDay: 0, progressPercent: 0, isStarted: false, isCompleted: false };
+  }
+
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const diffTime = today.getTime() - start.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+  if (diffDays <= 0) {
+    return { currentDay: 0, progressPercent: 0, isStarted: false, isCompleted: false };
+  }
+
+  if (diffDays >= totalDays) {
+    return { currentDay: totalDays, progressPercent: 100, isStarted: true, isCompleted: true };
+  }
+
+  return {
+    currentDay: diffDays,
+    progressPercent: Math.round((diffDays / totalDays) * 100),
+    isStarted: true,
+    isCompleted: false,
+  };
+}
 
 export default function RewardDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
@@ -141,13 +172,32 @@ export default function RewardDetailPage({ params }: { params: Promise<{ id: str
 
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>실제 유입</CardDescription>
-              <CardTitle className="text-3xl text-emerald-600">{totalActualCount.toLocaleString()}타</CardTitle>
+              <CardDescription className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                일자 기준 진행률
+              </CardDescription>
+              <CardTitle className="text-3xl text-sky-600">
+                {(() => {
+                  const progress = calculateAutoProgress(submission.start_date, submission.total_days);
+                  return `${progress.progressPercent}%`;
+                })()}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-muted-foreground">
-                진행률 {completionRate}%
-              </p>
+              {(() => {
+                const progress = calculateAutoProgress(submission.start_date, submission.total_days);
+                if (!progress.isStarted) {
+                  return <p className="text-xs text-muted-foreground">구동 시작 대기중</p>;
+                }
+                if (progress.isCompleted) {
+                  return <p className="text-xs text-emerald-600 font-medium">구동 완료!</p>;
+                }
+                return (
+                  <p className="text-xs text-muted-foreground">
+                    {progress.currentDay}일차 / {submission.total_days}일
+                  </p>
+                );
+              })()}
             </CardContent>
           </Card>
 
@@ -218,6 +268,79 @@ export default function RewardDetailPage({ params }: { params: Promise<{ id: str
                     </p>
                   </div>
                 )}
+                {submission.start_date && submission.total_days && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">종료일</p>
+                    <p className="font-medium">
+                      {(() => {
+                        const startDate = new Date(submission.start_date);
+                        const endDate = new Date(startDate);
+                        endDate.setDate(startDate.getDate() + submission.total_days - 1);
+                        return endDate.toLocaleDateString('ko-KR');
+                      })()}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* 일자별 진행 현황 카드 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-sky-600" />
+                  일자별 진행 현황
+                </CardTitle>
+                <CardDescription>
+                  구동 시작일 기준 자동 계산된 진행률입니다
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {(() => {
+                  const progress = calculateAutoProgress(submission.start_date, submission.total_days);
+
+                  if (!submission.start_date) {
+                    return (
+                      <div className="text-center py-4">
+                        <p className="text-muted-foreground">구동 시작일이 설정되지 않았습니다</p>
+                        <p className="text-xs text-muted-foreground mt-1">관리자가 시작일을 설정하면 진행률이 자동 계산됩니다</p>
+                      </div>
+                    );
+                  }
+
+                  const endDate = new Date(submission.start_date);
+                  endDate.setDate(endDate.getDate() + submission.total_days - 1);
+
+                  return (
+                    <>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">진행률</span>
+                        <span className="font-bold text-sky-600">{progress.progressPercent}%</span>
+                      </div>
+                      <Progress value={progress.progressPercent} className="h-3" />
+                      <div className="grid grid-cols-2 gap-4 pt-2">
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <p className="text-xs text-muted-foreground">시작일</p>
+                          <p className="font-medium">{new Date(submission.start_date).toLocaleDateString('ko-KR')}</p>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <p className="text-xs text-muted-foreground">예상 종료일</p>
+                          <p className="font-medium">{endDate.toLocaleDateString('ko-KR')}</p>
+                        </div>
+                        <div className="p-3 bg-sky-50 rounded-lg">
+                          <p className="text-xs text-sky-600">현재 진행</p>
+                          <p className="font-bold text-sky-700">{progress.currentDay}일차 / {submission.total_days}일</p>
+                        </div>
+                        <div className="p-3 bg-emerald-50 rounded-lg">
+                          <p className="text-xs text-emerald-600">상태</p>
+                          <p className="font-bold text-emerald-700">
+                            {progress.isCompleted ? '완료' : progress.isStarted ? '진행중' : '대기중'}
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
               </CardContent>
             </Card>
 
@@ -247,7 +370,9 @@ export default function RewardDetailPage({ params }: { params: Promise<{ id: str
                   records={dailyRecords}
                   totalCount={totalExpected}
                   dailyCount={submission.daily_count}
+                  totalDays={submission.total_days}
                   createdAt={submission.created_at}
+                  startDateStr={submission.start_date}
                   onRecordSave={fetchDailyRecords}
                   apiEndpoint={`/api/submissions/reward/${unwrappedParams.id}/daily-records`}
                   readOnly={true}

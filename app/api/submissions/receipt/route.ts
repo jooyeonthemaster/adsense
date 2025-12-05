@@ -24,30 +24,37 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch daily records to calculate progress
-    const { data: allDailyRecords } = await supabase
-      .from('receipt_review_daily_records')
-      .select('submission_id, actual_count');
+    // Fetch content items count for progress calculation
+    const submissionIds = (submissions || []).map((s: any) => s.id);
+    const contentCountMap = new Map<string, number>();
 
-    // Create a map of submission_id to total actual count
-    const actualCountMap = new Map<string, number>();
-    if (allDailyRecords) {
-      allDailyRecords.forEach((record: any) => {
-        const currentCount = actualCountMap.get(record.submission_id) || 0;
-        actualCountMap.set(record.submission_id, currentCount + record.actual_count);
-      });
+    if (submissionIds.length > 0) {
+      // 각 submission의 content_items 수를 조회
+      for (const subId of submissionIds) {
+        const { count } = await supabase
+          .from('receipt_content_items')
+          .select('*', { count: 'exact', head: true })
+          .eq('submission_id', subId);
+        contentCountMap.set(subId, count || 0);
+      }
     }
 
     // Add progress to each submission
     const submissionsWithProgress = (submissions || []).map((sub: any) => {
-      const actualCount = actualCountMap.get(sub.id) || 0;
-      const progressPercentage = sub.total_count > 0
-        ? Math.min(100, Math.round((actualCount / sub.total_count) * 100))
+      const contentCount = contentCountMap.get(sub.id) || 0;
+      // submission에 저장된 progress_percentage 우선 사용, 없으면 계산
+      // 콘텐츠가 있으면 최소 1% 보장
+      const rawProgress = sub.total_count > 0
+        ? (contentCount / sub.total_count) * 100
         : 0;
+      const calculatedProgress = contentCount > 0
+        ? Math.max(1, Math.min(Math.round(rawProgress), 100))
+        : 0;
+      const progressPercentage = sub.progress_percentage ?? calculatedProgress;
 
       return {
         ...sub,
-        actual_count_total: actualCount,
+        actual_count_total: contentCount, // content_items 수 사용
         progress_percentage: progressPercentage,
       };
     });
@@ -154,11 +161,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Generate submission number using database function
+    const { data: submissionNumberData, error: snError } = await supabase
+      .rpc('generate_submission_number', { p_product_code: 'RR' });
+
+    if (snError) {
+      console.error('Error generating submission number:', snError);
+      // Rollback points
+      await supabase
+        .from('clients')
+        .update({ points: client.points })
+        .eq('id', user.id);
+      return NextResponse.json(
+        { error: '접수번호 생성 중 오류가 발생했습니다.' },
+        { status: 500 }
+      );
+    }
+
     // Create submission
     const { data: submission, error: submissionError } = await supabase
       .from('receipt_review_submissions')
       .insert({
         client_id: user.id,
+        submission_number: submissionNumberData,
         company_name,
         place_url,
         daily_count,

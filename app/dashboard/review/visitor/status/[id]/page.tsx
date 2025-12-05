@@ -6,11 +6,26 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Download, Package, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ArrowLeft, Download, Package, Image as ImageIcon, Loader2, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DailyRecordCalendar } from '@/components/admin/review-marketing/DailyRecordCalendar';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import * as XLSX from 'xlsx';
+
+// 콘텐츠 아이템 타입
+interface ContentItemExtended {
+  id: string;
+  upload_order: number;
+  script_text: string | null;
+  review_registered_date: string | null;
+  receipt_date: string | null;
+  review_status: string;
+  review_link: string | null;
+  review_id: string | null;
+  created_at: string;
+}
 
 interface ReceiptReviewDetail {
   id: string;
@@ -54,12 +69,26 @@ export default function ClientVisitorReviewDetailPage({ params }: { params: Prom
   const [downloadLoading, setDownloadLoading] = useState(false);
   const [submission, setSubmission] = useState<ReceiptReviewDetail | null>(null);
   const [dailyRecords, setDailyRecords] = useState<DailyRecord[]>([]);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('content-list');
+  const [contentItems, setContentItems] = useState<ContentItemExtended[]>([]);
 
   useEffect(() => {
     fetchSubmissionDetail();
     fetchDailyRecords();
+    fetchContentItems();
   }, [unwrappedParams.id]);
+
+  const fetchContentItems = async () => {
+    try {
+      const response = await fetch(`/api/submissions/receipt/${unwrappedParams.id}/content`);
+      if (response.ok) {
+        const data = await response.json();
+        setContentItems(data.items || []);
+      }
+    } catch (error) {
+      console.error('Error fetching content items:', error);
+    }
+  };
 
   const fetchSubmissionDetail = async () => {
     try {
@@ -157,6 +186,66 @@ export default function ClientVisitorReviewDetailPage({ params }: { params: Prom
   const totalActualCount = dailyRecords.reduce((sum, record) => sum + record.actual_count, 0);
   const completionRate = submission ? Math.round((totalActualCount / submission.total_count) * 100) : 0;
 
+  // 콘텐츠 기준 진행률 계산
+  const contentProgressPercentage = submission?.total_count
+    ? Math.min(Math.round((contentItems.length / submission.total_count) * 100), 100)
+    : 0;
+
+  // 상태 배지 표시
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge className="bg-green-100 text-green-700">승인됨</Badge>;
+      case 'revision_requested':
+        return <Badge className="bg-amber-100 text-amber-700">수정요청</Badge>;
+      default:
+        return <Badge variant="outline">대기</Badge>;
+    }
+  };
+
+  // 콘텐츠 엑셀 다운로드
+  const handleContentExcelDownload = () => {
+    if (contentItems.length === 0) {
+      toast({
+        title: '알림',
+        description: '다운로드할 데이터가 없습니다.',
+      });
+      return;
+    }
+
+    const excelData = contentItems.map((item, idx) => ({
+      '순번': idx + 1,
+      '리뷰원고': item.script_text || '',
+      '리뷰등록날짜': item.review_registered_date || '',
+      '영수증날짜': item.receipt_date || '',
+      '상태': item.review_status === 'approved' ? '승인됨' : item.review_status === 'revision_requested' ? '수정요청' : '대기',
+      '리뷰링크': item.review_link || '',
+      '리뷰아이디': item.review_id || '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '콘텐츠 목록');
+
+    // 컬럼 너비 설정
+    ws['!cols'] = [
+      { wch: 6 },   // 순번
+      { wch: 50 },  // 리뷰원고
+      { wch: 14 },  // 리뷰등록날짜
+      { wch: 14 },  // 영수증날짜
+      { wch: 10 },  // 상태
+      { wch: 30 },  // 리뷰링크
+      { wch: 15 },  // 리뷰아이디
+    ];
+
+    XLSX.writeFile(wb, `방문자리뷰_${submission?.company_name || 'report'}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    toast({
+      title: '다운로드 완료',
+      description: '엑셀 파일이 다운로드되었습니다.',
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -234,11 +323,111 @@ export default function ClientVisitorReviewDetailPage({ params }: { params: Prom
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-lg grid-cols-4">
+            <TabsTrigger value="content-list">콘텐츠 목록</TabsTrigger>
             <TabsTrigger value="overview">개요</TabsTrigger>
             <TabsTrigger value="files">파일</TabsTrigger>
             <TabsTrigger value="daily">일별 기록</TabsTrigger>
           </TabsList>
+
+          {/* 콘텐츠 목록 탭 */}
+          <TabsContent value="content-list" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>콘텐츠 목록</CardTitle>
+                    <CardDescription>
+                      등록된 리뷰 콘텐츠 {contentItems.length}건 / 총 {submission?.total_count || 0}건
+                    </CardDescription>
+                  </div>
+                  <Button onClick={handleContentExcelDownload} variant="outline">
+                    <Download className="h-4 w-4 mr-2" />
+                    엑셀 다운로드
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* 진행률 바 */}
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span>콘텐츠 등록 진행률</span>
+                    <span className="font-medium">{contentProgressPercentage}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div
+                      className="h-3 rounded-full bg-blue-500 transition-all"
+                      style={{ width: `${contentProgressPercentage}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {contentItems.length}건 등록 / {submission?.total_count || 0}건 접수
+                  </p>
+                </div>
+
+                {contentItems.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    아직 등록된 콘텐츠가 없습니다.
+                  </div>
+                ) : (
+                  <div className="rounded-md border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12 text-center">순번</TableHead>
+                          <TableHead className="min-w-[300px]">리뷰원고</TableHead>
+                          <TableHead className="w-28">리뷰등록날짜</TableHead>
+                          <TableHead className="w-28">영수증날짜</TableHead>
+                          <TableHead className="w-24 text-center">상태</TableHead>
+                          <TableHead className="w-32">리뷰링크</TableHead>
+                          <TableHead className="w-28">리뷰아이디</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {contentItems.map((item, idx) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="text-center font-medium">{idx + 1}</TableCell>
+                            <TableCell>
+                              <p className="whitespace-pre-wrap line-clamp-3 text-sm">
+                                {item.script_text || '-'}
+                              </p>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {item.review_registered_date || '-'}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {item.receipt_date || '-'}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {getStatusBadge(item.review_status)}
+                            </TableCell>
+                            <TableCell>
+                              {item.review_link ? (
+                                <a
+                                  href={item.review_link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline flex items-center gap-1 text-sm"
+                                >
+                                  <ExternalLink className="h-3 w-3" />
+                                  보기
+                                </a>
+                              ) : (
+                                '-'
+                              )}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {item.review_id || '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="overview" className="space-y-4">
             <Card>

@@ -37,3 +37,8 @@ export const calculateStats = (submissions: KakaomapSubmission[]) => {
 
 
 
+
+
+
+
+

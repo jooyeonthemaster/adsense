@@ -48,8 +48,8 @@ export function SubmissionTableRow({ submission, onCancel }: SubmissionTableRowP
             </a>
           )}
         </div>
-        {submission.place_mid && (
-          <p className="text-xs text-gray-500">MID: {submission.place_mid}</p>
+        {submission.submission_number && (
+          <p className="text-xs text-gray-500 font-mono">{submission.submission_number}</p>
         )}
       </TableCell>
       <TableCell className="text-sm text-gray-600">{getDetailInfo(submission)}</TableCell>

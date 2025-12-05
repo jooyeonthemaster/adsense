@@ -30,6 +30,7 @@ interface DailyRecordCalendarProps {
   dailyCount: number;
   totalDays?: number;
   createdAt: string;
+  startDateStr?: string | null; // 실제 구동 시작일 (start_date)
   onRecordSave: () => void;
   apiEndpoint: string;
   readOnly?: boolean;
@@ -42,6 +43,7 @@ export function DailyRecordCalendar({
   dailyCount,
   totalDays,
   createdAt,
+  startDateStr,
   onRecordSave,
   apiEndpoint,
   readOnly = false,
@@ -52,22 +54,63 @@ export function DailyRecordCalendar({
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const recordsMap = new Map(
+  // 수동 입력된 기록
+  const manualRecordsMap = new Map(
     records.map((r) => [r.date, r])
   );
+
+  // 자동 계산 기록 생성 (시작일 ~ min(오늘, 종료일))
+  const generateAutoRecords = (): Map<string, DailyRecord & { isAuto?: boolean }> => {
+    const combinedMap = new Map<string, DailyRecord & { isAuto?: boolean }>();
+
+    // Calculate dates first
+    const calcStartDate = startDateStr ? new Date(startDateStr + 'T00:00:00') : new Date(createdAt);
+    const calcEstimatedDays = totalDays || Math.ceil(totalCount / dailyCount);
+    const calcEndDate = new Date(calcStartDate);
+    calcEndDate.setDate(calcStartDate.getDate() + calcEstimatedDays - 1);
+
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // 오늘까지 포함
+
+    // 시작일부터 min(오늘, 종료일)까지 자동 기록 생성
+    const currentDate = new Date(calcStartDate);
+    while (currentDate <= calcEndDate && currentDate <= today) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+
+      // 수동 기록이 있으면 수동 기록 사용, 없으면 자동 계산
+      if (manualRecordsMap.has(dateStr)) {
+        combinedMap.set(dateStr, { ...manualRecordsMap.get(dateStr)!, isAuto: false });
+      } else {
+        combinedMap.set(dateStr, {
+          date: dateStr,
+          actual_count: dailyCount,
+          notes: '자동 계산',
+          isAuto: true,
+        });
+      }
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return combinedMap;
+  };
+
+  const recordsMap = generateAutoRecords();
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!date || readOnly) return;
 
     setSelectedDate(date);
     const dateStr = date.toISOString().split('T')[0];
-    const existingRecord = recordsMap.get(dateStr);
 
-    if (existingRecord) {
-      setActualCount(String(existingRecord.actual_count));
-      setNotes(existingRecord.notes || '');
+    // 수동 입력 기록이 있으면 그 값 사용
+    const manualRecord = manualRecordsMap.get(dateStr);
+    if (manualRecord) {
+      setActualCount(String(manualRecord.actual_count));
+      setNotes(manualRecord.notes || '');
     } else {
-      setActualCount('');
+      // 수동 기록 없으면 일 접수량을 기본값으로
+      setActualCount(String(dailyCount));
       setNotes('');
     }
 
@@ -102,9 +145,15 @@ export function DailyRecordCalendar({
   };
 
   const modifiers = {
-    recorded: (date: Date) => {
+    autoRecorded: (date: Date) => {
       const dateStr = date.toISOString().split('T')[0];
-      return recordsMap.has(dateStr);
+      const record = recordsMap.get(dateStr);
+      return record?.isAuto === true;
+    },
+    manualRecorded: (date: Date) => {
+      const dateStr = date.toISOString().split('T')[0];
+      const record = recordsMap.get(dateStr);
+      return record !== undefined && record.isAuto === false;
     },
     start: (date: Date) => {
       return date.toDateString() === startDate.toDateString();
@@ -115,9 +164,12 @@ export function DailyRecordCalendar({
   };
 
   const modifiersStyles = {
-    recorded: {
-      backgroundColor: '#3b82f6',
-      color: 'white',
+    autoRecorded: {
+      backgroundColor: '#e0f2fe', // sky-100
+      fontWeight: 'bold',
+    },
+    manualRecorded: {
+      backgroundColor: '#dbeafe', // blue-100
       fontWeight: 'bold',
     },
     start: {
@@ -132,16 +184,19 @@ export function DailyRecordCalendar({
     },
   };
 
-  const totalActualCount = records.reduce((sum, r) => sum + r.actual_count, 0);
+  // 자동 + 수동 기록의 합계 계산
+  const totalActualCount = Array.from(recordsMap.values()).reduce((sum, r) => sum + r.actual_count, 0);
   const remainingCount = totalCount - totalActualCount;
-  const daysWithRecords = records.length;
+  const daysWithRecords = recordsMap.size;
   const progressPercentage = totalCount > 0 ? Math.round((totalActualCount / totalCount) * 100) : 0;
 
   // Calculate start and end dates
-  const startDate = new Date(createdAt);
+  // startDateStr가 있으면 실제 구동 시작일 사용, 없으면 접수일(createdAt) 사용
+  const startDate = startDateStr ? new Date(startDateStr + 'T00:00:00') : new Date(createdAt);
   const estimatedDays = totalDays || Math.ceil(totalCount / dailyCount);
   const endDate = new Date(startDate);
-  endDate.setDate(endDate.getDate() + estimatedDays);
+  // 시작일이 1일차이므로 (총 일수 - 1)을 더함
+  endDate.setDate(startDate.getDate() + estimatedDays - 1);
 
   // Custom DayButton to show count on each date
   const CustomDayButton = (props: React.ComponentProps<typeof DayButton>) => {
@@ -155,12 +210,17 @@ export function DailyRecordCalendar({
       }
     };
 
+    // 자동 기록은 하늘색, 수동 기록은 파란색으로 구분
+    const isAutoRecord = record?.isAuto;
+
     return (
       <DayButton {...props} onClick={handleClick} className={readOnly ? 'cursor-default' : ''}>
         <div className="flex flex-col items-center justify-center h-full">
           <span className="text-sm">{props.day.date.getDate()}</span>
           {record && (
-            <span className="text-xs font-bold mt-0.5">{record.actual_count}건</span>
+            <span className={`text-xs font-bold mt-0.5 ${isAutoRecord ? 'text-sky-600' : 'text-blue-600'}`}>
+              {record.actual_count}건
+            </span>
           )}
         </div>
       </DayButton>
@@ -184,8 +244,9 @@ export function DailyRecordCalendar({
           <p className="text-2xl font-bold">{totalCount}건</p>
         </div>
         <div className="p-4 border rounded-lg bg-blue-50">
-          <p className="text-sm text-muted-foreground">실제 유입</p>
+          <p className="text-sm text-muted-foreground">예상 유입</p>
           <p className="text-2xl font-bold text-blue-600">{totalActualCount}건</p>
+          <p className="text-xs text-muted-foreground">일 {dailyCount}건 × {daysWithRecords}일</p>
         </div>
         <div className="p-4 border rounded-lg bg-purple-50">
           <p className="text-sm text-muted-foreground">진행률</p>
@@ -220,31 +281,38 @@ export function DailyRecordCalendar({
           <span className="text-sm">마감일</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-blue-500"></div>
-          <span className="text-sm">기록된 날짜</span>
+          <span className="text-sm font-bold text-sky-600">N건</span>
+          <span className="text-sm">자동 계산</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded border"></div>
-          <span className="text-sm">미기록 날짜</span>
+          <span className="text-sm font-bold text-blue-600">N건</span>
+          <span className="text-sm">수동 입력</span>
         </div>
       </div>
 
       {/* Recent Records */}
-      {records.length > 0 && (
+      {recordsMap.size > 0 && (
         <div className="space-y-2">
-          <h3 className="font-semibold">최근 기록</h3>
+          <h3 className="font-semibold">일별 기록</h3>
           <div className="space-y-2 max-h-60 overflow-y-auto">
-            {records.slice().reverse().slice(0, 10).map((record) => (
-              <div key={record.date} className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <p className="font-medium">{new Date(record.date).toLocaleDateString('ko-KR')}</p>
-                  {record.notes && (
-                    <p className="text-sm text-muted-foreground">{record.notes}</p>
-                  )}
+            {Array.from(recordsMap.values())
+              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+              .slice(0, 10)
+              .map((record) => (
+                <div key={record.date} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <p className="font-medium">{new Date(record.date + 'T00:00:00').toLocaleDateString('ko-KR')}</p>
+                    {record.isAuto ? (
+                      <p className="text-xs text-sky-600">자동 계산</p>
+                    ) : record.notes && (
+                      <p className="text-sm text-muted-foreground">{record.notes}</p>
+                    )}
+                  </div>
+                  <Badge variant={record.isAuto ? 'outline' : 'secondary'} className={record.isAuto ? 'text-sky-600 border-sky-300' : ''}>
+                    {record.actual_count}건
+                  </Badge>
                 </div>
-                <Badge variant="secondary">{record.actual_count}건</Badge>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}

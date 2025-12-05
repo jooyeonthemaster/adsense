@@ -84,6 +84,7 @@ export function CafeMarketingGroupView({
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>접수번호</TableHead>
                         <TableHead>업체명</TableHead>
                         <TableHead>거래처</TableHead>
                         <TableHead>지역</TableHead>
@@ -117,6 +118,11 @@ export function CafeMarketingGroupView({
     </div>
   );
 }
+
+
+
+
+
 
 
 

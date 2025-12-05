@@ -30,6 +30,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Bell,
+  AlertCircle,
+  ArrowRight,
+  X,
 } from 'lucide-react';
 import Image from 'next/image';
 import {
@@ -100,11 +103,17 @@ const navigationSections = [
   },
 ];
 
+interface ProfileAlert {
+  missingFields: string[];
+  message: string;
+}
+
 interface ClientNavProps {
   user: {
     name: string;
     points: number;
   };
+  profileAlert?: ProfileAlert;
 }
 
 function NavContent({
@@ -112,15 +121,18 @@ function NavContent({
   onClose,
   isCollapsed = false,
   onToggleCollapse,
+  profileAlert,
 }: {
   user: ClientNavProps['user'];
   onClose?: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  profileAlert?: ProfileAlert;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const [openSections, setOpenSections] = useState<string[]>(['reward', 'review', 'experience', 'blog-distribution']);
+  const [showProfileTutorial, setShowProfileTutorial] = useState(true);
 
   const handleLogout = async () => {
     try {
@@ -211,6 +223,50 @@ function NavContent({
                   공지사항 / 알림
                 </Button>
               </Link>
+
+              {/* 프로필 미완성 튜토리얼 안내 */}
+              {profileAlert && showProfileTutorial && (
+                <div className="mt-3 relative">
+                  {/* 말풍선 꼬리 */}
+                  <div className="absolute -top-2 left-4 w-4 h-4 bg-amber-50 border-l border-t border-amber-200 transform rotate-45" />
+
+                  <div className="relative bg-amber-50 border border-amber-200 rounded-lg p-3 shadow-sm">
+                    <button
+                      onClick={() => setShowProfileTutorial(false)}
+                      className="absolute top-2 right-2 text-amber-400 hover:text-amber-600 transition-colors"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+
+                    <div className="flex items-start gap-2 pr-4">
+                      <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-amber-800">
+                          {profileAlert.message}
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {profileAlert.missingFields.map((field) => (
+                            <span
+                              key={field}
+                              className="inline-block px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] rounded"
+                            >
+                              {field}
+                            </span>
+                          ))}
+                        </div>
+                        <Link
+                          href="/dashboard/notifications?tab=mypage"
+                          onClick={() => onClose?.()}
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-900 transition-colors"
+                        >
+                          마이페이지에서 입력하기
+                          <ArrowRight className="h-3 w-3" />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </>
         ) : (
@@ -431,7 +487,7 @@ function NavContent({
   );
 }
 
-export function ClientNav({ user }: ClientNavProps) {
+export function ClientNav({ user, profileAlert }: ClientNavProps) {
   const [open, setOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -465,7 +521,7 @@ export function ClientNav({ user }: ClientNavProps) {
               <SheetTitle>거래처 메뉴</SheetTitle>
             </SheetHeader>
             <div className="flex h-screen flex-col">
-              <NavContent user={user} onClose={() => setOpen(false)} />
+              <NavContent user={user} onClose={() => setOpen(false)} profileAlert={profileAlert} />
             </div>
           </SheetContent>
         </Sheet>
@@ -481,7 +537,7 @@ export function ClientNav({ user }: ClientNavProps) {
           isCollapsed ? 'w-20' : 'w-72'
         )}
       >
-        <NavContent user={user} isCollapsed={isCollapsed} onToggleCollapse={toggleCollapse} />
+        <NavContent user={user} isCollapsed={isCollapsed} onToggleCollapse={toggleCollapse} profileAlert={profileAlert} />
       </div>
     </>
   );

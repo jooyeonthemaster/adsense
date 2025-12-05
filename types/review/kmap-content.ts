@@ -23,7 +23,12 @@ export interface Feedback {
   created_at: string;
 }
 
-export type ContentFilter = 'all' | 'pending' | 'revision_requested' | 'approved' | 'revised';
+export type ContentFilter = 'all' | 'pending' | 'approved' | 'revised';
+
+
+
+
+
 
 
 

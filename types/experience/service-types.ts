@@ -30,6 +30,7 @@ export interface ExperienceFormData {
   publishDates: Date[];
   progressKeyword: string;
   hasImage: boolean;
+  emailImageConfirmed: boolean; // 이메일로 이미지 전송 확인
   email: string;
   images: File[];
 }
@@ -67,6 +68,11 @@ export const mapServiceToSlug = (service: ServiceType): string => {
   };
   return mapping[service];
 };
+
+
+
+
+
 
 
 

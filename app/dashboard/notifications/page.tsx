@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -72,6 +73,8 @@ interface ClientProfile {
   tax_email: string | null;
   profile_updated_at: string | null;
   created_at: string;
+  client_type: 'advertiser' | 'agency' | null;
+  onboarding_completed: boolean;
 }
 
 // 카카오 채널 URL (실제 채널 URL로 교체 필요)
@@ -79,12 +82,25 @@ const KAKAO_CHANNEL_URL = 'https://pf.kakao.com/_xnxkGxj'; // 예시 URL
 
 export default function NotificationsPage() {
   const { toast } = useToast();
+  const searchParams = useSearchParams();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
-  const [activeTab, setActiveTab] = useState('notifications');
+
+  // URL 파라미터에서 tab 값 가져오기 (기본값: notifications)
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(
+    tabParam === 'mypage' ? 'mypage' : 'notifications'
+  );
+
+  // URL 파라미터 변경 시 탭 업데이트
+  useEffect(() => {
+    if (tabParam === 'mypage') {
+      setActiveTab('mypage');
+    }
+  }, [tabParam]);
 
   // 마이페이지 상태
   const [profile, setProfile] = useState<ClientProfile | null>(null);
@@ -608,6 +624,25 @@ export default function NotificationsPage() {
                   <div className="grid gap-2">
                     <Label className="text-muted-foreground text-sm">아이디</Label>
                     <Input value={profile?.username || ''} disabled className="bg-muted" />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label className="text-muted-foreground text-sm">업체 유형</Label>
+                    <div className="flex items-center gap-2">
+                      {profile?.client_type === 'advertiser' ? (
+                        <Badge variant="default" className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+                          <Building2 className="h-3 w-3 mr-1" />
+                          광고주
+                        </Badge>
+                      ) : profile?.client_type === 'agency' ? (
+                        <Badge variant="default" className="bg-purple-100 text-purple-700 hover:bg-purple-100">
+                          <Megaphone className="h-3 w-3 mr-1" />
+                          대행사
+                        </Badge>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">미설정</span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid gap-2">

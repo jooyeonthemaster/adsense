@@ -26,12 +26,11 @@ export async function GET(
       );
     }
 
-    // Get content items (only published ones for clients)
+    // Get content items - 클라이언트용: 모든 콘텐츠 조회 (관리자가 업로드한 데이터)
     const { data: contentItems, error: itemsError } = await supabase
       .from('kakaomap_content_items')
       .select('*')
       .eq('submission_id', submissionId)
-      .eq('is_published', true)
       .order('upload_order', { ascending: true });
 
     if (itemsError) {

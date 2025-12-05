@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 interface UnifiedSubmission {
   id: string;
   product_type: 'place' | 'receipt' | 'kakaomap' | 'blog' | 'cafe' | 'experience';
+  submission_number?: string;
   company_name: string;
   status: string;
   total_points: number;
@@ -88,6 +89,7 @@ export async function GET(request: NextRequest) {
           allSubmissions.push({
             id: item.id,
             product_type: 'place',
+            submission_number: item.submission_number,
             company_name: item.company_name,
             status: item.status,
             total_points: item.total_points,
@@ -122,6 +124,7 @@ export async function GET(request: NextRequest) {
           allSubmissions.push({
             id: item.id,
             product_type: 'receipt',
+            submission_number: item.submission_number,
             company_name: item.company_name,
             status: item.status,
             total_points: item.total_points,
@@ -154,6 +157,7 @@ export async function GET(request: NextRequest) {
           allSubmissions.push({
             id: item.id,
             product_type: 'kakaomap',
+            submission_number: item.submission_number,
             company_name: item.company_name,
             status: item.status,
             total_points: item.total_points,
@@ -186,6 +190,7 @@ export async function GET(request: NextRequest) {
           allSubmissions.push({
             id: item.id,
             product_type: 'blog',
+            submission_number: item.submission_number,
             company_name: item.company_name,
             status: item.status,
             total_points: item.total_points,
@@ -219,6 +224,7 @@ export async function GET(request: NextRequest) {
           allSubmissions.push({
             id: item.id,
             product_type: 'experience',
+            submission_number: item.submission_number,
             company_name: item.company_name,
             status: item.status,
             total_points: item.total_points,
@@ -263,6 +269,7 @@ export async function GET(request: NextRequest) {
           allSubmissions.push({
             id: item.id,
             product_type: 'cafe',
+            submission_number: item.submission_number,
             company_name: item.company_name,
             status: mapCafeStatus(item.status),
             total_points: item.total_points,

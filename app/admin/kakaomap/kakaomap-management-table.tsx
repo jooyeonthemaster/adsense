@@ -27,7 +27,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, ExternalLink, MessageSquare, Image, AlertCircle, Clock, CheckCircle, Building2, ChevronDown } from 'lucide-react';
+import { Search, ExternalLink, MessageSquare, Image, AlertCircle, Clock, CheckCircle, Building2, ChevronDown, CalendarIcon, X, Copy, Check } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 import {
   Collapsible,
   CollapsibleContent,
@@ -37,6 +41,7 @@ import { KAKAOMAP_STATUS_LABELS } from '@/config/kakaomap-status';
 
 interface KakaomapSubmission {
   id: string;
+  submission_number: string;
   company_name: string;
   kakaomap_url: string;
   total_count: number;
@@ -57,6 +62,7 @@ interface KakaomapSubmission {
   content_items_count: number;
   unread_messages_count: number;
   pending_revision_count: number;
+  actual_count_total: number;
 }
 
 // 상태 라벨은 공통 설정 사용 (KAKAOMAP_STATUS_LABELS)
@@ -73,6 +79,22 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
   const [contentFilter, setContentFilter] = useState<string>('all');
   const [groupBy, setGroupBy] = useState<'list' | 'client'>('list');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Calendar filter states
+  const [createdDateFilter, setCreatedDateFilter] = useState<Date | undefined>();
+  const [startDateFilter, setStartDateFilter] = useState<Date | undefined>();
+
+  // Copy submission number to clipboard
+  const copyToClipboard = async (submissionNumber: string) => {
+    try {
+      await navigator.clipboard.writeText(submissionNumber);
+      setCopiedId(submissionNumber);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  };
 
   const toggleGroup = (groupName: string) => {
     setExpandedGroups((prev) => {
@@ -105,7 +127,38 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
       matchesContent = sub.pending_revision_count > 0;
     }
 
-    return matchesSearch && matchesStatus && matchesContent;
+    // 접수일 필터
+    let matchesCreatedDate = true;
+    if (createdDateFilter) {
+      const filterStart = new Date(createdDateFilter);
+      filterStart.setHours(0, 0, 0, 0);
+      const filterEnd = new Date(createdDateFilter);
+      filterEnd.setHours(23, 59, 59, 999);
+      const createdAt = new Date(sub.created_at);
+      matchesCreatedDate = createdAt >= filterStart && createdAt <= filterEnd;
+    }
+
+    // 구동일 필터 (선택한 날짜가 구동 기간 내에 포함되는지 확인)
+    let matchesStartDate = true;
+    if (startDateFilter) {
+      const selectedDate = new Date(startDateFilter);
+      selectedDate.setHours(0, 0, 0, 0);
+
+      // 구동 시작일 (카카오맵은 접수일 = 구동 시작일)
+      const runStartDate = new Date(sub.created_at);
+      runStartDate.setHours(0, 0, 0, 0);
+
+      // 구동 종료일 = 시작일 + 예상 구동일수 - 1
+      const estimatedDays = Math.ceil(sub.total_count / sub.daily_count);
+      const runEndDate = new Date(runStartDate);
+      runEndDate.setDate(runEndDate.getDate() + estimatedDays - 1);
+      runEndDate.setHours(23, 59, 59, 999);
+
+      // 선택한 날짜가 구동 기간 내에 있는지 확인
+      matchesStartDate = selectedDate >= runStartDate && selectedDate <= runEndDate;
+    }
+
+    return matchesSearch && matchesStatus && matchesContent && matchesCreatedDate && matchesStartDate;
   });
 
   // Group by client
@@ -264,6 +317,62 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
                 <SelectItem value="client">거래처별</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* 접수일 캘린더 필터 */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-[140px] justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {createdDateFilter ? format(createdDateFilter, 'MM/dd', { locale: ko }) : '접수일'}
+                  {createdDateFilter && (
+                    <X
+                      className="ml-auto h-4 w-4 hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCreatedDateFilter(undefined);
+                      }}
+                    />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={createdDateFilter}
+                  onSelect={setCreatedDateFilter}
+                  locale={ko}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+
+            {/* 구동일 캘린더 필터 */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-[140px] justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {startDateFilter ? format(startDateFilter, 'MM/dd', { locale: ko }) : '구동일'}
+                  {startDateFilter && (
+                    <X
+                      className="ml-auto h-4 w-4 hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setStartDateFilter(undefined);
+                      }}
+                    />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={startDateFilter}
+                  onSelect={setStartDateFilter}
+                  locale={ko}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </CardHeader>
 
@@ -321,6 +430,7 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
                       <Table>
                         <TableHeader>
                           <TableRow>
+                            <TableHead>접수번호</TableHead>
                             <TableHead>상품명</TableHead>
                             <TableHead className="text-center">상태</TableHead>
                             <TableHead className="text-center">콘텐츠 진행</TableHead>
@@ -334,6 +444,29 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
                         <TableBody>
                           {group.items.map((sub) => (
                             <TableRow key={sub.id}>
+                              {/* 접수번호 */}
+                              <TableCell>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-sm font-mono text-muted-foreground">
+                                    {sub.submission_number || '-'}
+                                  </span>
+                                  {sub.submission_number && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6"
+                                      onClick={() => copyToClipboard(sub.submission_number)}
+                                    >
+                                      {copiedId === sub.submission_number ? (
+                                        <Check className="h-3 w-3 text-green-500" />
+                                      ) : (
+                                        <Copy className="h-3 w-3" />
+                                      )}
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+
                               {/* 상품명 */}
                               <TableCell>
                                 <div className="flex flex-col">
@@ -445,6 +578,7 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>접수번호</TableHead>
                     <TableHead>거래처</TableHead>
                     <TableHead>상품명</TableHead>
                     <TableHead className="text-center">상태</TableHead>
@@ -459,7 +593,7 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
                 <TableBody>
                   {filteredSubmissions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                         {searchQuery || statusFilter !== 'all' || contentFilter !== 'all'
                           ? '검색 결과가 없습니다.'
                           : '카카오맵 접수 내역이 없습니다.'}
@@ -468,6 +602,29 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
                   ) : (
                     filteredSubmissions.map((sub) => (
                       <TableRow key={sub.id}>
+                        {/* 접수번호 */}
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm font-mono text-muted-foreground">
+                              {sub.submission_number || '-'}
+                            </span>
+                            {sub.submission_number && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => copyToClipboard(sub.submission_number)}
+                              >
+                                {copiedId === sub.submission_number ? (
+                                  <Check className="h-3 w-3 text-green-500" />
+                                ) : (
+                                  <Copy className="h-3 w-3" />
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+
                         {/* 거래처 */}
                         <TableCell>
                           <div className="flex flex-col">

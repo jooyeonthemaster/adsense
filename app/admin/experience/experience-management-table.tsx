@@ -32,12 +32,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { Search, ExternalLink, Users, Sparkles, Clock, CheckCircle, List, Grid3x3, Building2, ChevronDown } from 'lucide-react';
+import { Search, ExternalLink, Users, Sparkles, Clock, CheckCircle, List, Grid3x3, Building2, ChevronDown, Copy, Check } from 'lucide-react';
 import { getExperienceStep } from '@/lib/submission-utils';
 import { SubmissionStatus } from '@/types/submission';
 
 interface ExperienceSubmission {
   id: string;
+  submission_number?: string;
   company_name: string;
   product_type: 'experience';
   experience_type: string;
@@ -82,6 +83,17 @@ export function ExperienceManagementTable({ submissions }: { submissions: Experi
   const [viewMode, setViewMode] = useState<'list' | 'group'>('list');
   const [groupBy, setGroupBy] = useState<'client' | 'company'>('client');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyToClipboard = async (submissionNumber: string) => {
+    try {
+      await navigator.clipboard.writeText(submissionNumber);
+      setCopiedId(submissionNumber);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  };
 
   const toggleGroup = (groupName: string) => {
     setExpandedGroups((prev) => {
@@ -301,6 +313,7 @@ export function ExperienceManagementTable({ submissions }: { submissions: Experi
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>접수번호</TableHead>
                     <TableHead>거래처</TableHead>
                     <TableHead>업체명</TableHead>
                     <TableHead>유형</TableHead>
@@ -315,7 +328,7 @@ export function ExperienceManagementTable({ submissions }: { submissions: Experi
                 <TableBody>
                   {filteredSubmissions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={10} className="text-center py-8 text-gray-500">
                         검색 결과가 없습니다.
                       </TableCell>
                     </TableRow>
@@ -327,6 +340,27 @@ export function ExperienceManagementTable({ submissions }: { submissions: Experi
 
                       return (
                         <TableRow key={sub.id} className="hover:bg-gray-50">
+                          <TableCell>
+                            {sub.submission_number ? (
+                              <div className="flex items-center gap-1">
+                                <span className="font-mono text-xs">{sub.submission_number}</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-5 w-5 p-0"
+                                  onClick={() => copyToClipboard(sub.submission_number!)}
+                                >
+                                  {copiedId === sub.submission_number ? (
+                                    <Check className="h-3 w-3 text-green-500" />
+                                  ) : (
+                                    <Copy className="h-3 w-3 text-muted-foreground" />
+                                  )}
+                                </Button>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
                           <TableCell className="font-medium">
                             {sub.clients?.company_name || '-'}
                           </TableCell>
@@ -425,6 +459,7 @@ export function ExperienceManagementTable({ submissions }: { submissions: Experi
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>접수번호</TableHead>
                         <TableHead>업체명</TableHead>
                         <TableHead>유형</TableHead>
                         <TableHead>인원</TableHead>
@@ -443,6 +478,27 @@ export function ExperienceManagementTable({ submissions }: { submissions: Experi
 
                         return (
                           <TableRow key={sub.id} className="hover:bg-gray-50">
+                            <TableCell>
+                              {sub.submission_number ? (
+                                <div className="flex items-center gap-1">
+                                  <span className="font-mono text-xs">{sub.submission_number}</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-5 w-5 p-0"
+                                    onClick={() => copyToClipboard(sub.submission_number!)}
+                                  >
+                                    {copiedId === sub.submission_number ? (
+                                      <Check className="h-3 w-3 text-green-500" />
+                                    ) : (
+                                      <Copy className="h-3 w-3 text-muted-foreground" />
+                                    )}
+                                  </Button>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
                             <TableCell className="font-medium">{sub.company_name}</TableCell>
                             <TableCell>
                               <Badge variant="outline" className={`bg-${typeDisplay.color}-50 text-${typeDisplay.color}-700`}>

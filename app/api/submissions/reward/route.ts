@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
       daily_count,
       total_days,
       total_points,
+      start_date,
     } = body;
 
     // Validation
@@ -98,9 +99,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!total_days || total_days < 1 || total_days > 30) {
+    if (!total_days || total_days < 3 || total_days > 7) {
       return NextResponse.json(
-        { error: '구동일수는 1일 ~ 30일 사이여야 합니다.' },
+        { error: '구동일수는 3일 이상부터 접수가 가능합니다. (최대 7일)' },
         { status: 400 }
       );
     }
@@ -165,11 +166,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Generate submission number using database function
+    const { data: submissionNumberData, error: snError } = await supabase
+      .rpc('generate_submission_number', { p_product_code: 'PL' });
+
+    if (snError) {
+      console.error('Error generating submission number:', snError);
+      // Rollback points
+      await supabase
+        .from('clients')
+        .update({ points: client.points })
+        .eq('id', user.id);
+      return NextResponse.json(
+        { error: '접수번호 생성 중 오류가 발생했습니다.' },
+        { status: 500 }
+      );
+    }
+
     // Create submission
     const { data: submission, error: submissionError } = await supabase
       .from('place_submissions')
       .insert({
         client_id: user.id,
+        submission_number: submissionNumberData,
         company_name,
         place_url,
         place_mid,
@@ -177,7 +196,7 @@ export async function POST(request: NextRequest) {
         total_days,
         total_points,
         status: 'pending',
-        start_date: null,
+        start_date: start_date || null, // 클라이언트가 선택한 시작일
         notes: null,
       })
       .select()

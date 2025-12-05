@@ -3,7 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { List, Grid3x3 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { List, Grid3x3, CalendarIcon, X } from 'lucide-react';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface SubmissionsFiltersProps {
   searchQuery: string;
@@ -13,6 +18,8 @@ interface SubmissionsFiltersProps {
   sortBy: string;
   viewMode: 'list' | 'group';
   groupBy: 'client' | 'type';
+  createdDateFilter?: Date;
+  startDateFilter?: Date;
   onSearchChange: (value: string) => void;
   onTypeFilterChange: (value: string) => void;
   onStatusFilterChange: (value: string) => void;
@@ -20,6 +27,8 @@ interface SubmissionsFiltersProps {
   onSortByChange: (value: string) => void;
   onViewModeChange: (mode: 'list' | 'group') => void;
   onGroupByChange: (groupBy: 'client' | 'type') => void;
+  onCreatedDateFilterChange?: (date: Date | undefined) => void;
+  onStartDateFilterChange?: (date: Date | undefined) => void;
 }
 
 export function SubmissionsFilters({
@@ -30,6 +39,8 @@ export function SubmissionsFilters({
   sortBy,
   viewMode,
   groupBy,
+  createdDateFilter,
+  startDateFilter,
   onSearchChange,
   onTypeFilterChange,
   onStatusFilterChange,
@@ -37,6 +48,8 @@ export function SubmissionsFilters({
   onSortByChange,
   onViewModeChange,
   onGroupByChange,
+  onCreatedDateFilterChange,
+  onStartDateFilterChange,
 }: SubmissionsFiltersProps) {
   return (
     <Card>
@@ -123,6 +136,89 @@ export function SubmissionsFilters({
                 <SelectItem value="points-asc">포인트 낮은순</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </div>
+
+        {/* Calendar Date Filters */}
+        <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
+          {/* Created Date (접수일) Calendar Filter */}
+          <div className="space-y-1">
+            <Label className="text-[10px] sm:text-xs">접수일 지정</Label>
+            <div className="flex gap-1">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-8 flex-1 justify-start text-left text-xs sm:text-sm font-normal",
+                      !createdDateFilter && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                    {createdDateFilter ? format(createdDateFilter, 'yyyy-MM-dd', { locale: ko }) : '접수일 선택'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={createdDateFilter}
+                    onSelect={onCreatedDateFilterChange}
+                    locale={ko}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {createdDateFilter && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 flex-shrink-0"
+                  onClick={() => onCreatedDateFilterChange?.(undefined)}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Start Date (구동일) Calendar Filter */}
+          <div className="space-y-1">
+            <Label className="text-[10px] sm:text-xs">구동일 지정</Label>
+            <div className="flex gap-1">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-8 flex-1 justify-start text-left text-xs sm:text-sm font-normal",
+                      !startDateFilter && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                    {startDateFilter ? format(startDateFilter, 'yyyy-MM-dd', { locale: ko }) : '구동일 선택'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={startDateFilter}
+                    onSelect={onStartDateFilterChange}
+                    locale={ko}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {startDateFilter && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 flex-shrink-0"
+                  onClick={() => onStartDateFilterChange?.(undefined)}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 

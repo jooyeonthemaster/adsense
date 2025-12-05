@@ -32,6 +32,7 @@ export function CafeMarketingTable({
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>접수번호</TableHead>
               <TableHead>업체명</TableHead>
               <TableHead>거래처</TableHead>
               <TableHead>지역</TableHead>
@@ -46,7 +47,7 @@ export function CafeMarketingTable({
           <TableBody>
             {submissions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-12 text-gray-500">
+                <TableCell colSpan={10} className="text-center py-12 text-gray-500">
                   접수 내역이 없습니다.
                 </TableCell>
               </TableRow>

@@ -66,9 +66,9 @@ export function StatusMobileCard({
       )}
       <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
         <div>
-          <p className="text-[10px] text-gray-500 mb-0.5">업로드/총 건수</p>
+          <p className="text-[10px] text-gray-500 mb-0.5">업로드</p>
           <p className="text-xs font-medium">
-            {submission.content_items_count || 0}건 / {submission.total_count}건
+            {submission.content_items_count || 0} / {submission.total_count}
           </p>
         </div>
         <div>

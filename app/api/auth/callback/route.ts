@@ -93,7 +93,13 @@ export async function GET(request: NextRequest) {
     // 5. 커스텀 세션 생성 (기존 시스템과 통합)
     await createSession(clientUser);
 
-    // 6. 알림 페이지로 리다이렉트
+    // 6. 온보딩 완료 여부에 따라 리다이렉트
+    if (clientUser.onboarding_completed === false) {
+      // 온보딩 미완료 → 온보딩 페이지로
+      return NextResponse.redirect(`${origin}/onboarding`);
+    }
+
+    // 온보딩 완료 → 대시보드로
     return NextResponse.redirect(`${origin}/dashboard/notifications`);
 
   } catch (err) {

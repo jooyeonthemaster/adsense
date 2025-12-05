@@ -6,6 +6,7 @@ import { KakaomapManagementTable } from '@/app/admin/kakaomap/kakaomap-managemen
 
 interface KakaomapSubmission {
   id: string;
+  submission_number: string;
   company_name: string;
   kakaomap_url: string;
   total_count: number;
@@ -26,6 +27,7 @@ interface KakaomapSubmission {
   content_items_count: number;
   unread_messages_count: number;
   pending_revision_count: number;
+  actual_count_total: number;
 }
 
 export function KmapReviewManagement() {

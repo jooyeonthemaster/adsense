@@ -53,12 +53,24 @@ export async function GET() {
             .eq('submission_id', sub.id)
             .in('status', ['pending', 'in_progress']);
 
+          // Daily records - actual count total (실제 유입 합계)
+          const { data: dailyRecords } = await supabase
+            .from('kakaomap_review_daily_records')
+            .select('actual_count')
+            .eq('submission_id', sub.id);
+
+          const actualCountTotal = dailyRecords?.reduce(
+            (sum, record) => sum + (record.actual_count || 0),
+            0
+          ) || 0;
+
           return {
             ...sub,
             clients: clientMap.get(sub.client_id) || null,
             content_items_count: contentCount || 0,
             unread_messages_count: unreadCount || 0,
             pending_revision_count: revisionCount || 0,
+            actual_count_total: actualCountTotal,
           };
         })
       );

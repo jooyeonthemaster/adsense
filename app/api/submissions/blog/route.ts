@@ -201,6 +201,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Generate submission number using database function
+    const { data: submissionNumberData, error: snError } = await supabase
+      .rpc('generate_submission_number', { p_product_code: 'BD' });
+
+    if (snError) {
+      console.error('Error generating submission number:', snError);
+      // Rollback points
+      await supabase
+        .from('clients')
+        .update({ points: client.points })
+        .eq('id', user.id);
+      return NextResponse.json(
+        { error: '접수번호 생성 중 오류가 발생했습니다.' },
+        { status: 500 }
+      );
+    }
+
     // Create submission
     // keywords가 유효한 배열인지 확인하고, 아니면 빈 배열로 변환
     const validKeywords = Array.isArray(keywords) && keywords.length > 0 ? keywords : null;
@@ -209,6 +226,7 @@ export async function POST(request: NextRequest) {
       .from('blog_distribution_submissions')
       .insert({
         client_id: user.id,
+        submission_number: submissionNumberData,
         company_name,
         distribution_type,
         content_type,

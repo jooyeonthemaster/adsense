@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,13 +11,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, BookOpen, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [kakaoLoading, setKakaoLoading] = useState(false);
   const [error, setError] = useState('');
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [ripples, setRipples] = useState<Array<{ id: number; x: number; y: number }>>([]);
+
+  // 관리자 모드 여부 (URL에 ?admin=true 가 있을 때만)
+  const isAdminMode = searchParams.get('admin') === 'true';
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>, userType: 'admin' | 'client') => {
     e.preventDefault();
@@ -255,23 +259,139 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent className="pb-8">
-            <Tabs defaultValue="client" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 p-1 bg-muted/50">
-                <TabsTrigger
-                  value="client"
-                  className="data-[state=active]:gradient-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 data-[state=inactive]:text-muted-foreground transition-all duration-300"
-                >
-                  거래처
-                </TabsTrigger>
-                <TabsTrigger
-                  value="admin"
-                  className="data-[state=active]:gradient-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 data-[state=inactive]:text-muted-foreground transition-all duration-300"
-                >
-                  관리자
-                </TabsTrigger>
-              </TabsList>
+            {isAdminMode ? (
+              // 관리자 모드: 탭으로 거래처/관리자 선택 가능
+              <Tabs defaultValue="admin" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 p-1 bg-muted/50">
+                  <TabsTrigger
+                    value="client"
+                    className="data-[state=active]:gradient-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 data-[state=inactive]:text-muted-foreground transition-all duration-300"
+                  >
+                    거래처
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="admin"
+                    className="data-[state=active]:gradient-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 data-[state=inactive]:text-muted-foreground transition-all duration-300"
+                  >
+                    관리자
+                  </TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="client" className="space-y-4 mt-6">
+                <TabsContent value="client" className="space-y-4 mt-6">
+                  <form onSubmit={(e) => handleLogin(e, 'client')} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="client-username-tab" className="text-sm font-medium">
+                        아이디
+                      </Label>
+                      <Input
+                        id="client-username-tab"
+                        name="username"
+                        type="text"
+                        placeholder="아이디를 입력하세요"
+                        required
+                        disabled={loading}
+                        className="h-11 transition-all focus:ring-2 focus:ring-primary/20"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="client-password-tab" className="text-sm font-medium">
+                        비밀번호
+                      </Label>
+                      <Input
+                        id="client-password-tab"
+                        name="password"
+                        type="password"
+                        placeholder="비밀번호를 입력하세요"
+                        required
+                        disabled={loading}
+                        className="h-11 transition-all focus:ring-2 focus:ring-primary/20"
+                      />
+                    </div>
+                    {error && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20"
+                      >
+                        {error}
+                      </motion.div>
+                    )}
+                    <Button
+                      type="submit"
+                      className="w-full h-11 gradient-primary hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 hover:scale-[1.02]"
+                      disabled={loading || kakaoLoading}
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          로그인 중...
+                        </>
+                      ) : (
+                        '로그인'
+                      )}
+                    </Button>
+                  </form>
+                </TabsContent>
+
+                <TabsContent value="admin" className="space-y-4 mt-6">
+                  <form onSubmit={(e) => handleLogin(e, 'admin')} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="admin-username-tab" className="text-sm font-medium">
+                        아이디
+                      </Label>
+                      <Input
+                        id="admin-username-tab"
+                        name="username"
+                        type="text"
+                        placeholder="관리자 아이디"
+                        required
+                        disabled={loading}
+                        className="h-11 transition-all focus:ring-2 focus:ring-primary/20"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="admin-password-tab" className="text-sm font-medium">
+                        비밀번호
+                      </Label>
+                      <Input
+                        id="admin-password-tab"
+                        name="password"
+                        type="password"
+                        placeholder="비밀번호를 입력하세요"
+                        required
+                        disabled={loading}
+                        className="h-11 transition-all focus:ring-2 focus:ring-primary/20"
+                      />
+                    </div>
+                    {error && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20"
+                      >
+                        {error}
+                      </motion.div>
+                    )}
+                    <Button
+                      type="submit"
+                      className="w-full h-11 gradient-primary hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 hover:scale-[1.02]"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          로그인 중...
+                        </>
+                      ) : (
+                        '로그인'
+                      )}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
+            ) : (
+              // 일반 모드: 거래처 로그인만 표시 (탭 없음)
+              <div className="space-y-4">
                 <form onSubmit={(e) => handleLogin(e, 'client')} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="client-username" className="text-sm font-medium">
@@ -358,64 +478,8 @@ export default function LoginPage() {
                   )}
                   카카오로 시작하기
                 </Button>
-              </TabsContent>
-
-              <TabsContent value="admin" className="space-y-4 mt-6">
-                <form onSubmit={(e) => handleLogin(e, 'admin')} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-username" className="text-sm font-medium">
-                      아이디
-                    </Label>
-                    <Input
-                      id="admin-username"
-                      name="username"
-                      type="text"
-                      placeholder="관리자 아이디"
-                      required
-                      disabled={loading}
-                      className="h-11 transition-all focus:ring-2 focus:ring-primary/20"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-password" className="text-sm font-medium">
-                      비밀번호
-                    </Label>
-                    <Input
-                      id="admin-password"
-                      name="password"
-                      type="password"
-                      placeholder="비밀번호를 입력하세요"
-                      required
-                      disabled={loading}
-                      className="h-11 transition-all focus:ring-2 focus:ring-primary/20"
-                    />
-                  </div>
-                  {error && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20"
-                    >
-                      {error}
-                    </motion.div>
-                  )}
-                  <Button
-                    type="submit"
-                    className="w-full h-11 gradient-primary hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 hover:scale-[1.02]"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        로그인 중...
-                      </>
-                    ) : (
-                      '로그인'
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+              </div>
+            )}
 
             {/* 사용 설명서 링크 (모바일용) */}
             <div className="pt-4 border-t mt-4">
@@ -443,5 +507,20 @@ export default function LoginPage() {
         </motion.p>
       </motion.div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center gradient-bg">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
+          <p className="text-muted-foreground">로딩 중...</p>
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

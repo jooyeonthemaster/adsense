@@ -4,6 +4,7 @@ export interface SubmissionWithClient extends CafeMarketingSubmission {
   clients?: {
     company_name: string;
   };
+  submission_number?: string;
   progress_percentage?: number;
   completed_count?: number;
 }
@@ -33,6 +34,11 @@ export const STATUS_OPTIONS: { value: SubmissionWithClient['status']; label: str
   { value: 'completed', label: '완료' },
   { value: 'cancelled', label: '중단' },
 ];
+
+
+
+
+
 
 
 

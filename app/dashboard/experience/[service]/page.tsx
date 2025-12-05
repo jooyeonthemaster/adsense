@@ -7,7 +7,6 @@ import { BookText, Image, Users, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ProductGuideSection } from '@/components/dashboard/ProductGuideSection';
 import { extractNaverPlaceMID, fetchBusinessInfoByMID } from '@/utils/naver-place';
-import { createClient } from '@/utils/supabase/client';
 import { format } from 'date-fns';
 import {
   ServiceType,
@@ -45,6 +44,7 @@ export default function ExperienceServicePage() {
     publishDates: [],
     progressKeyword: '',
     hasImage: false,
+    emailImageConfirmed: false,
     email: '',
     images: [],
   });
@@ -184,11 +184,11 @@ export default function ExperienceServicePage() {
         });
         return;
       }
-      if (formData.hasImage && formData.images.length === 0) {
+      if (formData.hasImage && !formData.emailImageConfirmed) {
         toast({
           variant: 'destructive',
           title: '필수 항목 누락',
-          description: '이미지를 업로드해주세요.',
+          description: '이미지를 이메일(sense-ad@naver.com)로 전송했는지 확인해주세요.',
         });
         return;
       }
@@ -206,37 +206,9 @@ export default function ExperienceServicePage() {
     setIsSubmitting(true);
 
     try {
-      const supabase = createClient();
-      let imageUrls: string[] = [];
-
-      // 이미지 업로드 (실계정 기자단)
-      if (selectedService === 'reporter' && formData.hasImage && formData.images.length > 0) {
-        toast({
-          title: '이미지 업로드 중...',
-          description: `${formData.images.length}개 이미지를 업로드하고 있습니다`,
-        });
-
-        for (const file of formData.images) {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-          const filePath = `experience/${fileName}`;
-
-          const { data, error } = await supabase.storage
-            .from('submissions')
-            .upload(filePath, file, {
-              cacheControl: '3600',
-              upsert: false,
-            });
-
-          if (error) throw error;
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('submissions')
-            .getPublicUrl(filePath);
-
-          imageUrls.push(publicUrl);
-        }
-      }
+      // 이미지는 이메일로 받음 (sense-ad@naver.com)
+      // 더 이상 직접 업로드하지 않음
+      const imageUrls: string[] = [];
 
       const serviceName = services.find(s => s.id === selectedService)?.name;
 

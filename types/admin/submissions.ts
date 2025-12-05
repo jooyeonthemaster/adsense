@@ -5,10 +5,12 @@ export interface UnifiedSubmission {
   // 공통 필드
   id: string;
   client_id: string;
+  submission_number?: string; // 접수번호 (예: KM-2025-0001)
   company_name: string;
   total_points: number;
   status: string;
   created_at: string;
+  start_date?: string; // 구동 시작일
   type: 'place' | 'receipt' | 'kakaomap' | 'blog' | 'cafe' | 'experience';
   clients?: { company_name: string };
 
@@ -89,6 +91,11 @@ export const TYPE_LABELS: Record<string, string> = {
   cafe: '카페 침투',
   experience: '체험단 마케팅',
 };
+
+
+
+
+
 
 
 

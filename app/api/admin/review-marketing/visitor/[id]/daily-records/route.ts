@@ -11,18 +11,35 @@ export async function GET(
     const { id } = await params;
     const supabase = await createClient();
 
-    const { data: records, error } = await supabase
-      .from('receipt_review_daily_records')
-      .select('*')
+    // receipt_content_items에서 review_registered_date 기준으로 날짜별 건수 집계
+    const { data: contentItems, error } = await supabase
+      .from('receipt_content_items')
+      .select('review_registered_date')
       .eq('submission_id', id)
-      .order('date', { ascending: true });
+      .not('review_registered_date', 'is', null);
 
     if (error) {
-      console.error('Error fetching daily records:', error);
+      console.error('Error fetching content items:', error);
       return NextResponse.json({ records: [] }, { status: 200 });
     }
 
-    return NextResponse.json({ records: records || [] }, { status: 200 });
+    // 날짜별로 그룹화하여 건수 계산
+    const dateCountMap = new Map<string, number>();
+    for (const item of contentItems || []) {
+      if (item.review_registered_date) {
+        const dateStr = item.review_registered_date;
+        dateCountMap.set(dateStr, (dateCountMap.get(dateStr) || 0) + 1);
+      }
+    }
+
+    // DailyRecordCalendar에서 사용하는 형식으로 변환
+    const records = Array.from(dateCountMap.entries()).map(([date, count]) => ({
+      date,
+      actual_count: count,
+      notes: '',
+    })).sort((a, b) => a.date.localeCompare(b.date));
+
+    return NextResponse.json({ records }, { status: 200 });
   } catch (error) {
     console.error('Error:', error);
     return NextResponse.json({ records: [] }, { status: 200 });

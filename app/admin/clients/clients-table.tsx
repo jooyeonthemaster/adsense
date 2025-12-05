@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Edit, Trash2, DollarSign, Settings, Key, Eye } from 'lucide-react';
+import { Edit, Trash2, DollarSign, Settings, Key, Eye, Building2, Megaphone } from 'lucide-react';
 import Link from 'next/link';
 import { EditClientDialog } from './edit-client-dialog';
 import { DeleteClientDialog } from './delete-client-dialog';
@@ -152,7 +152,18 @@ export function ClientsTable({ clients }: ClientsTableProps) {
               <div key={client.id} className="rounded-lg border bg-card p-2.5 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-xs truncate">{client.company_name}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-semibold text-xs truncate">{client.company_name}</p>
+                      {client.client_type === 'advertiser' ? (
+                        <Badge variant="outline" className="text-[9px] px-1 py-0 border-blue-300 text-blue-600 shrink-0">
+                          광고주
+                        </Badge>
+                      ) : client.client_type === 'agency' ? (
+                        <Badge variant="outline" className="text-[9px] px-1 py-0 border-purple-300 text-purple-600 shrink-0">
+                          대행사
+                        </Badge>
+                      ) : null}
+                    </div>
                     <p className="text-[10px] text-muted-foreground">@{client.username}</p>
                   </div>
                   <Badge variant={client.is_active ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0.5 shrink-0">
@@ -261,6 +272,7 @@ export function ClientsTable({ clients }: ClientsTableProps) {
                 <TableRow>
                   <TableHead className="text-xs lg:text-sm whitespace-nowrap">아이디</TableHead>
                   <TableHead className="text-xs lg:text-sm whitespace-nowrap">회사명</TableHead>
+                  <TableHead className="text-xs lg:text-sm whitespace-nowrap">유형</TableHead>
                   <TableHead className="text-xs lg:text-sm whitespace-nowrap">담당자</TableHead>
                   <TableHead className="text-xs lg:text-sm whitespace-nowrap">연락처</TableHead>
                   <TableHead className="text-xs lg:text-sm whitespace-nowrap">포인트</TableHead>
@@ -276,6 +288,21 @@ export function ClientsTable({ clients }: ClientsTableProps) {
                     </TableCell>
                     <TableCell className="text-xs lg:text-sm whitespace-nowrap">
                       {client.company_name}
+                    </TableCell>
+                    <TableCell className="text-xs lg:text-sm whitespace-nowrap">
+                      {client.client_type === 'advertiser' ? (
+                        <Badge variant="outline" className="text-xs border-blue-300 text-blue-600">
+                          <Building2 className="h-3 w-3 mr-1" />
+                          광고주
+                        </Badge>
+                      ) : client.client_type === 'agency' ? (
+                        <Badge variant="outline" className="text-xs border-purple-300 text-purple-600">
+                          <Megaphone className="h-3 w-3 mr-1" />
+                          대행사
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-xs lg:text-sm whitespace-nowrap">
                       {client.contact_person || '-'}

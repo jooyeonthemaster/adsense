@@ -1,4 +1,5 @@
 export type AuthProvider = 'local' | 'kakao';
+export type ClientType = 'advertiser' | 'agency';
 
 export type Client = {
   id: string;
@@ -14,6 +15,8 @@ export type Client = {
   pending_charge_requests_count: number;
   kakao_id: string | null; // 카카오 OAuth 사용자 ID
   auth_provider: AuthProvider; // 인증 제공자
+  client_type: ClientType | null; // 광고주/대행사
+  onboarding_completed: boolean; // 온보딩 완료 여부
   // 마이페이지 - 사업자 정보
   business_license_url: string | null; // 사업자등록증 파일 URL
   business_license_name: string | null; // 사업자등록증 파일명

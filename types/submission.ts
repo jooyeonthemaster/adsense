@@ -100,6 +100,7 @@ export type ProductType = 'place' | 'receipt' | 'kakaomap' | 'blog' | 'cafe' | '
 export interface UnifiedSubmission {
   id: string;
   product_type: ProductType;
+  submission_number?: string;
   company_name: string;
   status: SubmissionStatus;
   total_points: number;

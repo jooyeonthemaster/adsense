@@ -7,13 +7,14 @@ export interface BlogDistributionFormData {
   linkType: 'place' | 'external';
   contentType: 'review' | 'info';
   dailyCount: number;
-  operationDays: number;
-  totalCount: number;
+  startDate: Date | null;
+  endDate: Date | null;
   keywords: string;
   guideline: string;
   externalAccountId: string;
   chargeCount: number;
   useExternalAccount: boolean;
+  emailMediaConfirmed: boolean; // 이메일로 이미지/영상 전송 확인
 }
 
 export interface ServiceConfig {
@@ -56,6 +57,11 @@ export const mapTypeToSlug = (type: DistributionType): string => {
   };
   return mapping[type];
 };
+
+
+
+
+
 
 
 

@@ -1,9 +1,39 @@
 /**
- * 업종별 AI 리뷰 생성 프롬프트
- * 각 업종에 특화된 리뷰 작성 가이드라인 제공
+ * AI 리뷰 생성 프롬프트
+ * 클라이언트 요청에 따른 통합 프롬프트 사용
  */
 
 import { BusinessType } from '@/types/review/ai-generation';
+
+/**
+ * 기본 통합 프롬프트 (클라이언트 제공)
+ * 모든 업종에 공통으로 사용
+ */
+export const DEFAULT_REVIEW_PROMPT = `🎯 리뷰 생성 통합 가이드
+
+✅ 기본 톤 & 구성
+- 말투: 20~50대 자연스럽게 섞기
+- MZ식 표현(예: 찐맛, 미쳤다, 인정, 밥도둑 등)도 일부 포함
+- 자연어 기반 실제 후기 말투 중심
+- 상황: 데이트 / 친구 / 가족 / 회식 / 퇴근 / 여행 등 랜덤
+- 분량: 1줄 / 2줄 / 3줄 랜덤 구성
+- 이모티콘 비율: 5% (😊🔥💯😋🫶 등 자연스럽게 가끔만 등장)
+- 맘카페톤 제외 (리얼 후기체 / 홍보 느낌 X)
+- 큰따옴표 절대 금지
+- 리뷰 간 행간 띄우기 없음 (한 줄씩 나열)
+- 복붙 가능한 텍스트 포맷
+
+✅ 문장 끝맺음 다양화
+리뷰 문장 끝은 항상 자연스럽고 랜덤하게 섞어서:
+~~했음 / ~~좋았음 / ~~완벽했어요 / ~~괜찮았어요 / ~~추천합니다 /
+~~인정 / ~~미쳤다 / ~~레전드 / ~~굿 / ~~가야 함 / ~~또 올 듯 /
+~~찐 / ~~대박 / ~~개존맛 / ~~맘에 들었음 / ...
+
+✅ 피해야 할 사항
+- 과도한 칭찬이나 광고성 문구
+- "최고", "완벽", "무조건" 같은 극단적 표현
+- 모든 것이 좋았다는 식의 비현실적 리뷰
+- 맘카페 홍보글 같은 느낌`;
 
 export interface BusinessPromptConfig {
   type: BusinessType;
@@ -266,9 +296,14 @@ export function detectBusinessType(keyword: string): BusinessType {
 
 /**
  * 업종에 맞는 프롬프트 가져오기
+ * 현재는 모든 업종에 통합 프롬프트 사용 (클라이언트 요청)
  */
 export function getBusinessPrompt(type: BusinessType): string {
-  return BUSINESS_PROMPTS[type]?.prompt || BUSINESS_PROMPTS.general.prompt;
+  // 통합 프롬프트 사용 (2025-12-02 클라이언트 요청)
+  return DEFAULT_REVIEW_PROMPT;
+
+  // 기존 업종별 프롬프트 (필요시 복원)
+  // return BUSINESS_PROMPTS[type]?.prompt || BUSINESS_PROMPTS.general.prompt;
 }
 
 /**

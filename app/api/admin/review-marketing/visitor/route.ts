@@ -53,13 +53,16 @@ export async function GET() {
             .eq('submission_id', sub.id)
             .in('status', ['pending', 'in_progress']);
 
-          // Get actual inflow count from daily records
-          const { data: dailyRecords } = await supabase
-            .from('receipt_review_daily_records')
-            .select('actual_count')
-            .eq('submission_id', sub.id);
-
-          const actualCountTotal = dailyRecords?.reduce((sum, record) => sum + record.actual_count, 0) || 0;
+          // 진행률 계산: content_items 수 / total_count
+          // submission에 저장된 progress_percentage 사용, 없으면 계산
+          // 콘텐츠가 있으면 최소 1% 보장
+          const rawProgress = sub.total_count > 0
+            ? (contentCount || 0) / sub.total_count * 100
+            : 0;
+          const calculatedProgress = (contentCount || 0) > 0
+            ? Math.max(1, Math.min(Math.round(rawProgress), 100))
+            : 0;
+          const progressPercentage = sub.progress_percentage ?? calculatedProgress;
 
           return {
             ...sub,
@@ -67,7 +70,8 @@ export async function GET() {
             content_items_count: contentCount || 0,
             unread_messages_count: unreadCount || 0,
             pending_revision_count: revisionCount || 0,
-            actual_count_total: actualCountTotal,
+            actual_count_total: contentCount || 0, // 이제 content_items 수를 사용
+            progress_percentage: progressPercentage,
           };
         })
       );

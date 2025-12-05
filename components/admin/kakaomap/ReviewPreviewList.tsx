@@ -43,7 +43,10 @@ import {
   Filter,
   Save,
   Loader2,
+  Download,
+  ClipboardList,
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { cn } from '@/lib/utils';
 import {
   GeneratedReview,
@@ -94,6 +97,7 @@ export function ReviewPreviewList({
   const [editText, setEditText] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isAllCopied, setIsAllCopied] = useState(false);
 
   // 필터링된 리뷰 목록
   const filteredReviews = useMemo(() => {
@@ -204,6 +208,46 @@ export function ReviewPreviewList({
     [onUpdateReview, onRegenerateReview]
   );
 
+  // 전체 복사
+  const handleCopyAll = useCallback(async () => {
+    const allTexts = reviews.map((review, index) => {
+      return `[${index + 1}번 리뷰]\n${review.script_text}`;
+    }).join('\n\n---\n\n');
+
+    await navigator.clipboard.writeText(allTexts);
+    setIsAllCopied(true);
+    setTimeout(() => setIsAllCopied(false), 2000);
+  }, [reviews]);
+
+  // 엑셀 다운로드
+  const handleExcelDownload = useCallback(() => {
+    const excelData = reviews.map((review, index) => ({
+      '번호': index + 1,
+      '리뷰 내용': review.script_text,
+      '글자수': review.char_count,
+      '길이': LENGTH_OPTIONS[review.length_type]?.label || review.length_type,
+      '말투': TONE_OPTIONS[review.tone_type]?.label || review.tone_type,
+      '이모티콘': review.has_emoji ? '포함' : '미포함',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '리뷰 목록');
+
+    // 열 너비 설정
+    worksheet['!cols'] = [
+      { wch: 6 },   // 번호
+      { wch: 80 },  // 리뷰 내용
+      { wch: 8 },   // 글자수
+      { wch: 10 },  // 길이
+      { wch: 10 },  // 말투
+      { wch: 10 },  // 이모티콘
+    ];
+
+    const fileName = `리뷰_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  }, [reviews]);
+
   const allSelected = filteredReviews.length > 0 && filteredReviews.every((r) => r.selected);
   const someSelected = filteredReviews.some((r) => r.selected);
 
@@ -219,6 +263,39 @@ export function ReviewPreviewList({
           </CardTitle>
 
           <div className="flex items-center gap-2">
+            {/* 전체 복사 버튼 */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyAll}
+              disabled={reviews.length === 0}
+              className="gap-2"
+            >
+              {isAllCopied ? (
+                <>
+                  <Check className="h-4 w-4 text-green-500" />
+                  복사됨
+                </>
+              ) : (
+                <>
+                  <ClipboardList className="h-4 w-4" />
+                  전체 복사
+                </>
+              )}
+            </Button>
+
+            {/* 엑셀 다운로드 버튼 */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExcelDownload}
+              disabled={reviews.length === 0}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              엑셀 다운로드
+            </Button>
+
             {/* 필터 드롭다운 */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

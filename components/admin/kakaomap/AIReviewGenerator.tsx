@@ -58,6 +58,35 @@ import {
 } from '@/types/review/ai-generation';
 import { getBusinessPrompt, detectBusinessType } from '@/lib/review-prompts';
 
+// 비율 기반으로 개수 재계산하는 헬퍼 함수
+function recalculateRatios(
+  items: RatioSliderConfig[],
+  newTotalCount: number
+): RatioSliderConfig[] {
+  if (newTotalCount <= 0) {
+    return items.map((item) => ({ ...item, count: 0 }));
+  }
+
+  // 비율에 따라 개수 계산
+  const totalPercentage = items.reduce((sum, item) => sum + item.percentage, 0);
+  const result: RatioSliderConfig[] = [];
+  let assignedCount = 0;
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (i === items.length - 1) {
+      // 마지막 항목은 나머지로 처리 (반올림 오차 방지)
+      result.push({ ...item, count: Math.max(0, newTotalCount - assignedCount) });
+    } else {
+      const calculatedCount = Math.round((item.percentage / totalPercentage) * newTotalCount);
+      result.push({ ...item, count: calculatedCount });
+      assignedCount += calculatedCount;
+    }
+  }
+
+  return result;
+}
+
 interface AIReviewGeneratorProps {
   submissionId: string;
   companyName: string;
@@ -80,17 +109,24 @@ export function AIReviewGenerator({
   // 생성 설정 상태
   const [step, setStep] = useState<Step>('config');
   const [keyword, setKeyword] = useState(companyName);
-  const [count, setCount] = useState(Math.max(1, Math.min(10, totalCount - currentCount)));
+  const initialCount = Math.max(1, Math.min(10, totalCount - currentCount));
+  const [count, setCount] = useState(initialCount);
   const [businessType, setBusinessType] = useState<BusinessType>(() =>
     detectBusinessType(companyName)
   );
   const [customPrompt, setCustomPrompt] = useState('');
   const [editingPrompt, setEditingPrompt] = useState('');
 
-  // 비율 설정
-  const [lengthRatios, setLengthRatios] = useState<RatioSliderConfig[]>(DEFAULT_LENGTH_RATIOS);
-  const [toneRatios, setToneRatios] = useState<RatioSliderConfig[]>(DEFAULT_TONE_RATIOS);
-  const [emojiRatios, setEmojiRatios] = useState<RatioSliderConfig[]>(DEFAULT_EMOJI_RATIOS);
+  // 비율 설정 (초기값은 count 기준으로 계산)
+  const [lengthRatios, setLengthRatios] = useState<RatioSliderConfig[]>(() =>
+    recalculateRatios(DEFAULT_LENGTH_RATIOS, initialCount)
+  );
+  const [toneRatios, setToneRatios] = useState<RatioSliderConfig[]>(() =>
+    recalculateRatios(DEFAULT_TONE_RATIOS, initialCount)
+  );
+  const [emojiRatios, setEmojiRatios] = useState<RatioSliderConfig[]>(() =>
+    recalculateRatios(DEFAULT_EMOJI_RATIOS, initialCount)
+  );
 
   // 매장 정보
   const [storeInfo, setStoreInfo] = useState<StoreInfo>(() => ({
@@ -169,6 +205,17 @@ export function AIReviewGenerator({
     if (detected !== 'general') {
       setBusinessType(detected);
     }
+  }, []);
+
+  // 생성 수량 변경 시 비율 재계산
+  const handleCountChange = useCallback((newCount: number) => {
+    const clampedCount = Math.min(500, Math.max(1, newCount));
+    setCount(clampedCount);
+
+    // 현재 비율 기반으로 개수 재계산
+    setLengthRatios(prev => recalculateRatios(prev, clampedCount));
+    setToneRatios(prev => recalculateRatios(prev, clampedCount));
+    setEmojiRatios(prev => recalculateRatios(prev, clampedCount));
   }, []);
 
   // 매장 정보에 데이터가 있는지 확인
@@ -484,9 +531,7 @@ export function AIReviewGenerator({
                   min={1}
                   max={500}
                   value={count}
-                  onChange={(e) =>
-                    setCount(Math.min(500, Math.max(1, parseInt(e.target.value) || 1)))
-                  }
+                  onChange={(e) => handleCountChange(parseInt(e.target.value) || 1)}
                 />
                 <p className="text-xs text-muted-foreground">
                   현재 {currentCount}/{totalCount}개 등록됨
@@ -638,13 +683,13 @@ export function AIReviewGenerator({
 
             <Separator />
 
-            {/* 상세 설정 (비율) */}
+            {/* 상세 설정 (개수 배분) */}
             <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" className="w-full justify-between">
                   <span className="flex items-center gap-2">
                     <Settings2 className="h-4 w-4" />
-                    상세 비율 설정
+                    상세 개수 배분
                   </span>
                   {showAdvanced ? (
                     <ChevronUp className="h-4 w-4" />
@@ -656,9 +701,10 @@ export function AIReviewGenerator({
               <CollapsibleContent className="space-y-6 pt-4">
                 {/* 글자수 비율 */}
                 <RatioSlider
-                  title="글자수 비율"
+                  title="글자수 배분"
                   icon="📏"
                   items={lengthRatios}
+                  totalCount={count}
                   onChange={setLengthRatios}
                 />
 
@@ -666,9 +712,10 @@ export function AIReviewGenerator({
 
                 {/* 말투 비율 */}
                 <RatioSlider
-                  title="말투 타겟 비율"
+                  title="말투 타겟 배분"
                   icon="🗣️"
                   items={toneRatios}
+                  totalCount={count}
                   onChange={setToneRatios}
                 />
 
@@ -676,9 +723,10 @@ export function AIReviewGenerator({
 
                 {/* 이모티콘 비율 */}
                 <RatioSlider
-                  title="이모티콘 비율"
+                  title="이모티콘 배분"
                   icon="😊"
                   items={emojiRatios}
+                  totalCount={count}
                   onChange={setEmojiRatios}
                 />
               </CollapsibleContent>

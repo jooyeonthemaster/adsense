@@ -33,7 +33,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, ExternalLink, Loader2, MoreVertical, Eye, List, Grid3x3, Building2, ChevronDown } from 'lucide-react';
+import { Search, ExternalLink, Loader2, MoreVertical, Eye, List, Grid3x3, Building2, ChevronDown, CalendarIcon, X, Copy, Check } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import {
   Collapsible,
@@ -43,6 +47,7 @@ import {
 
 interface PlaceSubmission {
   id: string;
+  submission_number?: string;
   client_id: string;
   company_name: string;
   place_url: string;
@@ -79,11 +84,26 @@ export default function RewardManagementPage() {
   const [submissions, setSubmissions] = useState<PlaceSubmission[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyToClipboard = async (submissionNumber: string) => {
+    try {
+      await navigator.clipboard.writeText(submissionNumber);
+      setCopiedId(submissionNumber);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  };
 
   // View mode states
   const [viewMode, setViewMode] = useState<'list' | 'group'>('list');
   const [groupBy, setGroupBy] = useState<'client'>('client');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  // Calendar filter states
+  const [createdDateFilter, setCreatedDateFilter] = useState<Date | undefined>();
+  const [startDateFilter, setStartDateFilter] = useState<Date | undefined>();
 
   useEffect(() => {
     fetchSubmissions();
@@ -159,7 +179,37 @@ export default function RewardManagementPage() {
       sub.clients?.company_name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    // 접수일 필터
+    let matchesCreatedDate = true;
+    if (createdDateFilter) {
+      const filterStart = new Date(createdDateFilter);
+      filterStart.setHours(0, 0, 0, 0);
+      const filterEnd = new Date(createdDateFilter);
+      filterEnd.setHours(23, 59, 59, 999);
+      const createdAt = new Date(sub.created_at);
+      matchesCreatedDate = createdAt >= filterStart && createdAt <= filterEnd;
+    }
+
+    // 구동일 필터 (선택한 날짜가 구동 기간 내에 포함되는지 확인)
+    let matchesStartDate = true;
+    if (startDateFilter) {
+      const selectedDate = new Date(startDateFilter);
+      selectedDate.setHours(0, 0, 0, 0);
+
+      // 구동 시작일
+      const runStartDate = sub.start_date ? new Date(sub.start_date) : new Date(sub.created_at);
+      runStartDate.setHours(0, 0, 0, 0);
+
+      // 구동 종료일 = 시작일 + (구동일수 - 1)
+      const runEndDate = new Date(runStartDate);
+      runEndDate.setDate(runEndDate.getDate() + (sub.total_days || 1) - 1);
+      runEndDate.setHours(23, 59, 59, 999);
+
+      // 선택한 날짜가 구동 기간 내에 있는지 확인
+      matchesStartDate = selectedDate >= runStartDate && selectedDate <= runEndDate;
+    }
+
+    return matchesSearch && matchesStatus && matchesCreatedDate && matchesStartDate;
   });
 
   // Grouped data generation
@@ -271,6 +321,62 @@ export default function RewardManagementPage() {
               <SelectItem value="cancelled">중단됨</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* 접수일 캘린더 필터 */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full sm:w-40 justify-start text-left font-normal">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {createdDateFilter ? format(createdDateFilter, 'MM/dd', { locale: ko }) : '접수일'}
+                {createdDateFilter && (
+                  <X
+                    className="ml-auto h-4 w-4 hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCreatedDateFilter(undefined);
+                    }}
+                  />
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={createdDateFilter}
+                onSelect={setCreatedDateFilter}
+                locale={ko}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+
+          {/* 구동일 캘린더 필터 */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full sm:w-40 justify-start text-left font-normal">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {startDateFilter ? format(startDateFilter, 'MM/dd', { locale: ko }) : '구동일'}
+                {startDateFilter && (
+                  <X
+                    className="ml-auto h-4 w-4 hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setStartDateFilter(undefined);
+                    }}
+                  />
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={startDateFilter}
+                onSelect={setStartDateFilter}
+                locale={ko}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* View Mode Toggle */}
@@ -305,6 +411,7 @@ export default function RewardManagementPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>접수번호</TableHead>
                 <TableHead>업체명</TableHead>
                 <TableHead>거래처</TableHead>
                 <TableHead>MID</TableHead>
@@ -320,7 +427,7 @@ export default function RewardManagementPage() {
             <TableBody>
               {filteredSubmissions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                     검색 결과가 없습니다.
                   </TableCell>
                 </TableRow>
@@ -331,6 +438,27 @@ export default function RewardManagementPage() {
 
                   return (
                     <TableRow key={submission.id}>
+                      <TableCell>
+                        {submission.submission_number ? (
+                          <div className="flex items-center gap-1">
+                            <span className="font-mono text-xs">{submission.submission_number}</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-5 w-5 p-0"
+                              onClick={() => copyToClipboard(submission.submission_number!)}
+                            >
+                              {copiedId === submission.submission_number ? (
+                                <Check className="h-3 w-3 text-green-500" />
+                              ) : (
+                                <Copy className="h-3 w-3 text-muted-foreground" />
+                              )}
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{submission.company_name}</span>
@@ -460,6 +588,7 @@ export default function RewardManagementPage() {
                       <Table>
                         <TableHeader>
                           <TableRow>
+                            <TableHead>접수번호</TableHead>
                             <TableHead>업체명</TableHead>
                             <TableHead>MID</TableHead>
                             <TableHead className="text-center">일 접수량</TableHead>
@@ -478,6 +607,27 @@ export default function RewardManagementPage() {
 
                             return (
                               <TableRow key={submission.id}>
+                                <TableCell>
+                                  {submission.submission_number ? (
+                                    <div className="flex items-center gap-1">
+                                      <span className="font-mono text-xs">{submission.submission_number}</span>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-5 w-5 p-0"
+                                        onClick={() => copyToClipboard(submission.submission_number!)}
+                                      >
+                                        {copiedId === submission.submission_number ? (
+                                          <Check className="h-3 w-3 text-green-500" />
+                                        ) : (
+                                          <Copy className="h-3 w-3 text-muted-foreground" />
+                                        )}
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">-</span>
+                                  )}
+                                </TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-2">
                                     <span className="font-medium">{submission.company_name}</span>

@@ -29,7 +29,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Search, Calendar, FileText, Video, Zap, Users, List, Grid3x3, Building2, ChevronDown } from 'lucide-react';
+import { Search, CalendarIcon, FileText, Video, Zap, Users, List, Grid3x3, Building2, ChevronDown, X, Copy, Check } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 import {
   Collapsible,
   CollapsibleContent,
@@ -41,6 +45,7 @@ interface SubmissionWithClient extends BlogDistributionSubmission {
   clients?: {
     company_name: string;
   };
+  submission_number?: string;
   progress_percentage?: number;
   completed_count?: number;
 }
@@ -64,11 +69,24 @@ export default function AdminBlogDistributionPage() {
   const [submissions, setSubmissions] = useState<SubmissionWithClient[]>([]);
   const [filteredSubmissions, setFilteredSubmissions] = useState<SubmissionWithClient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyToClipboard = async (submissionNumber: string) => {
+    try {
+      await navigator.clipboard.writeText(submissionNumber);
+      setCopiedId(submissionNumber);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  };
 
   // 필터 상태
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [createdDateFilter, setCreatedDateFilter] = useState<Date | null>(null); // 접수일 필터
+  const [startDateFilter, setStartDateFilter] = useState<Date | null>(null); // 구동일 필터
 
   // 뷰 모드 상태
   const [viewMode, setViewMode] = useState<'list' | 'group'>('list');
@@ -105,7 +123,7 @@ export default function AdminBlogDistributionPage() {
 
   useEffect(() => {
     applyFilters();
-  }, [submissions, searchQuery, typeFilter, statusFilter]);
+  }, [submissions, searchQuery, typeFilter, statusFilter, createdDateFilter, startDateFilter]);
 
   const fetchSubmissions = async () => {
     setLoading(true);
@@ -141,6 +159,25 @@ export default function AdminBlogDistributionPage() {
           s.company_name.toLowerCase().includes(query) ||
           s.clients?.company_name?.toLowerCase().includes(query)
       );
+    }
+
+    // 접수일 필터
+    if (createdDateFilter) {
+      const filterDateStr = format(createdDateFilter, 'yyyy-MM-dd');
+      filtered = filtered.filter((s) => {
+        const createdDateStr = s.created_at.split('T')[0];
+        return createdDateStr === filterDateStr;
+      });
+    }
+
+    // 구동일 필터
+    if (startDateFilter) {
+      const filterDateStr = format(startDateFilter, 'yyyy-MM-dd');
+      filtered = filtered.filter((s) => {
+        if (!s.start_date) return false;
+        const startDateStr = s.start_date.split('T')[0];
+        return startDateStr === filterDateStr;
+      });
     }
 
     filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -323,8 +360,8 @@ export default function AdminBlogDistributionPage() {
 
         {/* 필터 */}
         <div className="flex flex-col gap-2">
-          <div className="flex gap-2">
-            <div className="relative flex-1">
+          <div className="flex flex-wrap gap-2">
+            <div className="relative flex-1 min-w-[150px]">
               <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
               <Input
                 placeholder="업체명 검색..."
@@ -334,7 +371,7 @@ export default function AdminBlogDistributionPage() {
               />
             </div>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-28 sm:w-32 h-8 text-xs sm:text-sm">
+              <SelectTrigger className="w-24 sm:w-28 h-8 text-xs sm:text-sm">
                 <SelectValue placeholder="전체" />
               </SelectTrigger>
               <SelectContent>
@@ -345,7 +382,7 @@ export default function AdminBlogDistributionPage() {
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-28 h-8 text-xs sm:text-sm">
+              <SelectTrigger className="w-24 sm:w-28 h-8 text-xs sm:text-sm">
                 <SelectValue placeholder="전체" />
               </SelectTrigger>
               <SelectContent>
@@ -356,6 +393,101 @@ export default function AdminBlogDistributionPage() {
                 <SelectItem value="cancelled">중단</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* 날짜 필터 (접수일/구동일) */}
+          <div className="flex flex-wrap gap-2">
+            {/* 접수일 필터 */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={createdDateFilter ? 'default' : 'outline'}
+                  size="sm"
+                  className={`h-8 text-xs sm:text-sm ${
+                    createdDateFilter ? 'bg-sky-500 hover:bg-sky-600 text-white' : ''
+                  }`}
+                >
+                  <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
+                  {createdDateFilter
+                    ? `접수일: ${format(createdDateFilter, 'M/d', { locale: ko })}`
+                    : '접수일'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={createdDateFilter || undefined}
+                  onSelect={(date) => setCreatedDateFilter(date || null)}
+                  locale={ko}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {createdDateFilter && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCreatedDateFilter(null)}
+                className="h-8 px-2 text-gray-500 hover:text-gray-700"
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            )}
+
+            {/* 구동일 필터 */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={startDateFilter ? 'default' : 'outline'}
+                  size="sm"
+                  className={`h-8 text-xs sm:text-sm ${
+                    startDateFilter ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : ''
+                  }`}
+                >
+                  <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
+                  {startDateFilter
+                    ? `구동일: ${format(startDateFilter, 'M/d', { locale: ko })}`
+                    : '구동일'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={startDateFilter || undefined}
+                  onSelect={(date) => setStartDateFilter(date || null)}
+                  locale={ko}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {startDateFilter && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setStartDateFilter(null)}
+                className="h-8 px-2 text-gray-500 hover:text-gray-700"
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            )}
+
+            {/* 필터 초기화 */}
+            {(createdDateFilter || startDateFilter || typeFilter !== 'all' || statusFilter !== 'all' || searchQuery) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setCreatedDateFilter(null);
+                  setStartDateFilter(null);
+                  setTypeFilter('all');
+                  setStatusFilter('all');
+                  setSearchQuery('');
+                }}
+                className="h-8 text-xs text-rose-500 hover:text-rose-700 hover:bg-rose-50"
+              >
+                전체 초기화
+              </Button>
+            )}
           </div>
 
           {/* View Mode Toggle */}
@@ -403,6 +535,7 @@ export default function AdminBlogDistributionPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>접수번호</TableHead>
                   <TableHead>타입</TableHead>
                   <TableHead>업체명</TableHead>
                   <TableHead>거래처</TableHead>
@@ -418,7 +551,7 @@ export default function AdminBlogDistributionPage() {
               <TableBody>
                 {filteredSubmissions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-12 text-gray-500">
+                    <TableCell colSpan={11} className="text-center py-12 text-gray-500">
                       접수 내역이 없습니다.
                     </TableCell>
                   </TableRow>
@@ -430,6 +563,27 @@ export default function AdminBlogDistributionPage() {
 
                     return (
                       <TableRow key={sub.id} className="cursor-pointer hover:bg-gray-50" onClick={() => window.location.href = `/admin/blog-distribution/${sub.id}`}>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          {sub.submission_number ? (
+                            <div className="flex items-center gap-1">
+                              <span className="font-mono text-xs">{sub.submission_number}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 w-5 p-0"
+                                onClick={() => copyToClipboard(sub.submission_number!)}
+                              >
+                                {copiedId === sub.submission_number ? (
+                                  <Check className="h-3 w-3 text-green-500" />
+                                ) : (
+                                  <Copy className="h-3 w-3 text-muted-foreground" />
+                                )}
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <div className={`p-2 rounded-lg ${typeInfo.color}`}>
@@ -497,7 +651,7 @@ export default function AdminBlogDistributionPage() {
                               onClick={() => handleDailyRecordOpen(sub)}
                               className="text-xs"
                             >
-                              <Calendar className="h-3 w-3 mr-1" />
+                              <CalendarIcon className="h-3 w-3 mr-1" />
                               기록
                             </Button>
                           </div>
@@ -534,6 +688,9 @@ export default function AdminBlogDistributionPage() {
                         </div>
                         <p className="font-semibold text-xs truncate">{sub.company_name}</p>
                         <p className="text-[10px] text-gray-500 truncate">{sub.clients?.company_name || '-'}</p>
+                        {sub.submission_number && (
+                          <p className="text-[10px] font-mono text-blue-600">{sub.submission_number}</p>
+                        )}
                       </div>
                       <Badge className={`text-[10px] px-1.5 py-0.5 flex-shrink-0 ${statusInfo.color}`}>
                         {statusInfo.label}
@@ -598,7 +755,7 @@ export default function AdminBlogDistributionPage() {
                         onClick={() => handleDailyRecordOpen(sub)}
                         className="flex-1 text-[11px] h-7 px-2"
                       >
-                        <Calendar className="h-2.5 w-2.5 mr-0.5" />
+                        <CalendarIcon className="h-2.5 w-2.5 mr-0.5" />
                         기록
                       </Button>
                     </div>
@@ -652,6 +809,7 @@ export default function AdminBlogDistributionPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead>접수번호</TableHead>
                           <TableHead>타입</TableHead>
                           <TableHead>업체명</TableHead>
                           <TableHead className="text-center">일 배포</TableHead>
@@ -671,6 +829,27 @@ export default function AdminBlogDistributionPage() {
 
                           return (
                             <TableRow key={sub.id} className="cursor-pointer hover:bg-gray-50" onClick={() => window.location.href = `/admin/blog-distribution/${sub.id}`}>
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                {sub.submission_number ? (
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-mono text-xs">{sub.submission_number}</span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-5 w-5 p-0"
+                                      onClick={() => copyToClipboard(sub.submission_number!)}
+                                    >
+                                      {copiedId === sub.submission_number ? (
+                                        <Check className="h-3 w-3 text-green-500" />
+                                      ) : (
+                                        <Copy className="h-3 w-3 text-muted-foreground" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">-</span>
+                                )}
+                              </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <div className={`p-2 rounded-lg ${typeInfo.color}`}>
@@ -735,7 +914,7 @@ export default function AdminBlogDistributionPage() {
                                     onClick={() => handleDailyRecordOpen(sub)}
                                     className="text-xs"
                                   >
-                                    <Calendar className="h-3 w-3 mr-1" />
+                                    <CalendarIcon className="h-3 w-3 mr-1" />
                                     기록
                                   </Button>
                                 </div>

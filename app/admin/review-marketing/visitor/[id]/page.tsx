@@ -13,11 +13,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Download, Package, Image as ImageIcon, Loader2 } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { ArrowLeft, FileSpreadsheet, Loader2, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DailyRecordCalendar } from '@/components/admin/review-marketing/DailyRecordCalendar';
-import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
+import * as XLSX from 'xlsx';
 
 interface ReceiptReviewDetail {
   id: string;
@@ -48,6 +55,25 @@ interface DailyRecord {
   notes?: string;
 }
 
+interface ContentItem {
+  id: string;
+  submission_id: string;
+  upload_order: number;
+  script_text: string | null;
+  review_status: 'pending' | 'approved' | 'revision_requested';
+  review_registered_date: string | null;
+  receipt_date: string | null;
+  review_link: string | null;
+  review_id: string | null;
+  created_at: string;
+}
+
+const reviewStatusConfig: Record<string, { label: string; variant: 'outline' | 'default' | 'secondary' }> = {
+  pending: { label: '대기', variant: 'outline' },
+  approved: { label: '승인됨', variant: 'default' },
+  revision_requested: { label: '수정요청', variant: 'secondary' },
+};
+
 const statusConfig: Record<string, { label: string; variant: 'outline' | 'default' | 'secondary' | 'destructive' }> = {
   pending: { label: '확인중', variant: 'outline' },
   approved: { label: '구동중', variant: 'default' }, // Legacy - will be migrated to in_progress
@@ -63,14 +89,15 @@ export default function VisitorReviewDetailPage({ params }: { params: Promise<{ 
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
-  const [downloadLoading, setDownloadLoading] = useState(false);
   const [submission, setSubmission] = useState<ReceiptReviewDetail | null>(null);
   const [dailyRecords, setDailyRecords] = useState<DailyRecord[]>([]);
+  const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     fetchSubmissionDetail();
     fetchDailyRecords();
+    fetchContentItems();
   }, [unwrappedParams.id]);
 
   const fetchSubmissionDetail = async () => {
@@ -104,6 +131,63 @@ export default function VisitorReviewDetailPage({ params }: { params: Promise<{ 
     }
   };
 
+  const fetchContentItems = async () => {
+    try {
+      const response = await fetch(`/api/admin/review-marketing/visitor/${unwrappedParams.id}/content-items`);
+      if (response.ok) {
+        const data = await response.json();
+        setContentItems(data.contentItems || []);
+      }
+    } catch (error) {
+      console.error('Error fetching content items:', error);
+    }
+  };
+
+  const downloadContentItemsAsExcel = () => {
+    if (!submission || contentItems.length === 0) {
+      toast({
+        title: '알림',
+        description: '다운로드할 콘텐츠가 없습니다.',
+      });
+      return;
+    }
+
+    // 엑셀 양식과 동일한 형식으로 데이터 준비
+    const excelData = contentItems.map((item, index) => ({
+      '순번': index + 1,
+      '리뷰원고': item.script_text || '',
+      '리뷰등록날짜': item.review_registered_date || '',
+      '영수증날짜': item.receipt_date || '',
+      '상태': reviewStatusConfig[item.review_status]?.label || item.review_status,
+      '리뷰링크': item.review_link || '',
+      '리뷰아이디': item.review_id || '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // 컬럼 너비 설정
+    ws['!cols'] = [
+      { wch: 6 },   // 순번
+      { wch: 60 },  // 리뷰원고
+      { wch: 14 },  // 리뷰등록날짜
+      { wch: 14 },  // 영수증날짜
+      { wch: 10 },  // 상태
+      { wch: 45 },  // 리뷰링크
+      { wch: 18 },  // 리뷰아이디
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '콘텐츠목록');
+
+    const fileName = `${submission.company_name}_콘텐츠목록_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+
+    toast({
+      title: '다운로드 완료',
+      description: `${contentItems.length}건의 콘텐츠가 다운로드되었습니다.`,
+    });
+  };
+
   const handleStatusChange = async (newStatus: string) => {
     try {
       const response = await fetch(`/api/admin/review-marketing/visitor/${unwrappedParams.id}/status`, {
@@ -126,68 +210,6 @@ export default function VisitorReviewDetailPage({ params }: { params: Promise<{ 
         description: '상태 변경에 실패했습니다.',
         variant: 'destructive',
       });
-    }
-  };
-
-  const downloadAllFiles = async () => {
-    if (!submission) return;
-
-    const filesToDownload: string[] = [];
-
-    if (submission.business_license_url) {
-      filesToDownload.push(submission.business_license_url);
-    }
-    if (submission.photo_urls) {
-      filesToDownload.push(...submission.photo_urls);
-    }
-
-    if (filesToDownload.length === 0) {
-      toast({
-        title: '알림',
-        description: '다운로드할 파일이 없습니다.',
-      });
-      return;
-    }
-
-    try {
-      setDownloadLoading(true);
-      const zip = new JSZip();
-
-      for (let i = 0; i < filesToDownload.length; i++) {
-        const url = filesToDownload[i];
-        const response = await fetch(url);
-        const blob = await response.blob();
-
-        const urlParts = url.split('/');
-        const fileName = urlParts[urlParts.length - 1];
-
-        let folderName = '';
-        if (url === submission.business_license_url) {
-          folderName = 'business_license/';
-        } else if (submission.photo_urls?.includes(url)) {
-          folderName = 'photos/';
-        }
-
-        zip.file(folderName + fileName, blob);
-      }
-
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      const zipFileName = `${submission.company_name}_${unwrappedParams.id.slice(0, 8)}_files.zip`;
-      saveAs(zipBlob, zipFileName);
-
-      toast({
-        title: '다운로드 완료',
-        description: '파일이 다운로드되었습니다.',
-      });
-    } catch (error) {
-      console.error('Download error:', error);
-      toast({
-        title: '오류',
-        description: '파일 다운로드 중 오류가 발생했습니다.',
-        variant: 'destructive',
-      });
-    } finally {
-      setDownloadLoading(false);
     }
   };
 
@@ -298,7 +320,7 @@ export default function VisitorReviewDetailPage({ params }: { params: Promise<{ 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="overview">개요</TabsTrigger>
-            <TabsTrigger value="files">파일</TabsTrigger>
+            <TabsTrigger value="contents">콘텐츠 목록</TabsTrigger>
             <TabsTrigger value="daily">일별 기록</TabsTrigger>
           </TabsList>
 
@@ -360,59 +382,93 @@ export default function VisitorReviewDetailPage({ params }: { params: Promise<{ 
             )}
           </TabsContent>
 
-          <TabsContent value="files" className="space-y-4">
+          <TabsContent value="contents" className="space-y-4">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>업로드 파일</CardTitle>
-                  {((submission.business_license_url) || (submission.photo_urls && submission.photo_urls.length > 0)) && (
-                    <Button onClick={downloadAllFiles} disabled={downloadLoading}>
-                      <Package className="h-4 w-4 mr-2" />
-                      {downloadLoading ? '다운로드 중...' : '일괄 다운로드'}
+                  <div>
+                    <CardTitle>리뷰 콘텐츠 목록</CardTitle>
+                    <CardDescription>
+                      엑셀로 업로드된 리뷰 콘텐츠 ({contentItems.length}건)
+                    </CardDescription>
+                  </div>
+                  {contentItems.length > 0 && (
+                    <Button onClick={downloadContentItemsAsExcel}>
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      엑셀 다운로드
                     </Button>
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {submission.business_license_url && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">사업자등록증</p>
-                    <Button
-                      variant="outline"
-                      onClick={() => window.open(submission.business_license_url, '_blank')}
-                    >
-                      <ImageIcon className="h-4 w-4 mr-2" />
-                      보기
-                    </Button>
-                  </div>
-                )}
-
-                {submission.photo_urls && submission.photo_urls.length > 0 && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      업로드 사진 ({submission.photo_urls.length}장)
-                    </p>
-                    <div className="grid grid-cols-4 gap-2">
-                      {submission.photo_urls.map((url, index) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          className="h-24"
-                          onClick={() => window.open(url, '_blank')}
-                        >
-                          <div className="flex flex-col items-center">
-                            <ImageIcon className="h-6 w-6 mb-1" />
-                            <span className="text-xs">사진 {index + 1}</span>
-                          </div>
-                        </Button>
-                      ))}
+              <CardContent>
+                {contentItems.length > 0 ? (
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="max-h-[500px] overflow-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-12 text-center">순번</TableHead>
+                            <TableHead className="min-w-[300px]">리뷰원고</TableHead>
+                            <TableHead className="w-28">리뷰등록날짜</TableHead>
+                            <TableHead className="w-28">영수증날짜</TableHead>
+                            <TableHead className="w-24 text-center">상태</TableHead>
+                            <TableHead className="w-32">리뷰링크</TableHead>
+                            <TableHead className="w-28">리뷰아이디</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {contentItems.map((item, index) => (
+                            <TableRow key={item.id}>
+                              <TableCell className="text-center text-muted-foreground">
+                                {index + 1}
+                              </TableCell>
+                              <TableCell>
+                                <p className="text-sm line-clamp-2" title={item.script_text || ''}>
+                                  {item.script_text || '-'}
+                                </p>
+                              </TableCell>
+                              <TableCell className="text-sm">
+                                {item.review_registered_date || '-'}
+                              </TableCell>
+                              <TableCell className="text-sm">
+                                {item.receipt_date || '-'}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Badge
+                                  variant={reviewStatusConfig[item.review_status]?.variant || 'outline'}
+                                  className="whitespace-nowrap"
+                                >
+                                  {reviewStatusConfig[item.review_status]?.label || item.review_status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {item.review_link ? (
+                                  <a
+                                    href={item.review_link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                    링크
+                                  </a>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">-</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs">
+                                {item.review_id || '-'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </div>
                   </div>
-                )}
-
-                {!submission.business_license_url && (!submission.photo_urls || submission.photo_urls.length === 0) && (
+                ) : (
                   <p className="text-center text-muted-foreground py-8">
-                    업로드된 파일이 없습니다.
+                    업로드된 콘텐츠가 없습니다.<br />
+                    <span className="text-xs">데이터 관리 페이지에서 엑셀로 콘텐츠를 업로드하세요.</span>
                   </p>
                 )}
               </CardContent>
@@ -424,7 +480,7 @@ export default function VisitorReviewDetailPage({ params }: { params: Promise<{ 
               <CardHeader>
                 <CardTitle>일별 유입 기록</CardTitle>
                 <CardDescription>
-                  관리자가 수기로 실제 유입 건수를 기록합니다
+                  리뷰등록날짜 기준으로 자동 집계됩니다
                 </CardDescription>
               </CardHeader>
               <CardContent>

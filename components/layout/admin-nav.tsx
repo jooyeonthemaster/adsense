@@ -22,6 +22,7 @@ import {
   Coffee,
   Gift,
   Megaphone,
+  Database,
 } from 'lucide-react';
 
 const navigation = [
@@ -39,6 +40,7 @@ const navigation = [
   { name: 'AS 관리', href: '/admin/as-requests', icon: Settings },
   { name: '공지사항 관리', href: '/admin/announcements', icon: Megaphone },
   { name: '상품 가이드 관리', href: '/admin/product-guides', icon: Package },
+  { name: '데이터 관리', href: '/admin/data-management', icon: Database },
 ];
 
 function NavContent({ onClose }: { onClose?: () => void }) {

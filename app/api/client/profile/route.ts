@@ -26,7 +26,9 @@ export async function GET() {
         business_address,
         tax_email,
         profile_updated_at,
-        created_at
+        created_at,
+        onboarding_completed,
+        client_type
       `)
       .eq('id', user.id)
       .single();

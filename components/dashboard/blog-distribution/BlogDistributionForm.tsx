@@ -1,10 +1,14 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { CheckCircle2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CheckCircle2, CalendarIcon } from 'lucide-react';
 import { DistributionType, BlogDistributionFormData } from '@/types/blog-distribution/types';
+import { format, addDays } from 'date-fns';
+import { ko } from 'date-fns/locale';
 
 interface BlogDistributionFormProps {
   formData: BlogDistributionFormData;
@@ -14,7 +18,12 @@ interface BlogDistributionFormProps {
   onFormChange: (updates: Partial<BlogDistributionFormData>) => void;
   onPlaceUrlChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onDailyCountChange: (value: number) => void;
-  onOperationDaysChange: (value: number) => void;
+  onStartDateChange: (date: Date | null) => void;
+  onEndDateChange: (date: Date | null) => void;
+  minStartDate: Date;
+  isWeekendSubmission: boolean;
+  operationDays: number;
+  totalCount: number;
 }
 
 export function BlogDistributionForm({
@@ -25,7 +34,12 @@ export function BlogDistributionForm({
   onFormChange,
   onPlaceUrlChange,
   onDailyCountChange,
-  onOperationDaysChange,
+  onStartDateChange,
+  onEndDateChange,
+  minStartDate,
+  isWeekendSubmission,
+  operationDays,
+  totalCount,
 }: BlogDistributionFormProps) {
   return (
     <div className="space-y-4">
@@ -33,19 +47,36 @@ export function BlogDistributionForm({
       {selectedType === 'auto' && (
         <div className={`p-3 rounded-lg border ${isApprovedForAutoDistribution ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50 border-gray-200'}`}>
           <div className="flex items-center gap-2 mb-2">
-            <Checkbox
-              id="useExternalAccount"
-              checked={formData.useExternalAccount}
-              onCheckedChange={(checked) => {
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={formData.useExternalAccount}
+              onClick={() => {
                 if (isApprovedForAutoDistribution) {
-                  onFormChange({ useExternalAccount: checked === true });
+                  onFormChange({ useExternalAccount: !formData.useExternalAccount });
                 }
               }}
               disabled={!isApprovedForAutoDistribution}
-              className="h-5 w-5"
-            />
+              className={`relative flex items-center justify-center h-6 w-6 rounded border-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 ${
+                !isApprovedForAutoDistribution
+                  ? 'bg-gray-100 border-gray-300 cursor-not-allowed'
+                  : formData.useExternalAccount
+                    ? 'bg-sky-500 border-sky-500 shadow-lg'
+                    : 'bg-white border-gray-300 hover:border-sky-400 cursor-pointer'
+              }`}
+            >
+              {formData.useExternalAccount && (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-white">
+                  <path d="M20 6 9 17l-5-5"></path>
+                </svg>
+              )}
+            </button>
             <label
-              htmlFor="useExternalAccount"
+              onClick={() => {
+                if (isApprovedForAutoDistribution) {
+                  onFormChange({ useExternalAccount: !formData.useExternalAccount });
+                }
+              }}
               className={`text-sm font-medium ${isApprovedForAutoDistribution ? 'text-yellow-900 cursor-pointer' : 'text-gray-500 cursor-not-allowed'} select-none`}
             >
               외부 계정 충전 요청 (승인된 회원만)
@@ -198,47 +229,117 @@ export function BlogDistributionForm({
             </RadioGroup>
           </div>
 
-          {/* 일 접수량 & 구동일수 */}
+          {/* 일 접수량 */}
+          <div className="space-y-2">
+            <Label htmlFor="dailyCount" className="text-xs font-medium text-gray-700">
+              일 접수량 (최소 3건) <span className="text-rose-500">*</span>
+            </Label>
+            <Input
+              id="dailyCount"
+              type="number"
+              min="3"
+              value={formData.dailyCount}
+              onChange={(e) => onDailyCountChange(Number(e.target.value))}
+              className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+            />
+          </div>
+
+          {/* 구동 시작일 & 종료일 */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="dailyCount" className="text-xs font-medium text-gray-700">
-                일 접수량 (최소 3건) <span className="text-rose-500">*</span>
+              <Label className="text-xs font-medium text-gray-700">
+                구동 시작일 <span className="text-rose-500">*</span>
               </Label>
-              <Input
-                id="dailyCount"
-                type="number"
-                min="3"
-                value={formData.dailyCount}
-                onChange={(e) => onDailyCountChange(Number(e.target.value))}
-                className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={`w-full justify-start text-left font-normal h-9 text-sm ${
+                      !formData.startDate ? 'text-gray-400' : 'text-gray-900'
+                    }`}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.startDate
+                      ? format(formData.startDate, 'M/d (EEE)', { locale: ko })
+                      : '시작일'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.startDate || undefined}
+                    onSelect={(date) => onStartDateChange(date || null)}
+                    disabled={(date) => date < minStartDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <span className="text-xs text-gray-500">
+                {isWeekendSubmission
+                  ? `${format(minStartDate, 'M/d', { locale: ko })}부터 가능`
+                  : '내일부터 가능'}
+              </span>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="operationDays" className="text-xs font-medium text-gray-700">
-                구동일수 (최소 10일) <span className="text-rose-500">*</span>
+              <Label className="text-xs font-medium text-gray-700">
+                구동 종료일 <span className="text-rose-500">*</span>
               </Label>
-              <Input
-                id="operationDays"
-                type="number"
-                min="10"
-                value={formData.operationDays}
-                onChange={(e) => onOperationDaysChange(Number(e.target.value))}
-                className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!formData.startDate}
+                    className={`w-full justify-start text-left font-normal h-9 text-sm ${
+                      !formData.endDate ? 'text-gray-400' : 'text-gray-900'
+                    }`}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.endDate
+                      ? format(formData.endDate, 'M/d (EEE)', { locale: ko })
+                      : '종료일'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.endDate || undefined}
+                    onSelect={(date) => onEndDateChange(date || null)}
+                    disabled={(date) => {
+                      if (!formData.startDate) return true;
+                      // 시작일 이전 불가
+                      if (date < formData.startDate) return true;
+                      // 시작일로부터 최대 30일까지만 선택 가능 (시작일 포함 30일)
+                      const maxDate = addDays(formData.startDate, 29);
+                      if (date > maxDate) return true;
+                      return false;
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <span className="text-xs text-gray-500">시작일 이후 최대 30일까지 선택 가능</span>
             </div>
           </div>
 
           {/* 총 작업수량 표시 */}
-          <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200">
-            <span className="text-xs text-gray-600">총 작업수량: </span>
-            <span className="text-base font-bold text-gray-900">
-              {formData.totalCount}건
+          <div className={`p-2.5 rounded-lg border ${
+            totalCount < 30
+              ? 'bg-rose-50 border-rose-200'
+              : 'bg-sky-50 border-sky-200'
+          }`}>
+            <span className={`text-xs ${totalCount < 30 ? 'text-rose-700' : 'text-sky-700'}`}>
+              총 작업수량:{' '}
             </span>
-            <span className="text-xs text-gray-500 ml-1">
-              (일 {formData.dailyCount}건 × {formData.operationDays}일)
+            <span className={`text-base font-bold ${totalCount < 30 ? 'text-rose-900' : 'text-sky-900'}`}>
+              {totalCount}건
             </span>
-            {formData.totalCount < 30 && (
+            <span className={`text-xs ml-1 ${totalCount < 30 ? 'text-rose-600' : 'text-sky-600'}`}>
+              (일 {formData.dailyCount}건 × {operationDays}일)
+            </span>
+            {totalCount < 30 && (
               <p className="text-xs text-rose-600 mt-1">
                 ⚠ 최소 30건 이상이어야 합니다.
               </p>
@@ -276,11 +377,44 @@ export function BlogDistributionForm({
               />
             </div>
           )}
+
+          {/* 리뷰어 배포 전용: 이미지 이메일 안내 */}
+          {selectedType === 'reviewer' && (
+            <div className="p-4 bg-sky-50 border border-sky-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <div className="bg-sky-100 p-2 rounded-lg shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-sky-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                  </svg>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-900">
+                    이미지는 이메일로 보내주세요
+                  </p>
+                  <p className="text-sm font-bold text-sky-700 bg-white px-3 py-1.5 rounded border border-sky-200 inline-block">
+                    sense-ad@naver.com
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    이메일 제목은 <span className="font-semibold">업체명 or 대행사명</span>으로 작성
+                  </p>
+                  <p className="text-xs font-medium text-sky-700 p-2 bg-sky-100 rounded">
+                    사진 100장 이상 전달 필수
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
   );
 }
+
+
+
+
+
 
 
 

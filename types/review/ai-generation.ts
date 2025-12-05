@@ -227,6 +227,7 @@ export interface RatioSliderConfig {
   label: string;
   description?: string;
   percentage: number;
+  count: number; // 개수 (새로 추가)
   color?: string;
 }
 
@@ -261,20 +262,20 @@ export interface GeneratorUIState {
 // ============================================
 
 export const DEFAULT_LENGTH_RATIOS: RatioSliderConfig[] = [
-  { id: 'short', value: 'short', label: '짧은 (100-200자)', percentage: 30, color: '#10b981' },
-  { id: 'medium', value: 'medium', label: '중간 (200-400자)', percentage: 50, color: '#3b82f6' },
-  { id: 'long', value: 'long', label: '긴 (400-600자)', percentage: 20, color: '#8b5cf6' },
+  { id: 'short', value: 'short', label: '짧은 (100-200자)', percentage: 30, count: 3, color: '#10b981' },
+  { id: 'medium', value: 'medium', label: '중간 (200-400자)', percentage: 50, count: 5, color: '#3b82f6' },
+  { id: 'long', value: 'long', label: '긴 (400-600자)', percentage: 20, count: 2, color: '#8b5cf6' },
 ];
 
 export const DEFAULT_TONE_RATIOS: RatioSliderConfig[] = [
-  { id: '20s', value: '20s', label: '20대', description: '친근하고 캐주얼', percentage: 20, color: '#f43f5e' },
-  { id: '30s', value: '30s', label: '30대', description: '자연스럽고 균형', percentage: 30, color: '#f97316' },
-  { id: '40s', value: '40s', label: '40대', description: '차분하고 신뢰감', percentage: 25, color: '#eab308' },
-  { id: '50s', value: '50s', label: '50대', description: '정중하고 격식', percentage: 15, color: '#22c55e' },
-  { id: 'mz', value: 'mz', label: 'MZ세대', description: '트렌디하고 감각적', percentage: 10, color: '#06b6d4' },
+  { id: '20s', value: '20s', label: '20대', description: '친근하고 캐주얼', percentage: 20, count: 2, color: '#f43f5e' },
+  { id: '30s', value: '30s', label: '30대', description: '자연스럽고 균형', percentage: 30, count: 3, color: '#f97316' },
+  { id: '40s', value: '40s', label: '40대', description: '차분하고 신뢰감', percentage: 25, count: 2, color: '#eab308' },
+  { id: '50s', value: '50s', label: '50대', description: '정중하고 격식', percentage: 15, count: 2, color: '#22c55e' },
+  { id: 'mz', value: 'mz', label: 'MZ세대', description: '트렌디하고 감각적', percentage: 10, count: 1, color: '#06b6d4' },
 ];
 
 export const DEFAULT_EMOJI_RATIOS: RatioSliderConfig[] = [
-  { id: 'with', value: 'with', label: '이모티콘 포함', percentage: 60, color: '#f59e0b' },
-  { id: 'without', value: 'without', label: '이모티콘 미포함', percentage: 40, color: '#6b7280' },
+  { id: 'with', value: 'with', label: '이모티콘 포함', percentage: 60, count: 6, color: '#f59e0b' },
+  { id: 'without', value: 'without', label: '이모티콘 미포함', percentage: 40, count: 4, color: '#6b7280' },
 ];

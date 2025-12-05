@@ -1,11 +1,16 @@
+'use client';
+
 import Link from 'next/link';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
-import { ExternalLink, ImageIcon, FileText, MessageSquare, ChevronRight, AlertTriangle } from 'lucide-react';
+import { ExternalLink, ImageIcon, FileText, MessageSquare, ChevronRight, AlertTriangle, Download, Loader2 } from 'lucide-react';
 import { KAKAOMAP_STATUS_LABELS } from '@/config/kakaomap-status';
 import { KakaomapSubmission } from '@/types/review/kmap-status';
 import { calculateProgress, formatDate, canCancelSubmission } from '@/utils/review/kmap-status-helpers';
+import { useToast } from '@/hooks/use-toast';
+import * as XLSX from 'xlsx';
 
 interface StatusTableRowProps {
   submission: KakaomapSubmission;
@@ -22,11 +27,80 @@ export function StatusTableRow({
   onCancelClick,
   onAsConditionClick,
 }: StatusTableRowProps) {
-  const statusDisplay = KAKAOMAP_STATUS_LABELS[submission.status as keyof typeof KAKAOMAP_STATUS_LABELS] || { 
-    label: submission.status, 
-    variant: 'outline' as const 
+  const { toast } = useToast();
+  const [downloadLoading, setDownloadLoading] = useState(false);
+  const statusDisplay = KAKAOMAP_STATUS_LABELS[submission.status as keyof typeof KAKAOMAP_STATUS_LABELS] || {
+    label: submission.status,
+    variant: 'outline' as const
   };
   const progress = calculateProgress(submission);
+
+  // 리포트 다운로드 함수
+  const handleReportDownload = async () => {
+    setDownloadLoading(true);
+    try {
+      const response = await fetch(`/api/submissions/kakaomap/${submission.id}/content`);
+      if (!response.ok) throw new Error('데이터를 가져오는데 실패했습니다.');
+
+      const data = await response.json();
+      const contentItems = data.items || [];
+
+      if (contentItems.length === 0) {
+        toast({
+          title: '알림',
+          description: '다운로드할 데이터가 없습니다.',
+        });
+        return;
+      }
+
+      const excelData = contentItems.map((item: {
+        script_text: string | null;
+        review_registered_date: string | null;
+        receipt_date: string | null;
+        status: string;
+        review_link: string | null;
+        review_id: string | null;
+      }, idx: number) => ({
+        '순번': idx + 1,
+        '리뷰원고': item.script_text || '',
+        '리뷰등록날짜': item.review_registered_date || '',
+        '영수증날짜': item.receipt_date || '',
+        '상태': item.status === 'approved' ? '승인됨' : item.status === 'rejected' ? '반려' : '대기',
+        '리뷰링크': item.review_link || '',
+        '리뷰아이디': item.review_id || '',
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '콘텐츠 목록');
+
+      ws['!cols'] = [
+        { wch: 6 },
+        { wch: 50 },
+        { wch: 14 },
+        { wch: 14 },
+        { wch: 10 },
+        { wch: 30 },
+        { wch: 15 },
+      ];
+
+      XLSX.writeFile(wb, `K맵리뷰_${submission.company_name}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+      toast({
+        title: '다운로드 완료',
+        description: '리포트가 다운로드되었습니다.',
+      });
+    } catch (error) {
+      console.error('Report download error:', error);
+      toast({
+        variant: 'destructive',
+        title: '다운로드 실패',
+        description: error instanceof Error ? error.message : '다운로드 중 오류가 발생했습니다.',
+      });
+    } finally {
+      setDownloadLoading(false);
+    }
+  };
 
   return (
     <TableRow className="hover:bg-gray-50">
@@ -104,7 +178,23 @@ export function StatusTableRow({
               <ChevronRight className="h-3 w-3 ml-1" />
             </Button>
           </Link>
-          
+
+          {/* 리포트 다운로드 버튼 */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleReportDownload}
+            disabled={downloadLoading}
+            className="h-7 text-xs text-green-600 border-green-300 hover:bg-green-50"
+          >
+            {downloadLoading ? (
+              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            ) : (
+              <Download className="h-3 w-3 mr-1" />
+            )}
+            리포트
+          </Button>
+
           {['review', 'revision_requested'].includes(submission.status) && (
             <Button
               variant="outline"

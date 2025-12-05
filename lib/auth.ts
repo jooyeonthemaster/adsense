@@ -12,6 +12,8 @@ export interface AuthUser {
   company_name?: string;
   points?: number;
   is_super_admin?: boolean;
+  onboarding_completed?: boolean;
+  client_type?: 'advertiser' | 'agency' | null;
 }
 
 export interface SessionData {
@@ -204,6 +206,8 @@ export async function findClientByKakaoId(
     type: 'client',
     company_name: client.company_name,
     points: client.points,
+    onboarding_completed: client.onboarding_completed ?? true,
+    client_type: client.client_type,
   };
 }
 
@@ -235,6 +239,8 @@ export async function createKakaoClient(
       is_active: true,
       auto_distribution_approved: false,
       pending_charge_requests_count: 0,
+      onboarding_completed: false, // 신규 카카오 사용자는 온보딩 필요
+      client_type: null,
     })
     .select()
     .single();
@@ -251,6 +257,8 @@ export async function createKakaoClient(
     type: 'client',
     company_name: client.company_name,
     points: client.points,
+    onboarding_completed: false,
+    client_type: null,
   };
 }
 

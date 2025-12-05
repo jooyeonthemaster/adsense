@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
-import { Calendar, ChevronDown } from 'lucide-react';
+import { Calendar, ChevronDown, Copy, Check } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { SubmissionWithClient, statusConfig, scriptStatusLabels, STATUS_OPTIONS } from '@/types/admin/cafe-marketing';
@@ -21,8 +22,19 @@ export function CafeMarketingTableRow({
   onScriptChange,
   onDailyRecordOpen,
 }: CafeMarketingTableRowProps) {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const statusInfo = statusConfig[submission.status];
   const scriptLabel = scriptStatusLabels[submission.script_status || ''] || '원고 상태 미입력';
+
+  const copyToClipboard = async (submissionNumber: string) => {
+    try {
+      await navigator.clipboard.writeText(submissionNumber);
+      setCopiedId(submissionNumber);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ko-KR', {
@@ -34,6 +46,27 @@ export function CafeMarketingTableRow({
 
   return (
     <TableRow className="hover:bg-gray-50">
+      <TableCell>
+        {submission.submission_number ? (
+          <div className="flex items-center gap-1">
+            <span className="font-mono text-xs">{submission.submission_number}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-5 w-5 p-0"
+              onClick={() => copyToClipboard(submission.submission_number!)}
+            >
+              {copiedId === submission.submission_number ? (
+                <Check className="h-3 w-3 text-green-500" />
+              ) : (
+                <Copy className="h-3 w-3 text-muted-foreground" />
+              )}
+            </Button>
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground">-</span>
+        )}
+      </TableCell>
       <TableCell className="font-medium">{submission.company_name}</TableCell>
       <TableCell className="text-sm text-gray-600">
         {submission.clients?.company_name || '-'}
@@ -123,6 +156,11 @@ export function CafeMarketingTableRow({
     </TableRow>
   );
 }
+
+
+
+
+
 
 
 

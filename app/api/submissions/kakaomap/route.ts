@@ -177,12 +177,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Generate submission number using database function
+    const { data: submissionNumberData, error: snError } = await supabase
+      .rpc('generate_submission_number', { p_product_code: 'KM' });
+
+    if (snError) {
+      console.error('Error generating submission number:', snError);
+      // Rollback points
+      await supabase
+        .from('clients')
+        .update({ points: client.points })
+        .eq('id', user.id);
+      return NextResponse.json(
+        { error: '접수번호 생성 중 오류가 발생했습니다.' },
+        { status: 500 }
+      );
+    }
+
     // Create submission
     // Determine has_photo based on photo_review_count
     const hasPhoto = photo_review_count > 0;
 
     console.log('[DEBUG] Creating kakaomap submission with data:', {
       client_id: user.id,
+      submission_number: submissionNumberData,
       company_name,
       kakaomap_url,
       daily_count: daily_count || 1,
@@ -205,6 +223,7 @@ export async function POST(request: NextRequest) {
       .from('kakaomap_review_submissions')
       .insert({
         client_id: user.id,
+        submission_number: submissionNumberData,
         company_name,
         kakaomap_url,
         daily_count: daily_count || 1,

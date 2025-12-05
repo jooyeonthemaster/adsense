@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Download, Eye } from 'lucide-react';
+import { Download, Eye, ExternalLink } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { UnifiedSubmission } from '@/types/admin/submissions';
 import { SubmissionDetailDialog } from './submission-detail-dialog';
@@ -14,6 +15,19 @@ import { SubmissionsGroupView } from '@/components/admin/submissions/Submissions
 import { applySubmissionFilters, createGroupedData, formatDate, getSubmissionDetails } from '@/utils/admin/submission-helpers';
 import { TYPE_LABELS, STATUS_LABELS, STATUS_VARIANTS } from '@/types/admin/submissions';
 import { Badge } from '@/components/ui/badge';
+
+// 상품 타입별 관리 페이지 URL 매핑
+const getManagementUrl = (type: UnifiedSubmission['type'], id: string): string => {
+  const urlMap: Record<UnifiedSubmission['type'], string> = {
+    place: `/admin/reward/${id}`,
+    receipt: `/admin/review-marketing/visitor/${id}`,
+    kakaomap: `/admin/kakaomap/${id}`,
+    blog: `/admin/blog-distribution/${id}`,
+    cafe: `/admin/cafe-marketing/${id}`,
+    experience: `/admin/experience/${id}`,
+  };
+  return urlMap[type];
+};
 
 export function AdminSubmissionsTable() {
   const [submissions, setSubmissions] = useState<UnifiedSubmission[]>([]);
@@ -27,6 +41,8 @@ export function AdminSubmissionsTable() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('date-desc');
+  const [createdDateFilter, setCreatedDateFilter] = useState<Date | undefined>();
+  const [startDateFilter, setStartDateFilter] = useState<Date | undefined>();
 
   // View mode states
   const [viewMode, setViewMode] = useState<'list' | 'group'>('list');
@@ -51,10 +67,12 @@ export function AdminSubmissionsTable() {
       typeFilter,
       statusFilter,
       dateFilter,
-      sortBy
+      sortBy,
+      createdDateFilter,
+      startDateFilter
     );
     setFilteredSubmissions(filtered);
-  }, [submissions, searchQuery, typeFilter, statusFilter, dateFilter, sortBy]);
+  }, [submissions, searchQuery, typeFilter, statusFilter, dateFilter, sortBy, createdDateFilter, startDateFilter]);
 
   const fetchSubmissions = async () => {
     try {
@@ -78,6 +96,7 @@ export function AdminSubmissionsTable() {
   const exportToExcel = () => {
     const excelData = filteredSubmissions.map((submission) => ({
       접수일시: formatDate(submission.created_at),
+      접수번호: submission.submission_number || '-',
       거래처: submission.clients?.company_name || '-',
       상품유형: TYPE_LABELS[submission.type] || submission.type,
       업체명: submission.company_name || '-',
@@ -159,6 +178,8 @@ export function AdminSubmissionsTable() {
         sortBy={sortBy}
         viewMode={viewMode}
         groupBy={groupBy}
+        createdDateFilter={createdDateFilter}
+        startDateFilter={startDateFilter}
         onSearchChange={setSearchQuery}
         onTypeFilterChange={setTypeFilter}
         onStatusFilterChange={setStatusFilter}
@@ -166,6 +187,8 @@ export function AdminSubmissionsTable() {
         onSortByChange={setSortBy}
         onViewModeChange={setViewMode}
         onGroupByChange={setGroupBy}
+        onCreatedDateFilterChange={setCreatedDateFilter}
+        onStartDateFilterChange={setStartDateFilter}
       />
 
       {/* List View */}
@@ -178,21 +201,22 @@ export function AdminSubmissionsTable() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[140px]">접수일시</TableHead>
-                      <TableHead className="w-[120px]">거래처</TableHead>
-                      <TableHead className="w-[140px]">상품유형</TableHead>
-                      <TableHead className="w-[150px]">업체명</TableHead>
-                      <TableHead className="min-w-[250px]">상세내용</TableHead>
-                      <TableHead className="w-[80px]">진행률</TableHead>
-                      <TableHead className="w-[100px] text-right">사용 포인트</TableHead>
-                      <TableHead className="w-[100px]">상태</TableHead>
-                      <TableHead className="w-[80px]">관리</TableHead>
+                      <TableHead className="w-[140px] whitespace-nowrap">접수일시</TableHead>
+                      <TableHead className="w-[130px] whitespace-nowrap">접수번호</TableHead>
+                      <TableHead className="w-[120px] whitespace-nowrap">거래처</TableHead>
+                      <TableHead className="w-[140px] whitespace-nowrap">상품유형</TableHead>
+                      <TableHead className="w-[150px] whitespace-nowrap">업체명</TableHead>
+                      <TableHead className="min-w-[250px] whitespace-nowrap">상세내용</TableHead>
+                      <TableHead className="w-[80px] whitespace-nowrap">진행률</TableHead>
+                      <TableHead className="w-[100px] text-right whitespace-nowrap">사용 포인트</TableHead>
+                      <TableHead className="w-[100px] whitespace-nowrap">상태</TableHead>
+                      <TableHead className="w-[100px] whitespace-nowrap">관리</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredSubmissions.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="h-24 text-center">
+                        <TableCell colSpan={10} className="h-24 text-center">
                           검색 결과가 없습니다.
                         </TableCell>
                       </TableRow>
@@ -227,6 +251,9 @@ export function AdminSubmissionsTable() {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold truncate">{submission.clients?.company_name || '-'}</p>
                       <p className="text-[10px] text-gray-500 truncate">{submission.company_name || '-'}</p>
+                      {submission.submission_number && (
+                        <p className="text-[10px] font-mono text-blue-600">{submission.submission_number}</p>
+                      )}
                     </div>
                     <Badge variant={STATUS_VARIANTS[submission.status] || 'outline'} className="text-[10px] px-1.5 py-0.5 flex-shrink-0">
                       {STATUS_LABELS[submission.status] || submission.status}
@@ -269,15 +296,28 @@ export function AdminSubmissionsTable() {
                     </div>
                   </div>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openDetailDialog(submission.id, submission.type)}
-                    className="w-full text-[11px] h-7 text-blue-600 border-blue-300 px-2"
-                  >
-                    <Eye className="h-2.5 w-2.5 mr-0.5" />
-                    상세
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openDetailDialog(submission.id, submission.type)}
+                      className="flex-1 text-[11px] h-7 text-blue-600 border-blue-300 px-2"
+                    >
+                      <Eye className="h-2.5 w-2.5 mr-0.5" />
+                      상세
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                      className="flex-1 text-[11px] h-7 px-2"
+                    >
+                      <Link href={getManagementUrl(submission.type, submission.id)}>
+                        관리
+                        <ExternalLink className="h-2.5 w-2.5 ml-0.5" />
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
               ))
             )}

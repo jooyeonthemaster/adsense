@@ -4,11 +4,22 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Sparkles } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+import { Sparkles, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ProductGuideSection } from '@/components/dashboard/ProductGuideSection';
 import { extractNaverPlaceMID, fetchBusinessInfoByMID } from '@/utils/naver-place';
 import { Video, Zap, Users } from 'lucide-react';
+import { format, addDays, differenceInDays } from 'date-fns';
+import { ko } from 'date-fns/locale';
 import {
   DistributionType,
   BlogDistributionFormData,
@@ -33,6 +44,8 @@ export default function BlogDistributionPage() {
   const [isApprovedForAutoDistribution, setIsApprovedForAutoDistribution] = useState(false);
   const [loadingBusinessName, setLoadingBusinessName] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showEmailConfirmDialog, setShowEmailConfirmDialog] = useState(false);
+  const [dialogEmailConfirmed, setDialogEmailConfirmed] = useState(false);
 
   const [formData, setFormData] = useState<BlogDistributionFormData>({
     businessName: '',
@@ -41,14 +54,59 @@ export default function BlogDistributionPage() {
     linkType: 'place',
     contentType: 'review',
     dailyCount: 3,
-    operationDays: 10,
-    totalCount: 30,
+    startDate: null as Date | null,
+    endDate: null as Date | null,
     keywords: '',
     guideline: '',
     externalAccountId: '',
     chargeCount: 0,
     useExternalAccount: false,
+    emailMediaConfirmed: false,
   });
+
+  // 주말/금요일 18시 이후 접수 시 최소 시작일 계산
+  const getMinStartDate = () => {
+    const now = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dayOfWeek = now.getDay(); // 0=일, 1=월, ..., 5=금, 6=토
+    const hour = now.getHours();
+
+    // 금요일 18시 이후, 토요일, 일요일 접수 시 → 화요일부터 시작 가능
+    const isWeekendSubmission =
+      dayOfWeek === 6 || // 토요일
+      dayOfWeek === 0 || // 일요일
+      (dayOfWeek === 5 && hour >= 18); // 금요일 18시 이후
+
+    if (isWeekendSubmission) {
+      // 다음 화요일까지 남은 일수 계산
+      let daysUntilTuesday = 0;
+      if (dayOfWeek === 5) daysUntilTuesday = 4; // 금→화: 4일
+      else if (dayOfWeek === 6) daysUntilTuesday = 3; // 토→화: 3일
+      else if (dayOfWeek === 0) daysUntilTuesday = 2; // 일→화: 2일
+
+      return addDays(today, daysUntilTuesday);
+    }
+
+    // 평일 접수 시 내일부터 가능
+    return addDays(today, 1);
+  };
+
+  const minStartDate = getMinStartDate();
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const hour = now.getHours();
+  const isWeekendSubmission =
+    dayOfWeek === 6 || dayOfWeek === 0 || (dayOfWeek === 5 && hour >= 18);
+
+  // 총 작업일 계산 (캘린더 기반)
+  const operationDays = formData.startDate && formData.endDate
+    ? differenceInDays(formData.endDate, formData.startDate) + 1
+    : 0;
+
+  // 총 건수 계산
+  const totalCount = formData.dailyCount * operationDays;
 
   // URL 파라미터가 변경되면 selectedType 업데이트
   useEffect(() => {
@@ -113,13 +171,19 @@ export default function BlogDistributionPage() {
   const isPriceConfigured = !!(selectedServicePrice && selectedServicePrice > 0);
 
   const handleDailyCountChange = (value: number) => {
-    const total = value * formData.operationDays;
-    setFormData(prev => ({ ...prev, dailyCount: value, totalCount: total }));
+    setFormData(prev => ({ ...prev, dailyCount: value }));
   };
 
-  const handleOperationDaysChange = (value: number) => {
-    const total = formData.dailyCount * value;
-    setFormData(prev => ({ ...prev, operationDays: value, totalCount: total }));
+  const handleStartDateChange = (date: Date | null) => {
+    setFormData(prev => ({
+      ...prev,
+      startDate: date,
+      endDate: date && prev.endDate && date > prev.endDate ? null : prev.endDate,
+    }));
+  };
+
+  const handleEndDateChange = (date: Date | null) => {
+    setFormData(prev => ({ ...prev, endDate: date }));
   };
 
   const handlePlaceUrlChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -156,7 +220,7 @@ export default function BlogDistributionPage() {
   const calculateTotalCost = () => {
     const service = services.find(s => s.id === selectedType);
     const pricePerPost = service?.pricePerPost || 15000;
-    return formData.totalCount * pricePerPost;
+    return totalCount * pricePerPost;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -172,6 +236,8 @@ export default function BlogDistributionPage() {
         });
         return;
       }
+      // 외부 계정은 이메일 확인 없이 바로 제출
+      await executeSubmit();
     } else {
       // 일반 접수 검증
       if (!formData.businessName || !formData.placeUrl) {
@@ -183,16 +249,37 @@ export default function BlogDistributionPage() {
         return;
       }
 
-      if (formData.dailyCount < 3 || formData.operationDays < 10 || formData.totalCount < 30) {
+      if (!formData.startDate || !formData.endDate) {
         toast({
           variant: 'destructive',
           title: '입력 오류',
-          description: '일 접수량 최소 3건, 구동일수 최소 10일, 총 작업수량 최소 30건이 필요합니다.',
+          description: '시작일과 종료일을 선택해주세요.',
         });
         return;
       }
-    }
 
+      if (formData.dailyCount < 3 || totalCount < 30) {
+        toast({
+          variant: 'destructive',
+          title: '입력 오류',
+          description: '일 접수량 최소 3건, 총 작업수량 최소 30건이 필요합니다.',
+        });
+        return;
+      }
+
+      // 리뷰어 배포만 이메일 확인 다이얼로그 표시 (2025-12-05)
+      if (selectedType === 'reviewer') {
+        setDialogEmailConfirmed(false);
+        setShowEmailConfirmDialog(true);
+      } else {
+        // 영상/자동화 배포는 바로 제출
+        await executeSubmit();
+      }
+    }
+  };
+
+  const executeSubmit = async () => {
+    setShowEmailConfirmDialog(false);
     setIsSubmitting(true);
 
     try {
@@ -206,8 +293,10 @@ export default function BlogDistributionPage() {
         content_type: formData.contentType,
         place_url: formData.placeUrl || '',
         daily_count: formData.dailyCount,
-        total_count: formData.totalCount,
+        total_count: totalCount,
+        total_days: operationDays,
         total_points: totalCost,
+        start_date: formData.startDate ? format(formData.startDate, 'yyyy-MM-dd') : null,
         keywords: formData.keywords ? formData.keywords.split(',').map(k => k.trim()).filter(k => k) : [],
         guide_text: formData.guideline || null,
         account_id: formData.useExternalAccount ? formData.externalAccountId : null,
@@ -270,11 +359,11 @@ export default function BlogDistributionPage() {
               />
 
               <PaymentInfoCard
-                totalCount={formData.totalCount}
+                totalCount={totalCount}
                 totalCost={calculateTotalCost()}
                 selectedService={selectedService}
                 dailyCount={formData.dailyCount}
-                operationDays={formData.operationDays}
+                operationDays={operationDays}
                 pricingLoading={pricingLoading}
               />
             </div>
@@ -290,7 +379,12 @@ export default function BlogDistributionPage() {
                   onFormChange={(updates) => setFormData(prev => ({ ...prev, ...updates }))}
                   onPlaceUrlChange={handlePlaceUrlChange}
                   onDailyCountChange={handleDailyCountChange}
-                  onOperationDaysChange={handleOperationDaysChange}
+                  onStartDateChange={handleStartDateChange}
+                  onEndDateChange={handleEndDateChange}
+                  minStartDate={minStartDate}
+                  isWeekendSubmission={isWeekendSubmission}
+                  operationDays={operationDays}
+                  totalCount={totalCount}
                 />
               </CardContent>
             </Card>
@@ -325,6 +419,69 @@ export default function BlogDistributionPage() {
           </Card>
         </form>
       </div>
+
+      {/* 리뷰어 배포 전용 이메일 확인 다이얼로그 */}
+      <AlertDialog open={showEmailConfirmDialog} onOpenChange={setShowEmailConfirmDialog}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-sky-700">
+              <Mail className="h-5 w-5" />
+              이미지 전송 확인
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <p className="text-base text-gray-700 font-medium">
+                  이메일로 이미지를 보내셨나요?
+                </p>
+                <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg space-y-2">
+                  <p className="text-sm font-bold text-sky-900">sense-ad@naver.com</p>
+                  <p className="text-xs text-sky-600">
+                    이메일 제목은 <span className="font-semibold">업체명 or 대행사명</span>으로 작성
+                  </p>
+                  <p className="text-xs font-medium text-sky-700 pt-1 border-t border-sky-200">
+                    사진 100장 이상 전달 필수
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 pt-2">
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={dialogEmailConfirmed}
+                    onClick={() => setDialogEmailConfirmed(!dialogEmailConfirmed)}
+                    className={`relative flex items-center justify-center h-6 w-6 rounded border-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 ${
+                      dialogEmailConfirmed
+                        ? 'bg-sky-500 border-sky-500 shadow-lg'
+                        : 'bg-white border-gray-300 hover:border-sky-400'
+                    }`}
+                  >
+                    {dialogEmailConfirmed && (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-white">
+                        <path d="M20 6 9 17l-5-5"></path>
+                      </svg>
+                    )}
+                  </button>
+                  <label
+                    onClick={() => setDialogEmailConfirmed(!dialogEmailConfirmed)}
+                    className="text-sm font-medium cursor-pointer select-none text-gray-700"
+                  >
+                    네, 이미지를 이메일로 보냈습니다
+                  </label>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="flex-1">취소</AlertDialogCancel>
+            <Button
+              onClick={executeSubmit}
+              disabled={!dialogEmailConfirmed || isSubmitting}
+              className="flex-1 bg-sky-500 hover:bg-sky-600 text-white"
+            >
+              {isSubmitting ? '접수 중...' : '접수하기'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

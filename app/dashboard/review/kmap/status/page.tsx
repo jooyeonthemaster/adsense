@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CheckCircle, Clock, ImageIcon, FileText, AlertCircle, Send, AlertTriangle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { KakaomapSubmission, Message } from '@/types/review/kmap-status';
 import { StatusPageHeader } from '@/components/dashboard/review/kmap/StatusPageHeader';
@@ -16,6 +17,7 @@ import { StatusMobileCard } from '@/components/dashboard/review/kmap/StatusMobil
 import { calculateStats, formatDate } from '@/utils/review/kmap-status-helpers';
 
 export default function KakaomapReviewStatusPage() {
+  const { toast } = useToast();
   const [submissions, setSubmissions] = useState<KakaomapSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -83,7 +85,11 @@ export default function KakaomapReviewStatusPage() {
 
   const handleConfirmCancel = async () => {
     if (!agreedToCancel || !selectedSubmission) {
-      alert('동의하지 않으면 중단 요청을 할 수 없습니다.');
+      toast({
+        variant: 'destructive',
+        title: '동의 필요',
+        description: '동의하지 않으면 중단 요청을 할 수 없습니다.',
+      });
       return;
     }
 
@@ -100,14 +106,22 @@ export default function KakaomapReviewStatusPage() {
       }
 
       const data = await response.json();
-      alert(`중단 신청이 완료되었습니다.\n환불 금액: ${data.refund_amount?.toLocaleString()}P`);
+      toast({
+        title: '✅ 중단 신청 완료',
+        description: `환불 금액: ${data.refund_amount?.toLocaleString()}P`,
+        duration: 5000,
+      });
       setCancelDialogOpen(false);
       setSelectedSubmission(null);
       setAgreedToCancel(false);
       fetchSubmissions();
     } catch (error) {
       console.error('Cancel error:', error);
-      alert(error instanceof Error ? error.message : '중단 신청에 실패했습니다.');
+      toast({
+        variant: 'destructive',
+        title: '중단 신청 실패',
+        description: error instanceof Error ? error.message : '중단 신청에 실패했습니다.',
+      });
     }
   };
 
@@ -132,18 +146,30 @@ export default function KakaomapReviewStatusPage() {
         throw new Error(data.error || '승인에 실패했습니다.');
       }
 
-      alert('검수가 승인되었습니다. 리뷰 구동을 시작합니다.');
+      toast({
+        title: '✅ 검수 승인 완료',
+        description: '리뷰 구동을 시작합니다.',
+        duration: 5000,
+      });
       setContentDialogOpen(false);
       fetchSubmissions();
     } catch (error) {
       console.error('Approve error:', error);
-      alert(error instanceof Error ? error.message : '승인에 실패했습니다.');
+      toast({
+        variant: 'destructive',
+        title: '승인 실패',
+        description: error instanceof Error ? error.message : '승인에 실패했습니다.',
+      });
     }
   };
 
   const handleRequestRevision = async () => {
     if (!revisionNote.trim()) {
-      alert('수정 요청 사항을 입력해주세요.');
+      toast({
+        variant: 'destructive',
+        title: '입력 오류',
+        description: '수정 요청 사항을 입력해주세요.',
+      });
       return;
     }
 
@@ -161,13 +187,21 @@ export default function KakaomapReviewStatusPage() {
         throw new Error(data.error || '수정 요청에 실패했습니다.');
       }
 
-      alert('수정 요청이 전송되었습니다.');
+      toast({
+        title: '✅ 수정 요청 완료',
+        description: '수정 요청이 전송되었습니다.',
+        duration: 5000,
+      });
       setContentDialogOpen(false);
       setRevisionNote('');
       fetchSubmissions();
     } catch (error) {
       console.error('Revision error:', error);
-      alert(error instanceof Error ? error.message : '수정 요청에 실패했습니다.');
+      toast({
+        variant: 'destructive',
+        title: '수정 요청 실패',
+        description: error instanceof Error ? error.message : '수정 요청에 실패했습니다.',
+      });
     }
   };
 
@@ -220,7 +254,11 @@ export default function KakaomapReviewStatusPage() {
       setNewMessage('');
     } catch (error) {
       console.error('Send message error:', error);
-      alert(error instanceof Error ? error.message : '메시지 전송에 실패했습니다.');
+      toast({
+        variant: 'destructive',
+        title: '메시지 전송 실패',
+        description: error instanceof Error ? error.message : '메시지 전송에 실패했습니다.',
+      });
     }
   };
 

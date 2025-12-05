@@ -70,15 +70,15 @@ export function SubmissionsGroupView({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[140px]">접수일시</TableHead>
-                        {groupBy === 'type' && <TableHead className="w-[120px]">거래처</TableHead>}
-                        {groupBy === 'client' && <TableHead className="w-[140px]">상품유형</TableHead>}
-                        <TableHead className="w-[150px]">업체명</TableHead>
-                        <TableHead className="min-w-[250px]">상세내용</TableHead>
-                        <TableHead className="w-[80px]">진행률</TableHead>
-                        <TableHead className="w-[100px] text-right">사용 포인트</TableHead>
-                        <TableHead className="w-[100px]">상태</TableHead>
-                        <TableHead className="w-[80px]">관리</TableHead>
+                        <TableHead className="w-[130px] whitespace-nowrap">접수일시</TableHead>
+                        {groupBy === 'type' && <TableHead className="w-[100px] whitespace-nowrap">거래처</TableHead>}
+                        {groupBy === 'client' && <TableHead className="w-[110px] whitespace-nowrap">상품유형</TableHead>}
+                        <TableHead className="w-[120px] whitespace-nowrap">업체명</TableHead>
+                        <TableHead className="min-w-[150px] whitespace-nowrap">상세내용</TableHead>
+                        <TableHead className="w-[70px] whitespace-nowrap">진행률</TableHead>
+                        <TableHead className="w-[80px] text-right whitespace-nowrap">사용 포인트</TableHead>
+                        <TableHead className="w-[70px] whitespace-nowrap">상태</TableHead>
+                        <TableHead className="w-[110px] whitespace-nowrap">관리</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

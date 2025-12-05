@@ -88,11 +88,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Generate submission number using database function
+    const { data: submissionNumberData, error: snError } = await supabase
+      .rpc('generate_submission_number', { p_product_code: 'PL' });
+
+    if (snError) {
+      console.error('Error generating submission number:', snError);
+      // Rollback points
+      await supabase
+        .from('clients')
+        .update({ points: client.points })
+        .eq('id', user.id);
+      return NextResponse.json(
+        { error: '접수번호 생성 중 오류가 발생했습니다.' },
+        { status: 500 }
+      );
+    }
+
     // Create submission
     const { data: submission, error: submissionError } = await supabase
       .from('place_submissions')
       .insert({
         client_id: user.id,
+        submission_number: submissionNumberData,
         company_name,
         place_url,
         daily_count,

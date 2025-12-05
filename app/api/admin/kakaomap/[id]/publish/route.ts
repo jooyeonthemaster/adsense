@@ -64,9 +64,13 @@ export async function POST(
     }
 
     // Publish only unpublished content items (use service role to bypass RLS)
+    // Set updated_at to current time for daily record tracking
     const { error: updateError } = await serviceSupabase
       .from('kakaomap_content_items')
-      .update({ is_published: true })
+      .update({
+        is_published: true,
+        updated_at: new Date().toISOString(),
+      })
       .eq('submission_id', submissionId)
       .eq('is_published', false); // Only update unpublished items
 

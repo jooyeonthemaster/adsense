@@ -41,7 +41,7 @@ export function StatusTable({
         <TableBody>
           {submissions.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-12 text-sm text-gray-500">
+              <TableCell colSpan={9} className="text-center py-12 text-sm text-gray-500">
                 접수 내역이 없습니다.
               </TableCell>
             </TableRow>
@@ -62,6 +62,11 @@ export function StatusTable({
     </div>
   );
 }
+
+
+
+
+
 
 
 

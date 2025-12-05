@@ -13,17 +13,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Download, Package, Image as ImageIcon, Loader2, Send, Sparkles } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { ArrowLeft, Download, Package, Image as ImageIcon, Loader2, Send, Sparkles, FileSpreadsheet, ExternalLink } from 'lucide-react';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import * as XLSX from 'xlsx';
+import { useToast } from '@/hooks/use-toast';
 import { DailyRecordCalendar } from '@/components/admin/review-marketing/DailyRecordCalendar';
 import { DirectUpload } from '@/components/admin/kakaomap/DirectUpload';
 import { ExcelUpload } from '@/components/admin/kakaomap/ExcelUpload';
@@ -83,6 +83,13 @@ const starRatingConfig: Record<string, { label: string }> = {
   four: { label: '4점대만' },
 };
 
+const contentStatusConfig: Record<string, { label: string; variant: 'outline' | 'default' | 'secondary' | 'destructive' }> = {
+  pending: { label: '대기', variant: 'outline' },
+  approved: { label: '승인됨', variant: 'default' },
+  rejected: { label: '반려', variant: 'destructive' },
+  revision_requested: { label: '수정요청', variant: 'secondary' }, // 레거시 호환
+};
+
 export default function KakaomapReviewDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
   const router = useRouter();
@@ -94,8 +101,6 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
   const [dailyRecords, setDailyRecords] = useState<DailyRecord[]>([]);
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
-  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
-  const [photoWarningData, setPhotoWarningData] = useState<{ required: number; actual: number } | null>(null);
 
   useEffect(() => {
     fetchSubmissionDetail();
@@ -237,23 +242,14 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
     if (!submission) return;
 
     try {
-      const response = await fetch(`/api/admin/kakaomap/${unwrappedParams.id}/publish`, {
+      // 사진 비율 체크 없이 바로 배포
+      const response = await fetch(`/api/admin/kakaomap/${unwrappedParams.id}/publish?force=true`, {
         method: 'POST',
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        // 사진 비율 부족 경고
-        if (result.error === 'photo_ratio_insufficient') {
-          setPhotoWarningData({
-            required: result.required_ratio,
-            actual: result.actual_ratio,
-          });
-          setPublishDialogOpen(true);
-          return;
-        }
-
         throw new Error(result.error || '배포에 실패했습니다.');
       }
 
@@ -275,36 +271,49 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
     }
   };
 
-  const handleForcePublish = async () => {
-    setPublishDialogOpen(false);
-
-    try {
-      // 경고를 무시하고 강제 배포
-      const response = await fetch(`/api/admin/kakaomap/${unwrappedParams.id}/publish?force=true`, {
-        method: 'POST',
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || '배포에 실패했습니다.');
-      }
-
+  const downloadContentItemsAsExcel = () => {
+    if (!submission || contentItems.length === 0) {
       toast({
-        title: '✓ 배포 완료',
-        description: `${result.published_count}개의 콘텐츠가 유저에게 배포되었습니다.`,
+        title: '알림',
+        description: '다운로드할 콘텐츠가 없습니다.',
       });
-
-      fetchSubmissionDetail();
-      fetchContentItems();
-    } catch (error) {
-      console.error('Force publish error:', error);
-      toast({
-        title: '오류',
-        description: error instanceof Error ? error.message : '배포 중 오류가 발생했습니다.',
-        variant: 'destructive',
-      });
+      return;
     }
+
+    // 엑셀 양식과 동일한 형식으로 데이터 준비 (방문자 리뷰와 동일)
+    const excelData = contentItems.map((item, index) => ({
+      '순번': index + 1,
+      '리뷰원고': item.script_text || '',
+      '리뷰등록날짜': item.review_registered_date || '',
+      '영수증날짜': item.receipt_date || '',
+      '상태': contentStatusConfig[item.status]?.label || item.status,
+      '리뷰링크': item.review_link || '',
+      '리뷰아이디': item.review_id || '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // 컬럼 너비 설정
+    ws['!cols'] = [
+      { wch: 6 },   // 순번
+      { wch: 60 },  // 리뷰원고
+      { wch: 14 },  // 리뷰등록날짜
+      { wch: 14 },  // 영수증날짜
+      { wch: 10 },  // 상태
+      { wch: 40 },  // 리뷰링크
+      { wch: 20 },  // 리뷰아이디
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '콘텐츠목록');
+
+    const fileName = `${submission.company_name}_콘텐츠목록_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+
+    toast({
+      title: '다운로드 완료',
+      description: `${contentItems.length}건의 콘텐츠가 다운로드되었습니다.`,
+    });
   };
 
   const totalActualCount = dailyRecords.reduce((sum, record) => sum + record.actual_count, 0);
@@ -415,13 +424,14 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full max-w-3xl grid-cols-5">
+          <TabsList className="grid w-full max-w-4xl grid-cols-6">
             <TabsTrigger value="overview">개요</TabsTrigger>
             <TabsTrigger value="ai-generate" className="gap-1">
               <Sparkles className="h-3.5 w-3.5" />
               AI 생성
             </TabsTrigger>
             <TabsTrigger value="content">콘텐츠 관리</TabsTrigger>
+            <TabsTrigger value="contents-list">콘텐츠 목록</TabsTrigger>
             <TabsTrigger value="feedback">피드백 관리</TabsTrigger>
             <TabsTrigger value="daily">일별 기록</TabsTrigger>
           </TabsList>
@@ -589,6 +599,99 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
             </div>
           </TabsContent>
 
+          <TabsContent value="contents-list" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>리뷰 콘텐츠 목록</CardTitle>
+                    <CardDescription>
+                      업로드된 리뷰 콘텐츠 ({contentItems.length}건)
+                    </CardDescription>
+                  </div>
+                  {contentItems.length > 0 && (
+                    <Button onClick={downloadContentItemsAsExcel}>
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      엑셀 다운로드
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {contentItems.length > 0 ? (
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="max-h-[500px] overflow-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-12 text-center">순번</TableHead>
+                            <TableHead className="min-w-[300px]">리뷰원고</TableHead>
+                            <TableHead className="w-28">리뷰등록날짜</TableHead>
+                            <TableHead className="w-28">영수증날짜</TableHead>
+                            <TableHead className="w-24 text-center">상태</TableHead>
+                            <TableHead className="w-32">리뷰링크</TableHead>
+                            <TableHead className="w-28">리뷰아이디</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {contentItems.map((item, index) => (
+                            <TableRow key={item.id}>
+                              <TableCell className="text-center text-muted-foreground">
+                                {index + 1}
+                              </TableCell>
+                              <TableCell>
+                                <p className="text-sm line-clamp-2" title={item.script_text || ''}>
+                                  {item.script_text || '-'}
+                                </p>
+                              </TableCell>
+                              <TableCell className="text-sm">
+                                {item.review_registered_date || '-'}
+                              </TableCell>
+                              <TableCell className="text-sm">
+                                {item.receipt_date || '-'}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Badge
+                                  variant={contentStatusConfig[item.status]?.variant || 'outline'}
+                                  className="whitespace-nowrap"
+                                >
+                                  {contentStatusConfig[item.status]?.label || item.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {item.review_link ? (
+                                  <a
+                                    href={item.review_link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                    링크
+                                  </a>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">-</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-sm">
+                                {item.review_id || '-'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">
+                    업로드된 콘텐츠가 없습니다.<br />
+                    <span className="text-xs">콘텐츠 관리 탭에서 콘텐츠를 업로드하세요.</span>
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="feedback" className="space-y-4">
             <GeneralFeedbackView submissionId={unwrappedParams.id} />
             <FeedbackManagement submissionId={unwrappedParams.id} />
@@ -597,9 +700,9 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
           <TabsContent value="daily" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>일별 유입 기록</CardTitle>
+                <CardTitle>일별 배포 기록</CardTitle>
                 <CardDescription>
-                  관리자가 수기로 실제 유입 건수를 기록합니다
+                  콘텐츠 배포 날짜를 기준으로 자동 집계됩니다
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -612,45 +715,13 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
                   createdAt={submission.created_at}
                   onRecordSave={fetchDailyRecords}
                   apiEndpoint={`/api/admin/kakaomap/${unwrappedParams.id}/daily-records`}
+                  readOnly={true}
                 />
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
-
-      {/* 사진 비율 경고 모달 */}
-      <AlertDialog open={publishDialogOpen} onOpenChange={setPublishDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-amber-600">⚠️ 사진 비율 부족</AlertDialogTitle>
-          </AlertDialogHeader>
-          <div className="space-y-3 py-4">
-            <p className="text-sm text-muted-foreground">
-              설정된 사진 비율에 도달하지 못했습니다.
-            </p>
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="font-medium">필요한 사진 비율:</span>
-                <span className="text-amber-700 font-bold">{photoWarningData?.required}%</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="font-medium">현재 사진 비율:</span>
-                <span className="text-amber-700 font-bold">{photoWarningData?.actual}%</span>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              그래도 배포하시겠습니까?
-            </p>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction onClick={handleForcePublish} className="bg-amber-600 hover:bg-amber-700">
-              강제 배포
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

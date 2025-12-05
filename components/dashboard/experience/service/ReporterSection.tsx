@@ -1,8 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { X } from 'lucide-react';
 import { DatePickerMultiple } from '@/components/ui/date-picker-multiple';
 import { ExperienceFormData } from '@/types/experience/service-types';
 
@@ -68,72 +66,86 @@ export function ReporterSection({
           이미지 첨부 여부
         </Label>
         <div className="flex items-center gap-2">
-          <Checkbox
-            id="hasImage"
-            checked={formData.hasImage}
-            onCheckedChange={(checked) => onFormChange({ hasImage: checked === true })}
-            className="h-4 w-4"
-          />
-          <label htmlFor="hasImage" className="text-xs sm:text-sm font-medium cursor-pointer select-none text-gray-700">
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={formData.hasImage}
+            onClick={() => onFormChange({ hasImage: !formData.hasImage })}
+            className={`relative flex items-center justify-center h-6 w-6 rounded border-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 ${
+              formData.hasImage
+                ? 'bg-sky-500 border-sky-500 shadow-lg'
+                : 'bg-white border-gray-300 hover:border-sky-400'
+            }`}
+          >
+            {formData.hasImage && (
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-white">
+                <path d="M20 6 9 17l-5-5"></path>
+              </svg>
+            )}
+          </button>
+          <label
+            onClick={() => onFormChange({ hasImage: !formData.hasImage })}
+            className="text-sm font-medium cursor-pointer select-none text-gray-700"
+          >
             이미지 첨부
           </label>
         </div>
       </div>
 
-      {/* 이미지 첨부 시 이미지 업로드 */}
+      {/* 이미지 첨부 시 이메일 안내 */}
       {formData.hasImage && (
-        <div className="space-y-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="space-y-1.5">
-            <Label htmlFor="images" className="text-xs font-medium text-blue-700">
-              이미지 업로드 <span className="text-rose-500">*</span>
-            </Label>
-            <input
-              id="images"
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => {
-                const files = e.target.files;
-                if (files) {
-                  onFormChange({ images: Array.from(files) });
-                }
-              }}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 file:cursor-pointer"
-            />
-            <span className="text-xs text-blue-600">이미지 파일을 선택하세요 (복수 선택 가능)</span>
-          </div>
-          
-          {/* 이미지 미리보기 */}
-          {formData.images.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-xs font-medium text-blue-700">
-                선택된 이미지 ({formData.images.length}개)
-              </Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                {formData.images.map((file, idx) => (
-                  <div key={idx} className="relative group">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={URL.createObjectURL(file)}
-                      alt={`이미지 ${idx + 1}`}
-                      className="w-full h-16 sm:h-20 object-cover rounded-md"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onFormChange({
-                          images: formData.images.filter((_, i) => i !== idx)
-                        });
-                      }}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="h-2.5 w-2.5" />
-                    </button>
-                  </div>
-                ))}
+        <div className="space-y-3 p-4 bg-sky-50 border border-sky-200 rounded-lg">
+          <div className="space-y-2">
+            <div className="flex items-start gap-2">
+              <div className="bg-sky-100 p-2 rounded-full shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-sky-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-sky-800">
+                  이미지는 이메일로 보내주세요
+                </p>
+                <p className="text-xs text-sky-700 mt-1">
+                  아래 이메일 주소로 이미지 파일을 전송해 주세요.
+                </p>
+                <p className="text-sm font-bold text-sky-900 mt-2 bg-white px-3 py-1.5 rounded border border-sky-200 inline-block">
+                  sense-ad@naver.com
+                </p>
+                <p className="text-xs text-sky-600 mt-2">
+                  📌 이메일 제목은 <span className="font-semibold">업체명 or 대행사명</span>으로 작성해 주세요.
+                </p>
               </div>
             </div>
-          )}
+          </div>
+
+          {/* 이메일 전송 확인 체크박스 (필수) */}
+          <div className="flex items-center gap-2 pt-3 border-t border-sky-200">
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={formData.emailImageConfirmed}
+              onClick={() => onFormChange({ emailImageConfirmed: !formData.emailImageConfirmed })}
+              className={`relative flex items-center justify-center h-6 w-6 rounded border-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 ${
+                formData.emailImageConfirmed
+                  ? 'bg-sky-500 border-sky-500 shadow-lg'
+                  : 'bg-white border-gray-300 hover:border-sky-400'
+              }`}
+            >
+              {formData.emailImageConfirmed && (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-white">
+                  <path d="M20 6 9 17l-5-5"></path>
+                </svg>
+              )}
+            </button>
+            <label
+              onClick={() => onFormChange({ emailImageConfirmed: !formData.emailImageConfirmed })}
+              className="text-sm font-medium cursor-pointer select-none text-sky-800"
+            >
+              위 이메일 주소로 이미지를 전송했습니다 <span className="text-rose-500">*</span>
+            </label>
+          </div>
         </div>
       )}
     </>

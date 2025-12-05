@@ -47,6 +47,7 @@ import {
 interface ReceiptReviewSubmission {
   id: string;
   client_id: string;
+  submission_number?: string;
   company_name: string;
   place_url: string;
   daily_count: number;
@@ -370,7 +371,9 @@ export default function VisitorReviewStatusPage() {
                             <ExternalLink className="h-3.5 w-3.5" />
                           </a>
                         </div>
-                        {mid && <p className="text-xs text-gray-500 mt-0.5">MID: {mid}</p>}
+                        {submission.submission_number && (
+                          <p className="text-xs text-gray-500 mt-0.5 font-mono">{submission.submission_number}</p>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm">{submission.daily_count}건</TableCell>
                       <TableCell className="text-sm font-medium">
@@ -502,7 +505,9 @@ export default function VisitorReviewStatusPage() {
                           <ExternalLink className="h-3 w-3" />
                         </a>
                       </div>
-                      {mid && <p className="text-[10px] text-gray-500 truncate">MID: {mid}</p>}
+                      {submission.submission_number && (
+                        <p className="text-[10px] text-gray-500 truncate font-mono">{submission.submission_number}</p>
+                      )}
                     </div>
                     <Badge variant={statusDisplay.variant} className="text-[10px] px-1.5 py-0.5 flex-shrink-0">
                       {statusDisplay.label}
