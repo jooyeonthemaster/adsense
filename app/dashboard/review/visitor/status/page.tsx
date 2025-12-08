@@ -42,7 +42,9 @@ import {
   FileText as FileTextIcon,
   Image as ImageIcon,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 interface ReceiptReviewSubmission {
   id: string;
@@ -174,12 +176,64 @@ export default function VisitorReviewStatusPage() {
     }
   };
 
-  const handleDownloadReport = async (submissionId: string) => {
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownloadReport = async (submission: ReceiptReviewSubmission) => {
+    setDownloadingId(submission.id);
     try {
-      // TODO: 리포트 다운로드 API
-      alert('리포트 다운로드 기능은 관리자가 리포트를 등록한 후 사용 가능합니다.');
+      // 콘텐츠 아이템 API 호출 (유저용 API)
+      const response = await fetch(`/api/submissions/receipt/${submission.id}/content`);
+      if (!response.ok) throw new Error('데이터를 가져오는데 실패했습니다.');
+
+      const data = await response.json();
+      const contentItems = data.items || [];
+
+      if (contentItems.length === 0) {
+        alert('다운로드할 리포트 데이터가 없습니다. 관리자가 리포트를 등록한 후 다운로드할 수 있습니다.');
+        return;
+      }
+
+      // 업로드 템플릿과 동일한 형식으로 변환
+      const excelData = contentItems.map((item: {
+        script_text: string | null;
+        review_registered_date: string | null;
+        receipt_date: string | null;
+        review_status: string;
+        review_link: string | null;
+        review_id: string | null;
+      }) => ({
+        '접수번호': submission.submission_number || '',
+        '업체명': submission.company_name || '',
+        '리뷰원고': item.script_text || '',
+        '리뷰등록날짜': item.review_registered_date || '',
+        '영수증날짜': item.receipt_date || '',
+        '상태': item.review_status === 'approved' ? '승인됨' : item.review_status === 'revision_requested' ? '수정요청' : '대기',
+        '리뷰링크': item.review_link || '',
+        '리뷰아이디': item.review_id || '',
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      // 시트명을 업로드 템플릿과 동일하게 '방문자리뷰'로 설정
+      XLSX.utils.book_append_sheet(wb, ws, '방문자리뷰');
+
+      ws['!cols'] = [
+        { wch: 18 }, // 접수번호
+        { wch: 20 }, // 업체명
+        { wch: 60 }, // 리뷰원고
+        { wch: 14 }, // 리뷰등록날짜
+        { wch: 14 }, // 영수증날짜
+        { wch: 10 }, // 상태
+        { wch: 45 }, // 리뷰링크
+        { wch: 18 }, // 리뷰아이디
+      ];
+
+      XLSX.writeFile(wb, `방문자리뷰_${submission.company_name}_${new Date().toISOString().slice(0, 10)}.xlsx`);
     } catch (error) {
       console.error('Download error:', error);
+      alert(error instanceof Error ? error.message : '다운로드 중 오류가 발생했습니다.');
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -425,7 +479,7 @@ export default function VisitorReviewStatusPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-7 text-xs text-purple-600 border-purple-300 hover:bg-purple-50"
+                              className="h-7 text-xs text-blue-600 border-blue-300 hover:bg-blue-50 font-medium"
                             >
                               상세보기
                             </Button>
@@ -433,10 +487,15 @@ export default function VisitorReviewStatusPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleDownloadReport(submission.id)}
-                            className="h-7 text-xs text-emerald-600 border-emerald-300 hover:bg-emerald-50"
+                            onClick={() => handleDownloadReport(submission)}
+                            disabled={downloadingId === submission.id}
+                            className="h-7 text-xs text-green-600 border-green-300 hover:bg-green-50"
                           >
-                            <Download className="h-3 w-3 mr-1" />
+                            {downloadingId === submission.id ? (
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            ) : (
+                              <Download className="h-3 w-3 mr-1" />
+                            )}
                             리포트
                           </Button>
                           <Button
@@ -570,18 +629,23 @@ export default function VisitorReviewStatusPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full text-[11px] h-7 text-purple-600 border-purple-300 px-2"
+                        className="w-full text-[11px] h-7 text-blue-600 border-blue-300 hover:bg-blue-50 font-medium px-2"
                       >
-                        상세
+                        상세보기
                       </Button>
                     </Link>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDownloadReport(submission.id)}
-                      className="flex-1 text-[11px] h-7 text-emerald-600 border-emerald-300 px-2"
+                      onClick={() => handleDownloadReport(submission)}
+                      disabled={downloadingId === submission.id}
+                      className="flex-1 text-[11px] h-7 text-green-600 border-green-300 hover:bg-green-50 px-2"
                     >
-                      <Download className="h-2.5 w-2.5 mr-0.5" />
+                      {downloadingId === submission.id ? (
+                        <Loader2 className="h-2.5 w-2.5 mr-0.5 animate-spin" />
+                      ) : (
+                        <Download className="h-2.5 w-2.5 mr-0.5" />
+                      )}
                       리포트
                     </Button>
                     <Button

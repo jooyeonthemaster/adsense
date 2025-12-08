@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/table';
 import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
-import { DailyRecordCalendar } from '@/components/admin/review-marketing/DailyRecordCalendar';
+import { ReviewContentBasedCalendar } from '@/components/admin/review-marketing/ReviewContentBasedCalendar';
 import { DirectUpload } from '@/components/admin/kakaomap/DirectUpload';
 import { ExcelUpload } from '@/components/admin/kakaomap/ExcelUpload';
 import { ContentItemsList, type ContentItem } from '@/components/admin/kakaomap/ContentItemsList';
@@ -37,6 +37,7 @@ import { saveAs } from 'file-saver';
 interface KakaomapReviewDetail {
   id: string;
   client_id: string;
+  submission_number: string;
   company_name: string;
   kakaomap_url: string;
   daily_count: number;
@@ -271,6 +272,7 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
     }
   };
 
+  // 엑셀 다운로드 (업로드 템플릿과 동일한 형식)
   const downloadContentItemsAsExcel = () => {
     if (!submission || contentItems.length === 0) {
       toast({
@@ -280,34 +282,37 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
       return;
     }
 
-    // 엑셀 양식과 동일한 형식으로 데이터 준비 (방문자 리뷰와 동일)
-    const excelData = contentItems.map((item, index) => ({
-      '순번': index + 1,
+    // 업로드 템플릿과 동일한 형식: 접수번호, 업체명, 리뷰원고, 리뷰등록날짜, 영수증날짜, 상태, 리뷰링크, 리뷰아이디
+    const excelData = contentItems.map((item) => ({
+      '접수번호': submission.submission_number || '',
+      '업체명': submission.company_name || '',
       '리뷰원고': item.script_text || '',
       '리뷰등록날짜': item.review_registered_date || '',
       '영수증날짜': item.receipt_date || '',
-      '상태': contentStatusConfig[item.status]?.label || item.status,
+      '상태': item.status === 'approved' ? '승인됨' : item.status === 'rejected' ? '수정요청' : '대기',
       '리뷰링크': item.review_link || '',
       '리뷰아이디': item.review_id || '',
     }));
 
     const ws = XLSX.utils.json_to_sheet(excelData);
 
-    // 컬럼 너비 설정
+    // 컬럼 너비 설정 (업로드 템플릿과 동일)
     ws['!cols'] = [
-      { wch: 6 },   // 순번
+      { wch: 18 },  // 접수번호
+      { wch: 20 },  // 업체명
       { wch: 60 },  // 리뷰원고
       { wch: 14 },  // 리뷰등록날짜
       { wch: 14 },  // 영수증날짜
       { wch: 10 },  // 상태
-      { wch: 40 },  // 리뷰링크
-      { wch: 20 },  // 리뷰아이디
+      { wch: 45 },  // 리뷰링크
+      { wch: 18 },  // 리뷰아이디
     ];
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, '콘텐츠목록');
+    // 시트명을 업로드 템플릿과 동일하게 'K맵리뷰'로 설정
+    XLSX.utils.book_append_sheet(wb, ws, 'K맵리뷰');
 
-    const fileName = `${submission.company_name}_콘텐츠목록_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const fileName = `K맵리뷰_${submission.company_name}_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(wb, fileName);
 
     toast({
@@ -702,20 +707,13 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
               <CardHeader>
                 <CardTitle>일별 배포 기록</CardTitle>
                 <CardDescription>
-                  콘텐츠 배포 날짜를 기준으로 자동 집계됩니다
+                  업로드된 콘텐츠의 리뷰등록날짜 기준으로 집계됩니다
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <DailyRecordCalendar
-                  submissionId={unwrappedParams.id}
-                  records={dailyRecords}
+                <ReviewContentBasedCalendar
+                  contentItems={contentItems}
                   totalCount={submission.total_count}
-                  dailyCount={submission.daily_count}
-                  totalDays={submission.total_days}
-                  createdAt={submission.created_at}
-                  onRecordSave={fetchDailyRecords}
-                  apiEndpoint={`/api/admin/kakaomap/${unwrappedParams.id}/daily-records`}
-                  readOnly={true}
                 />
               </CardContent>
             </Card>

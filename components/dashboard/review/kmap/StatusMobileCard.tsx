@@ -66,9 +66,9 @@ export function StatusMobileCard({
       )}
       <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
         <div>
-          <p className="text-[10px] text-gray-500 mb-0.5">업로드</p>
+          <p className="text-[10px] text-gray-500 mb-0.5">리포트 등록</p>
           <p className="text-xs font-medium">
-            {submission.content_items_count || 0} / {submission.total_count}
+            {submission.completed_count || 0} / {submission.total_count}
           </p>
         </div>
         <div>
@@ -83,7 +83,7 @@ export function StatusMobileCard({
             size="sm"
             className="w-full text-[11px] h-7 text-blue-600 border-blue-300 hover:bg-blue-50 font-medium px-2"
           >
-            상세
+            상세보기
             <ChevronRight className="h-3 w-3 ml-0.5" />
           </Button>
         </Link>

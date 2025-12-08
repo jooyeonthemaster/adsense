@@ -13,9 +13,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Loader2, ExternalLink } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { ArrowLeft, Loader2, ExternalLink, FileSpreadsheet, Download, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { DailyRecordCalendar } from '@/components/admin/review-marketing/DailyRecordCalendar';
+import { CafeContentBasedCalendar } from '@/components/admin/cafe-marketing/CafeContentBasedCalendar';
+import * as XLSX from 'xlsx';
 
 interface CafeMarketingDetail {
   id: string;
@@ -48,6 +57,26 @@ interface DailyRecord {
   notes?: string;
 }
 
+interface ContentItem {
+  id: string;
+  submission_id: string;
+  upload_order: number;
+  post_title: string | null;
+  published_date: string | null;
+  status: string | null;
+  post_url: string | null;
+  writer_id: string | null;
+  cafe_name: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+const contentStatusConfig: Record<string, { label: string; variant: 'outline' | 'default' | 'secondary' | 'destructive' }> = {
+  pending: { label: '대기', variant: 'outline' },
+  approved: { label: '승인됨', variant: 'default' },
+  revision_requested: { label: '수정요청', variant: 'destructive' },
+};
+
 const statusConfig: Record<string, { label: string; variant: 'outline' | 'default' | 'secondary' | 'destructive' }> = {
   pending: { label: '확인중', variant: 'outline' },
   approved: { label: '접수완료', variant: 'default' },
@@ -78,11 +107,14 @@ export default function CafeMarketingDetailPage({ params }: { params: Promise<{ 
   const [loading, setLoading] = useState(true);
   const [submission, setSubmission] = useState<CafeMarketingDetail | null>(null);
   const [dailyRecords, setDailyRecords] = useState<DailyRecord[]>([]);
+  const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchSubmissionDetail();
     fetchDailyRecords();
+    fetchContentItems();
   }, [unwrappedParams.id]);
 
   const fetchSubmissionDetail = async () => {
@@ -116,6 +148,155 @@ export default function CafeMarketingDetailPage({ params }: { params: Promise<{ 
     }
   };
 
+  const fetchContentItems = async () => {
+    try {
+      const response = await fetch(`/api/admin/cafe-marketing/${unwrappedParams.id}/content-items`);
+      if (response.ok) {
+        const data = await response.json();
+        setContentItems(data.contentItems || []);
+      }
+    } catch (error) {
+      console.error('Error fetching content items:', error);
+    }
+  };
+
+  // 엑셀 파일 업로드 핸들러
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+      if (jsonData.length === 0) {
+        toast({
+          title: '오류',
+          description: '엑셀 파일에 데이터가 없습니다.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // 엑셀 컬럼 매핑 (한글/영문 지원)
+      const items = jsonData.map((row) => ({
+        post_title: row['작성제목'] || row['제목'] || row['post_title'] || '',
+        published_date: row['발행일'] || row['published_date'] || row['날짜'] || '',
+        status: row['상태'] || row['status'] || '대기',
+        post_url: row['리뷰링크'] || row['글링크'] || row['post_url'] || row['URL'] || '',
+        writer_id: row['작성아이디'] || row['작성 아이디'] || row['writer_id'] || '',
+        cafe_name: row['카페명'] || row['카페'] || row['cafe_name'] || '',
+        notes: row['메모'] || row['notes'] || row['비고'] || '',
+      }));
+
+      // API 호출
+      const response = await fetch(`/api/admin/cafe-marketing/${unwrappedParams.id}/content-items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '업로드 실패');
+      }
+
+      const result = await response.json();
+      toast({
+        title: '업로드 완료',
+        description: result.message,
+      });
+      fetchContentItems();
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: '업로드 오류',
+        description: error instanceof Error ? error.message : '파일 업로드 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+      // 파일 입력 초기화
+      event.target.value = '';
+    }
+  };
+
+  // 엑셀 다운로드 핸들러
+  const handleDownloadExcel = () => {
+    if (!submission) return;
+
+    const getStatusLabel = (status: string | null) => {
+      if (!status) return '대기';
+      return contentStatusConfig[status]?.label || status;
+    };
+
+    const excelData = contentItems.map((item) => ({
+      '접수번호': (submission as any).submission_number || '',
+      '업체명': submission.company_name || '',
+      '작성제목': item.post_title || '',
+      '발행일': item.published_date || '',
+      '상태': getStatusLabel(item.status),
+      '리뷰링크': item.post_url || '',
+      '작성아이디': item.writer_id || '',
+      '카페명': item.cafe_name || '',
+      '메모': item.notes || '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    ws['!cols'] = [
+      { wch: 18 },  // 접수번호
+      { wch: 20 },  // 업체명
+      { wch: 40 },  // 작성제목
+      { wch: 12 },  // 발행일
+      { wch: 10 },  // 상태
+      { wch: 50 },  // 리뷰링크
+      { wch: 20 },  // 작성아이디
+      { wch: 20 },  // 카페명
+      { wch: 30 },  // 메모
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '콘텐츠 목록');
+    XLSX.writeFile(wb, `카페마케팅_${submission.company_name}_콘텐츠.xlsx`);
+  };
+
+  // 템플릿 다운로드 핸들러
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      {
+        '접수번호': 'CM-2025-0001',
+        '업체명': '예시업체',
+        '작성제목': '예시 제목입니다',
+        '발행일': '2025-01-01',
+        '상태': '대기',
+        '리뷰링크': 'https://cafe.naver.com/...',
+        '작성아이디': 'writer123',
+        '카페명': '강남맘카페',
+        '메모': '',
+      },
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    ws['!cols'] = [
+      { wch: 18 },
+      { wch: 20 },
+      { wch: 40 },
+      { wch: 12 },
+      { wch: 10 },
+      { wch: 50 },
+      { wch: 20 },
+      { wch: 20 },
+      { wch: 30 },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '템플릿');
+    XLSX.writeFile(wb, '카페마케팅_콘텐츠_템플릿.xlsx');
+  };
+
   const handleStatusChange = async (newStatus: string) => {
     try {
       const response = await fetch(`/api/admin/cafe-marketing/${unwrappedParams.id}`, {
@@ -141,7 +322,8 @@ export default function CafeMarketingDetailPage({ params }: { params: Promise<{ 
     }
   };
 
-  const totalCompletedCount = dailyRecords.reduce((sum, record) => sum + record.completed_count, 0);
+  // 콘텐츠 기반 진행률 계산
+  const totalCompletedCount = contentItems.length;
   const completionRate = submission ? Math.round((totalCompletedCount / submission.total_count) * 100) : 0;
 
   if (loading) {
@@ -249,8 +431,9 @@ export default function CafeMarketingDetailPage({ params }: { params: Promise<{ 
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-lg grid-cols-3">
             <TabsTrigger value="overview">개요</TabsTrigger>
+            <TabsTrigger value="content">콘텐츠 관리</TabsTrigger>
             <TabsTrigger value="daily">일별 기록</TabsTrigger>
           </TabsList>
 
@@ -344,24 +527,122 @@ export default function CafeMarketingDetailPage({ params }: { params: Promise<{ 
             )}
           </TabsContent>
 
+          {/* 콘텐츠 관리 탭 */}
+          <TabsContent value="content" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <CardTitle>콘텐츠 목록</CardTitle>
+                    <CardDescription>
+                      업로드된 콘텐츠 {contentItems.length}건 / 총 {submission.total_count}건
+                    </CardDescription>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      템플릿
+                    </Button>
+                    {contentItems.length > 0 && (
+                      <Button variant="outline" size="sm" onClick={handleDownloadExcel}>
+                        <Download className="h-4 w-4 mr-2" />
+                        다운로드
+                      </Button>
+                    )}
+                    <Button size="sm" disabled={uploading} asChild>
+                      <label className="cursor-pointer">
+                        <Upload className="h-4 w-4 mr-2" />
+                        {uploading ? '업로드 중...' : '엑셀 업로드'}
+                        <input
+                          type="file"
+                          accept=".xlsx,.xls"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                          disabled={uploading}
+                        />
+                      </label>
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {contentItems.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12">#</TableHead>
+                          <TableHead>작성제목</TableHead>
+                          <TableHead className="w-28">발행일</TableHead>
+                          <TableHead className="w-24">상태</TableHead>
+                          <TableHead>리뷰링크</TableHead>
+                          <TableHead className="w-28">작성아이디</TableHead>
+                          <TableHead className="w-28">카페명</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {contentItems.map((item, index) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{index + 1}</TableCell>
+                            <TableCell className="max-w-[200px] truncate">
+                              {item.post_title || '-'}
+                            </TableCell>
+                            <TableCell>
+                              {item.published_date || '-'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={contentStatusConfig[item.status || 'pending']?.variant || 'outline'}>
+                                {contentStatusConfig[item.status || 'pending']?.label || item.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="max-w-[200px] truncate">
+                              {item.post_url ? (
+                                <a
+                                  href={item.post_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline flex items-center gap-1"
+                                >
+                                  링크
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              ) : '-'}
+                            </TableCell>
+                            <TableCell>{item.writer_id || '-'}</TableCell>
+                            <TableCell>{item.cafe_name || '-'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>업로드된 콘텐츠가 없습니다.</p>
+                    <p className="text-sm mt-1">엑셀 파일을 업로드하면 콘텐츠 목록이 표시됩니다.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* 일별 기록 탭 - 콘텐츠 기반 캘린더 */}
           <TabsContent value="daily" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>일별 발행 기록</CardTitle>
                 <CardDescription>
-                  매일 발행된 건수와 메모를 기록합니다
+                  업로드된 콘텐츠의 발행일 기준으로 집계됩니다
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <DailyRecordCalendar
-                  submissionId={unwrappedParams.id}
-                  records={dailyRecords.map(r => ({ date: r.record_date, actual_count: r.completed_count, notes: r.notes }))}
+                <CafeContentBasedCalendar
+                  contentItems={contentItems.map(item => ({
+                    id: item.id,
+                    published_date: item.published_date,
+                    post_title: item.post_title,
+                  }))}
                   totalCount={submission.total_count}
-                  dailyCount={0}
-                  totalDays={30}
-                  createdAt={submission.created_at}
-                  onRecordSave={fetchDailyRecords}
-                  apiEndpoint={`/api/admin/cafe-marketing/${unwrappedParams.id}/daily-records`}
                 />
               </CardContent>
             </Card>

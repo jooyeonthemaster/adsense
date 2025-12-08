@@ -170,13 +170,20 @@ export default function AdminBlogDistributionPage() {
       });
     }
 
-    // 구동일 필터
+    // 구동일 필터 - 선택한 날짜가 구동 기간(start_date ~ end_date) 내에 있는지 확인
     if (startDateFilter) {
       const filterDateStr = format(startDateFilter, 'yyyy-MM-dd');
       filtered = filtered.filter((s) => {
         if (!s.start_date) return false;
         const startDateStr = s.start_date.split('T')[0];
-        return startDateStr === filterDateStr;
+        const endDateStr = s.end_date ? s.end_date.split('T')[0] : null;
+
+        // 필터 날짜가 start_date ~ end_date 범위 내에 있는지 확인
+        if (endDateStr) {
+          return filterDateStr >= startDateStr && filterDateStr <= endDateStr;
+        }
+        // end_date가 없으면 start_date 이후인지만 확인
+        return filterDateStr >= startDateStr;
       });
     }
 
@@ -645,15 +652,6 @@ export default function AdminBlogDistributionPage() {
                             >
                               상태 변경
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDailyRecordOpen(sub)}
-                              className="text-xs"
-                            >
-                              <CalendarIcon className="h-3 w-3 mr-1" />
-                              기록
-                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -748,15 +746,6 @@ export default function AdminBlogDistributionPage() {
                         className="flex-1 text-[11px] h-7 px-2"
                       >
                         상태
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDailyRecordOpen(sub)}
-                        className="flex-1 text-[11px] h-7 px-2"
-                      >
-                        <CalendarIcon className="h-2.5 w-2.5 mr-0.5" />
-                        기록
                       </Button>
                     </div>
                   </div>
@@ -907,15 +896,6 @@ export default function AdminBlogDistributionPage() {
                                     className="text-xs"
                                   >
                                     상태 변경
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleDailyRecordOpen(sub)}
-                                    className="text-xs"
-                                  >
-                                    <CalendarIcon className="h-3 w-3 mr-1" />
-                                    기록
                                   </Button>
                                 </div>
                               </TableCell>

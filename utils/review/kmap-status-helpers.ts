@@ -3,10 +3,11 @@ import { KakaomapSubmission } from '@/types/review/kmap-status';
 export const calculateProgress = (submission: KakaomapSubmission): number => {
   if (submission.status === 'completed') return 100;
 
-  const uploadedCount = submission.content_items_count || 0;
+  // 진행률 = 리포트에 등록된 콘텐츠 수 (review_registered_date가 있는 것) / total_count
+  const completedCount = submission.completed_count || 0;
   const totalCount = submission.total_count || 1;
 
-  return Math.min((uploadedCount / totalCount) * 100, 100);
+  return Math.min((completedCount / totalCount) * 100, 100);
 };
 
 export const formatDate = (dateString: string) => {
@@ -31,6 +32,7 @@ export const calculateStats = (submissions: KakaomapSubmission[]) => {
     completed: submissions.filter((s) => s.status === 'completed').length,
   };
 };
+
 
 
 

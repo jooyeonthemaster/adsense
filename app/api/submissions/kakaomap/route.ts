@@ -41,11 +41,18 @@ export async function GET(request: NextRequest) {
     // For each submission, get related data (content items, messages count)
     const submissionsWithDetails = await Promise.all(
       (submissions || []).map(async (submission) => {
-        // Get content items count
+        // Get content items count (전체)
         const { count: contentCount } = await supabase
           .from('kakaomap_content_items')
           .select('*', { count: 'exact', head: true })
           .eq('submission_id', submission.id);
+
+        // Get completed count (리포트에 등록된 것만 = review_registered_date가 있는 것)
+        const { count: completedCount } = await supabase
+          .from('kakaomap_content_items')
+          .select('*', { count: 'exact', head: true })
+          .eq('submission_id', submission.id)
+          .not('review_registered_date', 'is', null);
 
         // Get unread messages count
         const { count: unreadCount } = await supabase
@@ -55,15 +62,16 @@ export async function GET(request: NextRequest) {
           .eq('is_read', false)
           .eq('sender_type', 'admin');
 
-        // Calculate progress
+        // Calculate progress based on completed count (리포트 등록된 것만)
         const actualCount = actualCountMap.get(submission.id) || 0;
         const progressPercentage = submission.total_count > 0
-          ? Math.min(100, Math.round((actualCount / submission.total_count) * 100))
+          ? Math.min(100, Math.round(((completedCount || 0) / submission.total_count) * 100))
           : 0;
 
         return {
           ...submission,
           content_items_count: contentCount || 0,
+          completed_count: completedCount || 0,
           unread_messages_count: unreadCount || 0,
           actual_count_total: actualCount,
           progress_percentage: progressPercentage,

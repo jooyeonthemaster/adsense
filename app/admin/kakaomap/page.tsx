@@ -31,11 +31,18 @@ async function getKakaomapSubmissions() {
       // Get content items count and unread messages count for each submission
       const submissionsWithDetails = await Promise.all(
         submissions.map(async (sub) => {
-          // Content items count
+          // Content items count (전체)
           const { count: contentCount } = await supabase
             .from('kakaomap_content_items')
             .select('*', { count: 'exact', head: true })
             .eq('submission_id', sub.id);
+
+          // Completed count (리포트에 등록된 것만 = review_registered_date가 있는 것)
+          const { count: completedCount } = await supabase
+            .from('kakaomap_content_items')
+            .select('*', { count: 'exact', head: true })
+            .eq('submission_id', sub.id)
+            .not('review_registered_date', 'is', null);
 
           // Unread messages count (from client)
           const { count: unreadCount } = await supabase
@@ -56,6 +63,7 @@ async function getKakaomapSubmissions() {
             ...sub,
             clients: clientMap.get(sub.client_id) || null,
             content_items_count: contentCount || 0,
+            completed_count: completedCount || 0,  // 리포트에 등록된 콘텐츠 수
             unread_messages_count: unreadCount || 0,
             pending_revision_count: revisionCount || 0,
           };

@@ -23,12 +23,13 @@ import {
 } from '@/components/ui/table';
 import { ArrowLeft, FileSpreadsheet, Loader2, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { DailyRecordCalendar } from '@/components/admin/review-marketing/DailyRecordCalendar';
+import { ReviewContentBasedCalendar } from '@/components/admin/review-marketing/ReviewContentBasedCalendar';
 import * as XLSX from 'xlsx';
 
 interface ReceiptReviewDetail {
   id: string;
   client_id: string;
+  submission_number?: string;
   company_name: string;
   place_url: string;
   daily_count: number;
@@ -152,9 +153,11 @@ export default function VisitorReviewDetailPage({ params }: { params: Promise<{ 
       return;
     }
 
-    // 엑셀 양식과 동일한 형식으로 데이터 준비
-    const excelData = contentItems.map((item, index) => ({
-      '순번': index + 1,
+    // 업로드 템플릿과 동일한 형식으로 데이터 준비
+    // 컬럼: 접수번호, 업체명, 리뷰원고, 리뷰등록날짜, 영수증날짜, 상태, 리뷰링크, 리뷰아이디
+    const excelData = contentItems.map((item) => ({
+      '접수번호': submission.submission_number || '',
+      '업체명': submission.company_name || '',
       '리뷰원고': item.script_text || '',
       '리뷰등록날짜': item.review_registered_date || '',
       '영수증날짜': item.receipt_date || '',
@@ -165,9 +168,10 @@ export default function VisitorReviewDetailPage({ params }: { params: Promise<{ 
 
     const ws = XLSX.utils.json_to_sheet(excelData);
 
-    // 컬럼 너비 설정
+    // 컬럼 너비 설정 (업로드 템플릿과 동일)
     ws['!cols'] = [
-      { wch: 6 },   // 순번
+      { wch: 18 },  // 접수번호
+      { wch: 20 },  // 업체명
       { wch: 60 },  // 리뷰원고
       { wch: 14 },  // 리뷰등록날짜
       { wch: 14 },  // 영수증날짜
@@ -177,9 +181,10 @@ export default function VisitorReviewDetailPage({ params }: { params: Promise<{ 
     ];
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, '콘텐츠목록');
+    // 시트명을 업로드 템플릿과 동일하게 '방문자리뷰'로 설정
+    XLSX.utils.book_append_sheet(wb, ws, '방문자리뷰');
 
-    const fileName = `${submission.company_name}_콘텐츠목록_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const fileName = `방문자리뷰_${submission.company_name}_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(wb, fileName);
 
     toast({
@@ -480,18 +485,13 @@ export default function VisitorReviewDetailPage({ params }: { params: Promise<{ 
               <CardHeader>
                 <CardTitle>일별 유입 기록</CardTitle>
                 <CardDescription>
-                  리뷰등록날짜 기준으로 자동 집계됩니다
+                  업로드된 콘텐츠의 리뷰등록날짜 기준으로 집계됩니다
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <DailyRecordCalendar
-                  submissionId={unwrappedParams.id}
-                  records={dailyRecords}
+                <ReviewContentBasedCalendar
+                  contentItems={contentItems}
                   totalCount={submission.total_count}
-                  dailyCount={submission.daily_count}
-                  createdAt={submission.created_at}
-                  onRecordSave={fetchDailyRecords}
-                  apiEndpoint={`/api/admin/review-marketing/visitor/${unwrappedParams.id}/daily-records`}
                 />
               </CardContent>
             </Card>

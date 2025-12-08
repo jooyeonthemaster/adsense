@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
-import { ExternalLink, ImageIcon, FileText, MessageSquare, ChevronRight, AlertTriangle, Download, Loader2 } from 'lucide-react';
+import { ExternalLink, ImageIcon, FileText, ChevronRight, AlertTriangle, Download, Loader2 } from 'lucide-react';
 import { KAKAOMAP_STATUS_LABELS } from '@/config/kakaomap-status';
 import { KakaomapSubmission } from '@/types/review/kmap-status';
 import { calculateProgress, formatDate, canCancelSubmission } from '@/utils/review/kmap-status-helpers';
@@ -23,7 +23,7 @@ interface StatusTableRowProps {
 export function StatusTableRow({
   submission,
   onViewContent,
-  onOpenMessages,
+  // onOpenMessages, // 문의 버튼 숨김 처리로 사용하지 않음
   onCancelClick,
   onAsConditionClick,
 }: StatusTableRowProps) {
@@ -35,7 +35,7 @@ export function StatusTableRow({
   };
   const progress = calculateProgress(submission);
 
-  // 리포트 다운로드 함수
+  // 리포트 다운로드 함수 (업로드 템플릿과 동일한 형식)
   const handleReportDownload = async () => {
     setDownloadLoading(true);
     try {
@@ -53,6 +53,7 @@ export function StatusTableRow({
         return;
       }
 
+      // 업로드 템플릿과 동일한 형식으로 변환
       const excelData = contentItems.map((item: {
         script_text: string | null;
         review_registered_date: string | null;
@@ -60,28 +61,31 @@ export function StatusTableRow({
         status: string;
         review_link: string | null;
         review_id: string | null;
-      }, idx: number) => ({
-        '순번': idx + 1,
+      }) => ({
+        '접수번호': submission.submission_number || '',
+        '업체명': submission.company_name || '',
         '리뷰원고': item.script_text || '',
         '리뷰등록날짜': item.review_registered_date || '',
         '영수증날짜': item.receipt_date || '',
-        '상태': item.status === 'approved' ? '승인됨' : item.status === 'rejected' ? '반려' : '대기',
+        '상태': item.status === 'approved' ? '승인됨' : item.status === 'rejected' ? '수정요청' : '대기',
         '리뷰링크': item.review_link || '',
         '리뷰아이디': item.review_id || '',
       }));
 
       const ws = XLSX.utils.json_to_sheet(excelData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '콘텐츠 목록');
+      // 시트명을 업로드 템플릿과 동일하게 'K맵리뷰'로 설정
+      XLSX.utils.book_append_sheet(wb, ws, 'K맵리뷰');
 
       ws['!cols'] = [
-        { wch: 6 },
-        { wch: 50 },
-        { wch: 14 },
-        { wch: 14 },
-        { wch: 10 },
-        { wch: 30 },
-        { wch: 15 },
+        { wch: 18 }, // 접수번호
+        { wch: 20 }, // 업체명
+        { wch: 60 }, // 리뷰원고
+        { wch: 14 }, // 리뷰등록날짜
+        { wch: 14 }, // 영수증날짜
+        { wch: 10 }, // 상태
+        { wch: 45 }, // 리뷰링크
+        { wch: 18 }, // 리뷰아이디
       ];
 
       XLSX.writeFile(wb, `K맵리뷰_${submission.company_name}_${new Date().toISOString().slice(0, 10)}.xlsx`);
@@ -121,7 +125,7 @@ export function StatusTableRow({
       </TableCell>
       <TableCell className="text-sm">
         <div className="flex items-center gap-1">
-          <span className="font-medium text-amber-600">{submission.content_items_count || 0}</span>
+          <span className="font-medium text-amber-600">{submission.completed_count || 0}</span>
           <span className="text-gray-400">/</span>
           <span>{submission.total_count}</span>
         </div>
@@ -203,17 +207,6 @@ export function StatusTableRow({
               className="h-7 text-xs text-amber-600 border-amber-300"
             >
               검수
-            </Button>
-          )}
-          {submission.status === 'in_progress' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onOpenMessages(submission)}
-              className="h-7 text-xs text-blue-600 border-blue-300"
-            >
-              <MessageSquare className="h-3 w-3 mr-1" />
-              문의
             </Button>
           )}
           <Button

@@ -25,6 +25,7 @@ interface KakaomapSubmission {
     phone: string | null;
   };
   content_items_count: number;
+  completed_count: number;  // 리포트에 등록된 콘텐츠 수 (review_registered_date가 있는 것)
   unread_messages_count: number;
   pending_revision_count: number;
   actual_count_total: number;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { createClient as createServiceClient } from '@/utils/supabase/service';
 import { requireAuth } from '@/lib/auth';
 import { getProductPrice } from '@/lib/pricing';
 import { revalidatePath } from 'next/cache';
@@ -24,17 +25,18 @@ export async function GET() {
       );
     }
 
-    // Fetch daily records to calculate progress
-    const { data: allDailyRecords } = await supabase
-      .from('cafe_marketing_daily_records')
-      .select('submission_id, completed_count');
+    // Fetch content items to calculate progress (콘텐츠 기반) - service client 사용 (RLS bypass)
+    const serviceClient = createServiceClient();
+    const { data: allContentItems } = await serviceClient
+      .from('cafe_content_items')
+      .select('submission_id');
 
-    // Create a map of submission_id to total completed count
+    // Create a map of submission_id to content item count
     const completedCountMap = new Map<string, number>();
-    if (allDailyRecords) {
-      allDailyRecords.forEach((record: any) => {
-        const currentCount = completedCountMap.get(record.submission_id) || 0;
-        completedCountMap.set(record.submission_id, currentCount + record.completed_count);
+    if (allContentItems) {
+      allContentItems.forEach((item: any) => {
+        const currentCount = completedCountMap.get(item.submission_id) || 0;
+        completedCountMap.set(item.submission_id, currentCount + 1);
       });
     }
 

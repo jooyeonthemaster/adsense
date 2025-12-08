@@ -60,6 +60,7 @@ interface KakaomapSubmission {
     phone: string | null;
   };
   content_items_count: number;
+  completed_count: number;  // 리포트에 등록된 콘텐츠 수 (review_registered_date가 있는 것)
   unread_messages_count: number;
   pending_revision_count: number;
   actual_count_total: number;
@@ -198,7 +199,8 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
   };
 
   const getProgressPercentage = (sub: KakaomapSubmission) => {
-    return Math.round((sub.content_items_count / sub.total_count) * 100);
+    // 진행률 = 리포트에 등록된 콘텐츠 수 / 전체 수량
+    return Math.round(((sub.completed_count || 0) / sub.total_count) * 100);
   };
 
   // 진행률 바 너비용 (최대 100%로 제한)
@@ -484,13 +486,13 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
                                 </Badge>
                               </TableCell>
 
-                              {/* 콘텐츠 진행 */}
+                              {/* 콘텐츠 진행 (리포트 등록 기준) */}
                               <TableCell className="text-center">
                                 <div className="flex flex-col items-center gap-1">
                                   <div className="flex items-center gap-1">
                                     <Image className="h-3 w-3" />
                                     <span className="text-sm font-medium">
-                                      {sub.content_items_count} / {sub.total_count}
+                                      {sub.completed_count || 0} / {sub.total_count}
                                     </span>
                                   </div>
                                   <div className="w-full bg-muted rounded-full h-1.5">
@@ -652,13 +654,13 @@ export function KakaomapManagementTable({ submissions }: { submissions: Kakaomap
                           </Badge>
                         </TableCell>
 
-                        {/* 콘텐츠 진행 */}
+                        {/* 콘텐츠 진행 (리포트 등록 기준) */}
                         <TableCell className="text-center">
                           <div className="flex flex-col items-center gap-1">
                             <div className="flex items-center gap-1">
                               <Image className="h-3 w-3" />
                               <span className="text-sm font-medium">
-                                {sub.content_items_count} / {sub.total_count}
+                                {sub.completed_count || 0} / {sub.total_count}
                               </span>
                             </div>
                             <div className="w-full bg-muted rounded-full h-1.5">

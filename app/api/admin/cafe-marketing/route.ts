@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/utils/supabase/service';
 import { requireAuth } from '@/lib/auth';
 
 // 관리자용 카페 마케팅 목록 조회
 export async function GET() {
   try {
     await requireAuth(['admin']);
-    const supabase = await createClient();
+    const supabase = createClient();
 
     // 모든 카페 마케팅 제출 조회 (클라이언트 정보 포함)
     const { data: submissions, error } = await supabase
@@ -30,25 +30,35 @@ export async function GET() {
       );
     }
 
-    // Fetch daily records for all submissions to calculate progress
-    const { data: allDailyRecords } = await supabase
-      .from('cafe_marketing_daily_records')
-      .select('submission_id, completed_count');
+    // Fetch content items for all submissions to calculate progress (콘텐츠 아이템 기반)
+    const { data: allContentItems, error: contentError } = await supabase
+      .from('cafe_content_items')
+      .select('submission_id');
 
-    // Create a map of submission_id to total completed count
+    if (contentError) {
+      console.error('Error fetching cafe content items:', contentError);
+    }
+
+    console.log('[Cafe Marketing] Content items found:', allContentItems?.length || 0);
+
+    // Create a map of submission_id to content item count
     const completedCountMap = new Map<string, number>();
-    if (allDailyRecords) {
-      allDailyRecords.forEach((record: any) => {
-        const currentCount = completedCountMap.get(record.submission_id) || 0;
-        completedCountMap.set(record.submission_id, currentCount + record.completed_count);
+    if (allContentItems) {
+      allContentItems.forEach((item: { submission_id: string }) => {
+        const currentCount = completedCountMap.get(item.submission_id) || 0;
+        completedCountMap.set(item.submission_id, currentCount + 1);
       });
     }
 
     // Add progress to each submission
     const submissionsWithProgress = (submissions || []).map((sub: any) => {
       const completedCount = completedCountMap.get(sub.id) || 0;
-      const progressPercentage = sub.total_count > 0
-        ? Math.round((completedCount / sub.total_count) * 100)
+      // 콘텐츠가 있으면 최소 1% 보장 (0.5% 같은 경우도 1%로 표시)
+      const rawPercentage = sub.total_count > 0
+        ? (completedCount / sub.total_count) * 100
+        : 0;
+      const progressPercentage = completedCount > 0
+        ? Math.max(1, Math.min(Math.round(rawPercentage), 100))
         : 0;
 
       return {

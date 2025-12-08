@@ -206,6 +206,7 @@ export type BlogDistributionSubmission = {
   total_points: number;
   status: SubmissionStatus;
   start_date: string | null;
+  end_date: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;

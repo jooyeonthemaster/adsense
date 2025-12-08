@@ -41,11 +41,14 @@ import {
   Video,
   Zap,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import * as XLSX from 'xlsx';
 
 interface BlogDistribution {
   id: string;
+  submission_number: string;
   distribution_type: 'reviewer' | 'video' | 'automation';
   company_name: string;
   place_url: string;
@@ -87,6 +90,7 @@ export default function BlogDistributionStatusPage() {
   const [selectedSubmission, setSelectedSubmission] = useState<BlogDistribution | null>(null);
   const [agreedToCancel, setAgreedToCancel] = useState(false);
   const [asConditionDialogOpen, setAsConditionDialogOpen] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSubmissions();
@@ -144,6 +148,93 @@ export default function BlogDistributionStatusPage() {
     setSelectedSubmission(submission);
     setAgreedToCancel(false);
     setCancelDialogOpen(true);
+  };
+
+  // 상태 한글 변환 함수
+  const getStatusLabel = (status: string | null | undefined) => {
+    if (!status) return '대기';
+    switch (status) {
+      case 'approved': return '승인됨';
+      case 'revision_requested': return '수정요청';
+      case 'pending':
+      default: return '대기';
+    }
+  };
+
+  // 배포 타입별 시트명
+  const getSheetName = (distributionType: string) => {
+    switch (distributionType) {
+      case 'reviewer': return '리뷰어배포';
+      case 'video': return '영상배포';
+      case 'automation': return '자동화배포';
+      default: return '블로그배포';
+    }
+  };
+
+  // 리포트 다운로드 함수
+  const handleDownloadReport = async (submission: BlogDistribution) => {
+    setDownloadingId(submission.id);
+    try {
+      const response = await fetch(`/api/submissions/blog/${submission.id}/content`);
+      if (!response.ok) {
+        throw new Error('데이터를 가져오는데 실패했습니다.');
+      }
+
+      const data = await response.json();
+      const contentItems = data.items || [];
+
+      if (contentItems.length === 0) {
+        toast({
+          variant: 'destructive',
+          title: '다운로드 불가',
+          description: '리포트 다운로드 기능은 관리자가 리포트를 등록한 후 사용 가능합니다.',
+        });
+        return;
+      }
+
+      // 네이버 리뷰 형식에 맞춘 새 엑셀 형식
+      const excelData = contentItems.map((item: { blog_url?: string; blog_title?: string; published_date?: string; status?: string; blog_id?: string }) => ({
+        '접수번호': submission.submission_number || '',
+        '업체명': submission.company_name || '',
+        '작성제목': item.blog_title || '',
+        '발행일': item.published_date || '',
+        '상태': getStatusLabel(item.status),
+        '블로그링크': item.blog_url || '',
+        '블로그아이디': item.blog_id || '',
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      ws['!cols'] = [
+        { wch: 18 },  // 접수번호
+        { wch: 20 },  // 업체명
+        { wch: 40 },  // 작성제목
+        { wch: 12 },  // 발행일
+        { wch: 10 },  // 상태
+        { wch: 50 },  // 블로그링크
+        { wch: 20 },  // 블로그아이디
+      ];
+
+      const wb = XLSX.utils.book_new();
+      const sheetName = getSheetName(submission.distribution_type);
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+      const today = new Date().toISOString().split('T')[0];
+      XLSX.writeFile(wb, `블로그배포_${submission.submission_number}_${submission.company_name}_${today}.xlsx`);
+
+      toast({
+        title: '다운로드 완료',
+        description: `${contentItems.length}건의 콘텐츠가 다운로드되었습니다.`,
+      });
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        variant: 'destructive',
+        title: '다운로드 실패',
+        description: error instanceof Error ? error.message : '리포트 다운로드 중 오류가 발생했습니다.',
+      });
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const [cancelLoading, setCancelLoading] = useState(false);
@@ -375,12 +466,23 @@ export default function BlogDistributionStatusPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => window.location.href = `/dashboard/blog-distribution/status/detail/${sub.id}`}
-                            className="h-7 text-xs text-blue-600 border-blue-300"
+                            className="h-7 text-xs text-blue-600 border-blue-300 hover:bg-blue-50 font-medium"
                           >
-                            상세
+                            상세보기
                           </Button>
-                          <Button variant="outline" size="sm" className="h-7 text-xs text-emerald-600 border-emerald-300">
-                            <Download className="h-3 w-3 mr-1" />리포트
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs text-green-600 border-green-300 hover:bg-green-50"
+                            onClick={() => handleDownloadReport(sub)}
+                            disabled={downloadingId === sub.id}
+                          >
+                            {downloadingId === sub.id ? (
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            ) : (
+                              <Download className="h-3 w-3 mr-1" />
+                            )}
+                            리포트
                           </Button>
                           <Button
                             variant="outline"
@@ -481,12 +583,23 @@ export default function BlogDistributionStatusPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => window.location.href = `/dashboard/blog-distribution/status/detail/${sub.id}`}
-                      className="flex-1 text-[11px] h-7 text-blue-600 border-blue-300 px-2"
+                      className="flex-1 text-[11px] h-7 text-blue-600 border-blue-300 hover:bg-blue-50 font-medium px-2"
                     >
-                      상세
+                      상세보기
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1 text-[11px] h-7 text-emerald-600 border-emerald-300 px-2">
-                      <Download className="h-2.5 w-2.5 mr-0.5" />리포트
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-[11px] h-7 text-green-600 border-green-300 hover:bg-green-50 px-2"
+                      onClick={() => handleDownloadReport(sub)}
+                      disabled={downloadingId === sub.id}
+                    >
+                      {downloadingId === sub.id ? (
+                        <Loader2 className="h-2.5 w-2.5 mr-0.5 animate-spin" />
+                      ) : (
+                        <Download className="h-2.5 w-2.5 mr-0.5" />
+                      )}
+                      리포트
                     </Button>
                     <Button
                       variant="outline"

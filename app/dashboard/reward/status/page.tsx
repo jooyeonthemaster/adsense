@@ -371,7 +371,7 @@ export default function RewardStatusPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-7 text-xs text-emerald-600 border-emerald-300 hover:bg-emerald-50"
+                              className="h-7 text-xs text-blue-600 border-blue-300 hover:bg-blue-50 font-medium"
                             >
                               상세보기
                             </Button>
@@ -488,7 +488,7 @@ export default function RewardStatusPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full text-[11px] h-7 text-emerald-600 border-emerald-300 px-2"
+                        className="w-full text-[11px] h-7 text-blue-600 border-blue-300 hover:bg-blue-50 font-medium px-2"
                       >
                         상세보기
                       </Button>

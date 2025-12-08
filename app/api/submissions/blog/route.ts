@@ -24,17 +24,17 @@ export async function GET() {
       );
     }
 
-    // Fetch daily records to calculate progress
-    const { data: allDailyRecords } = await supabase
-      .from('blog_distribution_daily_records')
-      .select('submission_id, completed_count');
+    // Fetch content items to calculate progress (content_items 기반 진행률)
+    const { data: allContentItems } = await supabase
+      .from('blog_content_items')
+      .select('submission_id');
 
-    // Create a map of submission_id to total completed count
+    // Create a map of submission_id to total content count
     const completedCountMap = new Map<string, number>();
-    if (allDailyRecords) {
-      allDailyRecords.forEach((record: any) => {
-        const currentCount = completedCountMap.get(record.submission_id) || 0;
-        completedCountMap.set(record.submission_id, currentCount + record.completed_count);
+    if (allContentItems) {
+      allContentItems.forEach((item: { submission_id: string }) => {
+        const currentCount = completedCountMap.get(item.submission_id) || 0;
+        completedCountMap.set(item.submission_id, currentCount + 1);
       });
     }
 

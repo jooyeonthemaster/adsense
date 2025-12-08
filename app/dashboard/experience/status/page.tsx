@@ -334,7 +334,7 @@ export default function ExperienceMarketingStatusPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => router.push(`/dashboard/experience/detail/${sub.id}`)}
-                          className="h-7 text-xs text-violet-600 border-violet-300"
+                          className="h-7 text-xs text-blue-600 border-blue-300 hover:bg-blue-50 font-medium"
                         >
                           <Eye className="h-3 w-3 mr-1" />
                           상세보기
@@ -402,10 +402,10 @@ export default function ExperienceMarketingStatusPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => router.push(`/dashboard/experience/detail/${sub.id}`)}
-                    className="w-full text-[11px] h-7 text-violet-600 border-violet-300 px-2"
+                    className="w-full text-[11px] h-7 text-blue-600 border-blue-300 hover:bg-blue-50 font-medium px-2"
                   >
                     <Eye className="h-2.5 w-2.5 mr-0.5" />
-                    상세
+                    상세보기
                   </Button>
                 </div>
               );

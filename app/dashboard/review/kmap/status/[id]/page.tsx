@@ -222,9 +222,10 @@ export default function KakaomapContentReviewPage({
     ? contentItems.filter((item) => item.review_status === 'approved' && item.has_been_revised)
     : contentItems.filter((item) => item.review_status === contentFilter);
 
-  // 진행률 계산
+  // 진행률 계산 (리포트에 등록된 콘텐츠만 = review_registered_date가 있는 것)
+  const completedItems = extendedContentItems.filter(item => item.review_registered_date != null);
   const progressPercentage = submission?.total_count
-    ? Math.min(Math.round((extendedContentItems.length / submission.total_count) * 100), 100)
+    ? Math.min(Math.round((completedItems.length / submission.total_count) * 100), 100)
     : 0;
 
   // 상태 배지 표시
@@ -239,7 +240,7 @@ export default function KakaomapContentReviewPage({
     }
   };
 
-  // 엑셀 다운로드
+  // 엑셀 다운로드 (업로드 템플릿과 동일한 형식)
   const handleExcelDownload = () => {
     if (extendedContentItems.length === 0) {
       toast({
@@ -249,29 +250,33 @@ export default function KakaomapContentReviewPage({
       return;
     }
 
-    const excelData = extendedContentItems.map((item, idx) => ({
-      '순번': idx + 1,
+    // 업로드 템플릿과 동일한 형식: 접수번호, 업체명, 리뷰원고, 리뷰등록날짜, 영수증날짜, 상태, 리뷰링크, 리뷰아이디
+    const excelData = extendedContentItems.map((item) => ({
+      '접수번호': submission?.submission_number || '',
+      '업체명': submission?.company_name || '',
       '리뷰원고': item.script_text || '',
       '리뷰등록날짜': item.review_registered_date || '',
       '영수증날짜': item.receipt_date || '',
-      '상태': item.status === 'approved' ? '승인됨' : item.status === 'rejected' ? '반려' : '대기',
+      '상태': item.status === 'approved' ? '승인됨' : item.status === 'rejected' ? '수정요청' : '대기',
       '리뷰링크': item.review_link || '',
       '리뷰아이디': item.review_id || '',
     }));
 
     const ws = XLSX.utils.json_to_sheet(excelData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, '콘텐츠 목록');
+    // 시트명을 업로드 템플릿과 동일하게 'K맵리뷰'로 설정
+    XLSX.utils.book_append_sheet(wb, ws, 'K맵리뷰');
 
-    // 컬럼 너비 설정
+    // 컬럼 너비 설정 (업로드 템플릿과 동일)
     ws['!cols'] = [
-      { wch: 6 },   // 순번
-      { wch: 50 },  // 리뷰원고
+      { wch: 18 },  // 접수번호
+      { wch: 20 },  // 업체명
+      { wch: 60 },  // 리뷰원고
       { wch: 14 },  // 리뷰등록날짜
       { wch: 14 },  // 영수증날짜
       { wch: 10 },  // 상태
-      { wch: 30 },  // 리뷰링크
-      { wch: 15 },  // 리뷰아이디
+      { wch: 45 },  // 리뷰링크
+      { wch: 18 },  // 리뷰아이디
     ];
 
     XLSX.writeFile(wb, `K맵리뷰_${submission?.company_name || 'report'}_${new Date().toISOString().slice(0, 10)}.xlsx`);
@@ -315,8 +320,8 @@ export default function KakaomapContentReviewPage({
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>등록된 콘텐츠</CardDescription>
-                <CardTitle className="text-3xl text-amber-600">{extendedContentItems.length}건</CardTitle>
+                <CardDescription>리포트 등록</CardDescription>
+                <CardTitle className="text-3xl text-amber-600">{completedItems.length}건</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-xs text-muted-foreground">진행률 {progressPercentage}%</p>

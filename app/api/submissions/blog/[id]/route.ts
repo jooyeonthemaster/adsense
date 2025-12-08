@@ -34,8 +34,14 @@ export async function GET(
       .eq('submission_id', id)
       .order('record_date', { ascending: false });
 
-    // Calculate progress
-    const completedCount = dailyRecords?.reduce((sum, r) => sum + r.completed_count, 0) || 0;
+    // Fetch content items for progress calculation
+    const { data: contentItems } = await supabase
+      .from('blog_content_items')
+      .select('id')
+      .eq('submission_id', id);
+
+    // Calculate progress based on content_items count
+    const completedCount = contentItems?.length || 0;
     const progressPercentage = submission.total_count > 0
       ? Math.round((completedCount / submission.total_count) * 100)
       : 0;

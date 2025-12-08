@@ -1,5 +1,110 @@
 # CHANGELOG - 애드센스 마케팅 상품 접수 시스템
 
+## 2025-12-09 - [FIX] 블로그 배포 일별 기록을 콘텐츠 발행일 기준으로 변경
+
+**Changed Files**:
+- components/admin/blog-distribution/ContentBasedCalendar.tsx (신규)
+- app/admin/blog-distribution/[id]/page.tsx (수정 - 캘린더 컴포넌트 교체)
+
+**Changes**:
+1. **콘텐츠 기반 캘린더 컴포넌트 생성**:
+   - 업로드된 콘텐츠의 published_date를 기준으로 일별 건수 표시
+   - 자동 계산(dailyCount 기반) 제거
+   - 실제 데이터만 표시
+
+2. **블로그 배포 상세 페이지 수정**:
+   - DailyRecordCalendar → ContentBasedCalendar로 교체
+   - 리워드 상품용 자동 계산 로직 제거
+
+**Reason**:
+- 블로그 배포는 리워드 상품과 달리 자동 계산이 아닌 실제 업로드된 데이터 기준으로 표시해야 함
+- 데이터 관리에서 업로드한 콘텐츠의 발행일 기준으로 일별 건수 집계 필요
+
+**Impact**:
+- 블로그 배포 상세 페이지의 "일별 기록" 탭이 콘텐츠 발행일 기준으로 표시됨
+- 자동 계산 없이 실제 업로드된 데이터만 표시
+
+---
+
+## 2025-12-09 - [UPDATE] 블로그 배포 상세 페이지 엑셀 업로드 버튼 숨김
+
+**Changed Files**:
+- app/admin/blog-distribution/[id]/page.tsx (수정 - 엑셀 업로드 버튼 숨김)
+
+**Changes**:
+1. **엑셀 업로드 버튼 숨김 처리**:
+   - 콘텐츠 목록 탭의 "엑셀 업로드" 버튼 제거
+   - 데이터 관리 페이지에서 일괄 업로드 기능 사용 유도
+
+**Reason**:
+- 데이터 관리 페이지에서 일괄 업로드 기능으로 통합
+
+**Impact**:
+- 블로그 배포 상세 페이지에서 엑셀 다운로드만 가능
+
+---
+
+## 2025-12-09 - [FIX] 구동일 필터를 날짜 범위 기반으로 수정
+
+**Changed Files**:
+- app/admin/blog-distribution/page.tsx (수정 - 구동일 필터 로직 변경)
+
+**Changes**:
+1. **구동일 필터 로직 변경**:
+   - 기존: start_date와 정확히 일치하는 경우만 필터링
+   - 변경: 선택한 날짜가 start_date ~ end_date 범위 내에 있으면 필터링
+   - end_date가 없는 경우 start_date 이후인지만 확인
+
+**Reason**:
+- 구동일 필터 적용 시 해당 날짜가 구동 기간 내에 포함된 접수건을 모두 표시해야 함
+- 예: 12월 1일~12월 31일 구동 건은 12월 10일 필터 시에도 표시되어야 함
+
+**Impact**:
+- 관리자가 특정 날짜로 필터링 시 해당 날짜에 구동 중인 모든 접수건이 표시됨
+
+---
+
+## 2025-12-08 - [UPDATE] 블로그 배포 진행률 계산을 콘텐츠 기반으로 변경
+
+**Changed Files**:
+- supabase/migrations/20251208_blog_content_items.sql (신규 - 370→370 lines)
+- app/api/admin/blog-distribution/[id]/content-items/route.ts (신규 - 148 lines)
+- app/api/submissions/blog/[id]/content/route.ts (신규 - 55 lines)
+- app/admin/blog-distribution/[id]/page.tsx (수정 - 370→665 lines)
+- app/dashboard/blog-distribution/status/page.tsx (수정 - 570→640 lines)
+- app/api/submissions/blog/[id]/route.ts (수정 - 진행률 계산 로직 변경)
+- app/api/submissions/blog/route.ts (수정 - 진행률 계산 로직 변경)
+
+**Changes**:
+1. **blog_content_items 테이블 생성**:
+   - 블로그 배포 콘텐츠 아이템 테이블 (네이버 리뷰 receipt_content_items와 동일 구조)
+   - 컬럼: blog_url, blog_title, keyword, published_date, notes
+   - RLS 정책 적용 (관리자 전체 접근, 클라이언트 자신 접수만)
+
+2. **관리자 상세 페이지 개선**:
+   - 콘텐츠 목록 탭 추가 (개요, 콘텐츠 목록, 일별 기록)
+   - 엑셀 업로드/다운로드 기능 추가
+   - 진행률 계산을 content_items 개수 기반으로 변경
+
+3. **유저 대시보드 리포트 다운로드**:
+   - 블로그 배포 접수 현황 페이지에 리포트 다운로드 기능 구현
+   - 엑셀 파일로 콘텐츠 목록 다운로드
+
+4. **진행률 계산 로직 변경**:
+   - 기존: daily_records.completed_count 합계 기반 (수동 입력)
+   - 변경: blog_content_items 개수 기반 (데이터 업로드 기반)
+
+**Reason**:
+- 네이버 리뷰처럼 데이터 관리에서 업로드된 콘텐츠 기반으로 진행률 관리 요청
+- 수동 입력이 아닌 실제 업로드된 데이터 기반으로 정확한 진행률 추적
+
+**Impact**:
+- 관리자가 콘텐츠 목록 탭에서 엑셀 업로드하면 자동으로 진행률이 반영됨
+- 유저가 접수 현황에서 직접 리포트 다운로드 가능
+- 기존 daily_records 기능은 그대로 유지 (병렬 사용 가능)
+
+---
+
 ## 2025-12-06 - [UPDATE] 카카오맵 리뷰 접수 시 이메일 관련 UI 임시 비활성화
 
 **Changed Files**:

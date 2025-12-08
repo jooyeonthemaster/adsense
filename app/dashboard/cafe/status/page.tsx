@@ -38,8 +38,10 @@ import {
   Coffee,
   ExternalLink,
   FileSpreadsheet,
+  Download,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import * as XLSX from 'xlsx';
 
 interface CafeSubmission {
   id: string;
@@ -181,6 +183,67 @@ export default function CafeMarketingStatusPage() {
   };
 
   const canCancel = (submission: CafeSubmission) => ['pending', 'in_progress'].includes(submission.status);
+
+  // 개별 접수 건 리포트 다운로드 핸들러
+  const handleDownloadReport = async (submissionId: string, companyName: string) => {
+    try {
+      // 해당 접수의 콘텐츠 아이템 조회
+      const response = await fetch(`/api/submissions/cafe/${submissionId}`);
+      const data = await response.json();
+
+      if (!data.success || !data.content_items || data.content_items.length === 0) {
+        toast({
+          variant: 'destructive',
+          title: '다운로드 실패',
+          description: '다운로드할 콘텐츠가 없습니다.',
+        });
+        return;
+      }
+
+      const contentStatusLabels: Record<string, string> = {
+        pending: '대기',
+        approved: '승인됨',
+        revision_requested: '수정요청',
+      };
+
+      const excelData = data.content_items.map((item: any, index: number) => ({
+        '순번': index + 1,
+        '작성제목': item.post_title || '',
+        '발행일': item.published_date || '',
+        '상태': contentStatusLabels[item.status] || item.status || '대기',
+        '리뷰링크': item.post_url || '',
+        '작성아이디': item.writer_id || '',
+        '카페명': item.cafe_name || '',
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      ws['!cols'] = [
+        { wch: 6 },   // 순번
+        { wch: 40 },  // 작성제목
+        { wch: 12 },  // 발행일
+        { wch: 10 },  // 상태
+        { wch: 50 },  // 리뷰링크
+        { wch: 20 },  // 작성아이디
+        { wch: 20 },  // 카페명
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '콘텐츠 목록');
+      XLSX.writeFile(wb, `카페마케팅_${companyName}_콘텐츠목록.xlsx`);
+
+      toast({
+        title: '✅ 다운로드 완료',
+        description: `${companyName} 콘텐츠 리포트가 다운로드되었습니다.`,
+      });
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        variant: 'destructive',
+        title: '다운로드 오류',
+        description: '리포트 다운로드 중 오류가 발생했습니다.',
+      });
+    }
+  };
 
   const stats = {
     total: submissions.length,
@@ -339,8 +402,17 @@ export default function CafeMarketingStatusPage() {
                       <TableCell className="text-center">
                         <div className="flex gap-2 justify-center">
                           <Link href={`/dashboard/cafe/status/detail/${sub.id}`}>
-                            <Button variant="outline" size="sm" className="h-7 text-xs text-blue-600 border-blue-300">상세</Button>
+                            <Button variant="outline" size="sm" className="h-7 text-xs text-blue-600 border-blue-300 hover:bg-blue-50 font-medium">상세보기</Button>
                           </Link>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadReport(sub.id, sub.company_name)}
+                            className="h-7 text-xs text-green-600 border-green-300 hover:bg-green-50"
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            리포트
+                          </Button>
                           {canCancel(sub) && (
                             <Button variant="outline" size="sm" onClick={() => handleCancelClick(sub)} className="h-7 text-xs text-red-600 border-red-300">중단</Button>
                           )}
@@ -413,8 +485,17 @@ export default function CafeMarketingStatusPage() {
                   </div>
                   <div className="flex gap-1.5 pt-1">
                     <Link href={`/dashboard/cafe/status/detail/${sub.id}`} className="flex-1">
-                      <Button variant="outline" size="sm" className="w-full text-[11px] h-7 text-blue-600 border-blue-300 px-2">상세</Button>
+                      <Button variant="outline" size="sm" className="w-full text-[11px] h-7 text-blue-600 border-blue-300 hover:bg-blue-50 font-medium px-2">상세보기</Button>
                     </Link>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownloadReport(sub.id, sub.company_name)}
+                      className="flex-1 text-[11px] h-7 px-2 text-green-600 border-green-300 hover:bg-green-50"
+                    >
+                      <Download className="h-3 w-3 mr-1" />
+                      리포트
+                    </Button>
                     {canCancel(sub) && (
                       <Button variant="outline" size="sm" onClick={() => handleCancelClick(sub)} className="flex-1 text-[11px] h-7 text-red-600 border-red-300 px-2">중단</Button>
                     )}

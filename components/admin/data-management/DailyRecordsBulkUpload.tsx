@@ -35,14 +35,14 @@ interface DailyRecordsBulkUploadProps {
   category?: CategoryType;
 }
 
-// 상품 타입 정의
-type ProductType = 'kakaomap' | 'receipt' | 'blog' | 'cafe';
+// 상품 타입 정의 - 블로그 배포는 3개 서브타입으로 분리
+type ProductType = 'kakaomap' | 'receipt' | 'blog_reviewer' | 'blog_video' | 'blog_automation' | 'cafe';
 
 // 카테고리별 포함 상품 매핑
 const CATEGORY_PRODUCTS: Record<CategoryType, ProductType[]> = {
-  all: ['kakaomap', 'receipt', 'blog', 'cafe'],
+  all: ['kakaomap', 'receipt', 'blog_reviewer', 'blog_video', 'blog_automation', 'cafe'],
   review: ['kakaomap', 'receipt'],
-  blog: ['blog'],
+  blog: ['blog_reviewer', 'blog_video', 'blog_automation'],
   cafe: ['cafe'],
 };
 
@@ -65,12 +65,25 @@ interface ParsedRecord {
   isValid: boolean;
   errorMessage?: string;
   submissionId?: string; // 검증 후 채워짐
-  // K맵 리뷰 전용 필드
+  // K맵/네이버 리뷰 전용 필드
   reviewRegisteredDate?: string; // 리뷰등록날짜
   receiptDate?: string; // 영수증날짜
   reviewStatus?: string; // 상태 (대기, 승인됨, 수정요청)
   reviewLink?: string; // 리뷰 링크
   reviewId?: string; // 리뷰 아이디
+  // 블로그 배포 전용 필드
+  blogTitle?: string; // 작성 제목
+  publishedDate?: string; // 발행일
+  blogStatus?: string; // 상태 (대기, 승인됨, 수정요청)
+  blogUrl?: string; // 블로그 링크
+  blogId?: string; // 블로그 아이디
+  // 카페 침투 전용 필드
+  cafePostTitle?: string; // 작성 제목
+  cafePublishedDate?: string; // 발행일
+  cafeStatus?: string; // 상태 (대기, 승인됨, 수정요청)
+  cafePostUrl?: string; // 리뷰 링크
+  cafeWriterId?: string; // 작성 아이디
+  cafeName?: string; // 카페명
 }
 
 interface SheetData {
@@ -88,15 +101,17 @@ interface ValidationResult {
   invalidRecords: number;
 }
 
-// 상품 타입 매핑
-const PRODUCT_CONFIG: Record<ProductType, { name: string; prefix: string; tableName: string }> = {
+// 상품 타입 매핑 - 블로그 배포는 콘텐츠 아이템 테이블 사용
+const PRODUCT_CONFIG: Record<ProductType, { name: string; prefix: string; tableName: string; distributionType?: string }> = {
   kakaomap: { name: 'K맵 리뷰', prefix: 'KM', tableName: 'kakaomap_review_daily_records' },
   receipt: { name: '방문자 리뷰', prefix: 'RR', tableName: 'receipt_review_daily_records' },
-  blog: { name: '블로그 배포', prefix: 'BD', tableName: 'blog_distribution_daily_records' },
-  cafe: { name: '카페 침투', prefix: 'CM', tableName: 'cafe_marketing_daily_records' },
+  blog_reviewer: { name: '리뷰어 배포', prefix: 'BD', tableName: 'blog_content_items', distributionType: 'reviewer' },
+  blog_video: { name: '영상 배포', prefix: 'BD', tableName: 'blog_content_items', distributionType: 'video' },
+  blog_automation: { name: '자동화 배포', prefix: 'BD', tableName: 'blog_content_items', distributionType: 'automation' },
+  cafe: { name: '카페 침투', prefix: 'CM', tableName: 'cafe_content_items' },
 };
 
-// 시트 이름으로 상품 타입 매핑
+// 시트 이름으로 상품 타입 매핑 - 블로그 배포는 3개 서브타입
 const SHEET_NAME_MAP: Record<string, ProductType> = {
   'K맵리뷰': 'kakaomap',
   'K맵 리뷰': 'kakaomap',
@@ -107,9 +122,16 @@ const SHEET_NAME_MAP: Record<string, ProductType> = {
   '영수증리뷰': 'receipt',
   '영수증 리뷰': 'receipt',
   'receipt': 'receipt',
-  '블로그배포': 'blog',
-  '블로그 배포': 'blog',
-  'blog': 'blog',
+  // 블로그 배포 - 3개 시트로 분리
+  '리뷰어배포': 'blog_reviewer',
+  '리뷰어 배포': 'blog_reviewer',
+  'blog_reviewer': 'blog_reviewer',
+  '영상배포': 'blog_video',
+  '영상 배포': 'blog_video',
+  'blog_video': 'blog_video',
+  '자동화배포': 'blog_automation',
+  '자동화 배포': 'blog_automation',
+  'blog_automation': 'blog_automation',
   '카페침투': 'cafe',
   '카페 침투': 'cafe',
   'cafe': 'cafe',
@@ -190,38 +212,85 @@ export function DailyRecordsBulkUpload({ category = 'all' }: DailyRecordsBulkUpl
       XLSX.utils.book_append_sheet(wb, wsReceipt, '방문자리뷰');
     }
 
-    // 블로그 배포 시트
-    if (allowedProducts.includes('blog')) {
-      const blogData = [
-        ['접수번호', '업체명', '날짜', '완료수', '메모'],
-        ['BD-2025-0001', '뷰티샵', '2025-12-01', 5, ''],
-        ['BD-2025-0001', '뷰티샵', '2025-12-02', 3, ''],
+    // 블로그 배포 시트 - 리뷰어 배포 (콘텐츠 아이템 형식)
+    if (allowedProducts.includes('blog_reviewer')) {
+      const reviewerData = [
+        ['접수번호', '업체명', '작성제목', '발행일', '상태', '블로그링크', '블로그아이디'],
+        ['BD-2025-0001', '뷰티샵', '강남 맛집 추천! 진짜 맛있는 곳', '2025-12-05', '승인됨', 'https://blog.naver.com/reviewer1/123456', 'post_123456'],
+        ['BD-2025-0001', '뷰티샵', '분위기 좋은 카페 후기', '2025-12-06', '승인됨', 'https://blog.naver.com/reviewer2/123457', 'post_123457'],
+        ['BD-2025-0002', '헤어샵', '머리하러 갔다가 대박 발견!', '2025-12-07', '대기', '', ''],
       ];
-      const wsBlog = XLSX.utils.aoa_to_sheet(blogData);
-      wsBlog['!cols'] = [
+      const wsReviewer = XLSX.utils.aoa_to_sheet(reviewerData);
+      wsReviewer['!cols'] = [
         { wch: 18 }, // 접수번호
         { wch: 20 }, // 업체명
-        { wch: 12 }, // 날짜
-        { wch: 10 }, // 완료수
-        { wch: 25 }, // 메모
+        { wch: 40 }, // 작성제목
+        { wch: 14 }, // 발행일
+        { wch: 10 }, // 상태
+        { wch: 45 }, // 블로그링크
+        { wch: 18 }, // 블로그아이디
       ];
-      XLSX.utils.book_append_sheet(wb, wsBlog, '블로그배포');
+      XLSX.utils.book_append_sheet(wb, wsReviewer, '리뷰어배포');
     }
 
-    // 카페 침투 시트
+    // 블로그 배포 시트 - 영상 배포
+    if (allowedProducts.includes('blog_video')) {
+      const videoData = [
+        ['접수번호', '업체명', '작성제목', '발행일', '상태', '블로그링크', '블로그아이디'],
+        ['BD-2025-0003', '음식점', '맛집 브이로그 | 진짜 맛있다', '2025-12-05', '승인됨', 'https://blog.naver.com/video1/234567', 'video_234567'],
+        ['BD-2025-0003', '음식점', '먹방 유튜버의 솔직 후기', '2025-12-06', '대기', '', ''],
+      ];
+      const wsVideo = XLSX.utils.aoa_to_sheet(videoData);
+      wsVideo['!cols'] = [
+        { wch: 18 }, // 접수번호
+        { wch: 20 }, // 업체명
+        { wch: 40 }, // 작성제목
+        { wch: 14 }, // 발행일
+        { wch: 10 }, // 상태
+        { wch: 45 }, // 블로그링크
+        { wch: 18 }, // 블로그아이디
+      ];
+      XLSX.utils.book_append_sheet(wb, wsVideo, '영상배포');
+    }
+
+    // 블로그 배포 시트 - 자동화 배포
+    if (allowedProducts.includes('blog_automation')) {
+      const autoData = [
+        ['접수번호', '업체명', '작성제목', '발행일', '상태', '블로그링크', '블로그아이디'],
+        ['BD-2025-0004', '네일샵', '자동 생성 포스팅 #1', '2025-12-05', '승인됨', 'https://blog.naver.com/auto1/345678', 'auto_345678'],
+        ['BD-2025-0004', '네일샵', '자동 생성 포스팅 #2', '2025-12-06', '승인됨', 'https://blog.naver.com/auto2/345679', 'auto_345679'],
+      ];
+      const wsAuto = XLSX.utils.aoa_to_sheet(autoData);
+      wsAuto['!cols'] = [
+        { wch: 18 }, // 접수번호
+        { wch: 20 }, // 업체명
+        { wch: 40 }, // 작성제목
+        { wch: 14 }, // 발행일
+        { wch: 10 }, // 상태
+        { wch: 45 }, // 블로그링크
+        { wch: 18 }, // 블로그아이디
+      ];
+      XLSX.utils.book_append_sheet(wb, wsAuto, '자동화배포');
+    }
+
+    // 카페 침투 시트 - 콘텐츠 아이템 형식 (블로그 배포와 유사)
     if (allowedProducts.includes('cafe')) {
       const cafeData = [
-        ['접수번호', '업체명', '날짜', '완료수', '메모'],
-        ['CM-2025-0001', '네일샵', '2025-12-01', 20, ''],
-        ['CM-2025-0001', '네일샵', '2025-12-02', 25, '주말 증가'],
+        ['접수번호', '업체명', '작성제목', '발행일', '상태', '리뷰링크', '작성아이디', '카페명'],
+        ['CM-2025-0001', '네일샵', '예쁜 네일 추천합니다!', '2025-12-05', '승인됨', 'https://cafe.naver.com/xxx/123456', 'nail_lover', '뷰티카페'],
+        ['CM-2025-0001', '네일샵', '네일아트 후기 공유해요', '2025-12-06', '승인됨', 'https://cafe.naver.com/yyy/123457', 'beauty_queen', '셀프네일'],
+        ['CM-2025-0002', '헤어샵', '염색 전문점 방문 후기', '2025-12-07', '대기', '', '', '헤어스타일'],
       ];
       const wsCafe = XLSX.utils.aoa_to_sheet(cafeData);
       wsCafe['!cols'] = [
         { wch: 18 }, // 접수번호
         { wch: 20 }, // 업체명
-        { wch: 12 }, // 날짜
-        { wch: 10 }, // 완료수
-        { wch: 25 }, // 메모
+        { wch: 40 }, // 작성제목
+        { wch: 14 }, // 발행일
+        { wch: 10 }, // 상태
+        { wch: 45 }, // 리뷰링크
+        { wch: 18 }, // 작성아이디
+        { wch: 15 }, // 카페명
       ];
       XLSX.utils.book_append_sheet(wb, wsCafe, '카페침투');
     }
@@ -239,8 +308,8 @@ export function DailyRecordsBulkUpload({ category = 'all' }: DailyRecordsBulkUpl
     if (allowedProducts.includes('receipt')) {
       guideData.push(['  - 방문자 리뷰: RR-2025-0001']);
     }
-    if (allowedProducts.includes('blog')) {
-      guideData.push(['  - 블로그 배포: BD-2025-0001']);
+    if (allowedProducts.includes('blog_reviewer') || allowedProducts.includes('blog_video') || allowedProducts.includes('blog_automation')) {
+      guideData.push(['  - 블로그 배포 (리뷰어/영상/자동화): BD-2025-0001']);
     }
     if (allowedProducts.includes('cafe')) {
       guideData.push(['  - 카페 침투: CM-2025-0001']);
@@ -279,6 +348,39 @@ export function DailyRecordsBulkUpload({ category = 'all' }: DailyRecordsBulkUpl
         ['  - 상태: 대기, 승인됨, 수정요청 중 선택'],
         ['  - 리뷰링크: 네이버 리뷰 URL (선택)'],
         ['  - 리뷰아이디: 네이버 리뷰 고유 ID (선택)'],
+        [''],
+      );
+    }
+
+    // 블로그 배포 전용 안내 (3개 시트 공통)
+    if (allowedProducts.includes('blog_reviewer') || allowedProducts.includes('blog_video') || allowedProducts.includes('blog_automation')) {
+      guideData.push(
+        ['■ 블로그 배포 시트 (리뷰어/영상/자동화 배포)'],
+        ['  - 접수번호: 해당 접수의 접수번호 (BD-YYYY-XXXX)'],
+        ['  - 업체명: 업체명 (참고용, DB 기준 자동 매칭)'],
+        ['  - 작성제목: 블로그 포스팅 제목'],
+        ['  - 발행일: 블로그에 실제 발행된 날짜 (YYYY-MM-DD)'],
+        ['  - 상태: 대기, 승인됨, 수정요청 중 선택'],
+        ['  - 블로그링크: 블로그 포스팅 URL (선택)'],
+        ['  - 블로그아이디: 블로그 포스팅 고유 ID (선택)'],
+        [''],
+        ['  ※ 시트별 구분: 리뷰어배포, 영상배포, 자동화배포'],
+        [''],
+      );
+    }
+
+    // 카페 침투 전용 안내
+    if (allowedProducts.includes('cafe')) {
+      guideData.push(
+        ['■ 카페 침투 시트 (카페 콘텐츠 관리)'],
+        ['  - 접수번호: 해당 접수의 접수번호 (CM-YYYY-XXXX)'],
+        ['  - 업체명: 업체명 (참고용, DB 기준 자동 매칭)'],
+        ['  - 작성제목: 카페 게시글 제목'],
+        ['  - 발행일: 카페에 실제 발행된 날짜 (YYYY-MM-DD)'],
+        ['  - 상태: 대기, 승인됨, 수정요청 중 선택'],
+        ['  - 리뷰링크: 카페 게시글 URL (선택)'],
+        ['  - 작성아이디: 카페 작성자 ID (선택)'],
+        ['  - 카페명: 게시된 카페 이름 (선택)'],
         [''],
       );
     }
@@ -419,43 +521,98 @@ export function DailyRecordsBulkUpload({ category = 'all' }: DailyRecordsBulkUpl
             continue;
           }
 
-          // 블로그 배포, 카페 침투: 접수번호 | 업체명 | 날짜 | 완료수 | 메모
-          const dateValue = row[2];
-          const count = parseInt(String(row[3] || '0'), 10);
-          const notes = String(row[4] || '').trim();
+          // 블로그 배포 (리뷰어/영상/자동화): 접수번호 | 업체명 | 작성제목 | 발행일 | 상태 | 블로그링크 | 블로그아이디
+          if (productType === 'blog_reviewer' || productType === 'blog_video' || productType === 'blog_automation') {
+            const blogTitle = String(row[2] || '').trim();
+            const publishedDate = parseDateValue(row[3]);
+            const blogStatus = String(row[4] || '대기').trim();
+            const blogUrl = String(row[5] || '').trim();
+            const blogId = String(row[6] || '').trim();
 
-          // 날짜 파싱
-          const dateStr = parseDateValue(dateValue);
+            // 블로그 유효성 검사
+            let isValid = true;
+            let errorMessage = '';
 
-          // 기본 유효성 검사
-          let isValid = true;
-          let errorMessage = '';
+            if (!submissionNumber) {
+              isValid = false;
+              errorMessage = '접수번호 필수';
+            } else if (!submissionNumber.match(/^BD-\d{4}-\d{4}$/)) {
+              isValid = false;
+              errorMessage = '접수번호 형식 오류 (예: BD-2025-0001)';
+            } else if (!blogTitle) {
+              isValid = false;
+              errorMessage = '작성제목 필수';
+            } else if (!publishedDate || !publishedDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+              isValid = false;
+              errorMessage = '발행일 형식 오류 (YYYY-MM-DD)';
+            }
 
-          if (!submissionNumber) {
-            isValid = false;
-            errorMessage = '접수번호 필수';
-          } else if (!submissionNumber.match(/^(BD|CM|PL|EX)-\d{4}-\d{4}$/)) {
-            isValid = false;
-            errorMessage = '접수번호 형식 오류 (예: BD-2025-0001)';
-          } else if (!dateStr || !dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            isValid = false;
-            errorMessage = '날짜 형식 오류 (예: 2025-01-15)';
-          } else if (isNaN(count) || count < 0) {
-            isValid = false;
-            errorMessage = '완료수는 0 이상이어야 합니다';
+            records.push({
+              row: i + 1,
+              submissionNumber,
+              companyName,
+              date: publishedDate, // 기본 날짜는 발행일로
+              count: 0, // 블로그 배포는 유입수 사용 안함 (콘텐츠 아이템 개수로 진행률 계산)
+              notes: '',
+              isValid,
+              errorMessage,
+              blogTitle,
+              publishedDate,
+              blogStatus,
+              blogUrl,
+              blogId,
+            });
+            continue;
           }
 
-          records.push({
-            row: i + 1,
-            submissionNumber,
-            companyName,
-            date: dateStr,
-            count,
-            scriptText: undefined,
-            notes,
-            isValid,
-            errorMessage,
-          });
+          // 카페 침투 (콘텐츠 아이템): 접수번호 | 업체명 | 작성제목 | 발행일 | 상태 | 리뷰링크 | 작성아이디 | 카페명
+          if (productType === 'cafe') {
+            const cafePostTitle = String(row[2] || '').trim();
+            const cafePublishedDate = parseDateValue(row[3]);
+            const cafeStatus = String(row[4] || '대기').trim();
+            const cafePostUrl = String(row[5] || '').trim();
+            const cafeWriterId = String(row[6] || '').trim();
+            const cafeName = String(row[7] || '').trim();
+
+            // 카페 유효성 검사
+            let isValid = true;
+            let errorMessage = '';
+
+            if (!submissionNumber) {
+              isValid = false;
+              errorMessage = '접수번호 필수';
+            } else if (!submissionNumber.match(/^CM-\d{4}-\d{4}$/)) {
+              isValid = false;
+              errorMessage = '접수번호 형식 오류 (예: CM-2025-0001)';
+            } else if (!cafePostTitle) {
+              isValid = false;
+              errorMessage = '작성제목 필수';
+            } else if (!cafePublishedDate || !cafePublishedDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+              isValid = false;
+              errorMessage = '발행일 형식 오류 (YYYY-MM-DD)';
+            }
+
+            records.push({
+              row: i + 1,
+              submissionNumber,
+              companyName,
+              date: cafePublishedDate, // 기본 날짜는 발행일로
+              count: 0, // 카페 침투는 콘텐츠 아이템 개수로 진행률 계산
+              notes: '',
+              isValid,
+              errorMessage,
+              cafePostTitle,
+              cafePublishedDate,
+              cafeStatus,
+              cafePostUrl,
+              cafeWriterId,
+              cafeName,
+            });
+            continue;
+          }
+
+          // 그 외 기타 타입 (현재는 사용 안함)
+          continue;
         }
 
         if (records.length > 0) {
@@ -498,9 +655,10 @@ export function DailyRecordsBulkUpload({ category = 'all' }: DailyRecordsBulkUpl
                     record.errorMessage = '존재하지 않는 접수번호';
                   } else {
                     record.submissionId = submission.id;
-                    // 업체명 불일치 경고 (에러는 아님)
+                    // 업체명 불일치 검사 - 일치하지 않으면 에러 처리 (해당 레코드 업데이트 안됨)
                     if (record.companyName && submission.company_name !== record.companyName) {
-                      record.errorMessage = `업체명 불일치: DB=${submission.company_name}`;
+                      record.isValid = false;
+                      record.errorMessage = `업체명 불일치 (엑셀: ${record.companyName}, DB: ${submission.company_name})`;
                     }
                   }
                 }
@@ -552,6 +710,7 @@ export function DailyRecordsBulkUpload({ category = 'all' }: DailyRecordsBulkUpl
               .filter((r) => r.isValid && r.submissionId)
               .map((r) => ({
                 submissionId: r.submissionId,
+                companyName: r.companyName, // 업체명 검증용
                 date: r.date,
                 count: r.count,
                 scriptText: r.scriptText,
@@ -562,6 +721,19 @@ export function DailyRecordsBulkUpload({ category = 'all' }: DailyRecordsBulkUpl
                 reviewStatus: r.reviewStatus,
                 reviewLink: r.reviewLink,
                 reviewId: r.reviewId,
+                // 블로그 배포 전용 필드
+                blogTitle: r.blogTitle,
+                publishedDate: r.publishedDate,
+                blogStatus: r.blogStatus,
+                blogUrl: r.blogUrl,
+                blogId: r.blogId,
+                // 카페 침투 전용 필드
+                cafePostTitle: r.cafePostTitle,
+                cafePublishedDate: r.cafePublishedDate,
+                cafeStatus: r.cafeStatus,
+                cafePostUrl: r.cafePostUrl,
+                cafeWriterId: r.cafeWriterId,
+                cafeName: r.cafeName,
               })),
           })),
         }),
@@ -732,6 +904,23 @@ export function DailyRecordsBulkUpload({ category = 'all' }: DailyRecordsBulkUpl
                                 <TableHead>리뷰링크</TableHead>
                                 <TableHead>리뷰아이디</TableHead>
                               </>
+                            ) : (sheet.productType === 'blog_reviewer' || sheet.productType === 'blog_video' || sheet.productType === 'blog_automation') ? (
+                              <>
+                                <TableHead>작성제목</TableHead>
+                                <TableHead>발행일</TableHead>
+                                <TableHead>상태</TableHead>
+                                <TableHead>블로그링크</TableHead>
+                                <TableHead>블로그아이디</TableHead>
+                              </>
+                            ) : sheet.productType === 'cafe' ? (
+                              <>
+                                <TableHead>작성제목</TableHead>
+                                <TableHead>발행일</TableHead>
+                                <TableHead>상태</TableHead>
+                                <TableHead>리뷰링크</TableHead>
+                                <TableHead>작성아이디</TableHead>
+                                <TableHead>카페명</TableHead>
+                              </>
                             ) : (
                               <>
                                 <TableHead>날짜</TableHead>
@@ -801,6 +990,89 @@ export function DailyRecordsBulkUpload({ category = 'all' }: DailyRecordsBulkUpl
                                   </TableCell>
                                   <TableCell className="font-mono text-xs">
                                     {record.reviewId || <span className="text-gray-400">-</span>}
+                                  </TableCell>
+                                </>
+                              ) : (sheet.productType === 'blog_reviewer' || sheet.productType === 'blog_video' || sheet.productType === 'blog_automation') ? (
+                                <>
+                                  <TableCell className="max-w-[200px]">
+                                    {record.blogTitle ? (
+                                      <span
+                                        className="text-xs text-blue-600 truncate block"
+                                        title={record.blogTitle}
+                                      >
+                                        {record.blogTitle.slice(0, 30)}
+                                        {record.blogTitle.length > 30 && '...'}
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs text-gray-400">-</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell>{record.publishedDate}</TableCell>
+                                  <TableCell>
+                                    <Badge variant={record.blogStatus === '승인됨' ? 'default' : 'secondary'}>
+                                      {record.blogStatus}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="max-w-[150px]">
+                                    {record.blogUrl ? (
+                                      <a
+                                        href={record.blogUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-blue-600 hover:underline truncate block"
+                                        title={record.blogUrl}
+                                      >
+                                        {record.blogUrl.slice(0, 25)}...
+                                      </a>
+                                    ) : (
+                                      <span className="text-xs text-gray-400">-</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="font-mono text-xs">
+                                    {record.blogId || <span className="text-gray-400">-</span>}
+                                  </TableCell>
+                                </>
+                              ) : sheet.productType === 'cafe' ? (
+                                <>
+                                  <TableCell className="max-w-[200px]">
+                                    {record.cafePostTitle ? (
+                                      <span
+                                        className="text-xs text-blue-600 truncate block"
+                                        title={record.cafePostTitle}
+                                      >
+                                        {record.cafePostTitle.slice(0, 30)}
+                                        {record.cafePostTitle.length > 30 && '...'}
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs text-gray-400">-</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell>{record.cafePublishedDate}</TableCell>
+                                  <TableCell>
+                                    <Badge variant={record.cafeStatus === '승인됨' ? 'default' : 'secondary'}>
+                                      {record.cafeStatus}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="max-w-[150px]">
+                                    {record.cafePostUrl ? (
+                                      <a
+                                        href={record.cafePostUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-blue-600 hover:underline truncate block"
+                                        title={record.cafePostUrl}
+                                      >
+                                        {record.cafePostUrl.slice(0, 25)}...
+                                      </a>
+                                    ) : (
+                                      <span className="text-xs text-gray-400">-</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="font-mono text-xs">
+                                    {record.cafeWriterId || <span className="text-gray-400">-</span>}
+                                  </TableCell>
+                                  <TableCell className="text-xs">
+                                    {record.cafeName || <span className="text-gray-400">-</span>}
                                   </TableCell>
                                 </>
                               ) : (

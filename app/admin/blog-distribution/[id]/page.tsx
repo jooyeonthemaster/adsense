@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { use, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,13 +13,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { ArrowLeft, Loader2, FileSpreadsheet, Upload, ExternalLink, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { DailyRecordCalendar } from '@/components/admin/review-marketing/DailyRecordCalendar';
+import { ContentBasedCalendar } from '@/components/admin/blog-distribution/ContentBasedCalendar';
+import * as XLSX from 'xlsx';
 
 interface BlogDistributionDetail {
   id: string;
   client_id: string;
+  submission_number: string;
   company_name: string;
   distribution_type: string;
   content_type: string;
@@ -27,6 +37,8 @@ interface BlogDistributionDetail {
   daily_count: number;
   total_count: number;
   total_days: number;
+  start_date: string | null;
+  end_date: string | null;
   keywords: string[] | null;
   guide_text: string | null;
   account_id: string | null;
@@ -47,6 +59,26 @@ interface DailyRecord {
   completed_count: number;
   notes?: string;
 }
+
+interface BlogContentItem {
+  id: string;
+  submission_id: string;
+  upload_order: number;
+  blog_url: string | null;
+  blog_title: string | null;
+  keyword: string | null;
+  published_date: string | null;
+  notes: string | null;
+  status: string | null;
+  blog_id: string | null;
+  created_at: string;
+}
+
+const contentStatusConfig: Record<string, { label: string; variant: 'outline' | 'default' | 'secondary' | 'destructive' }> = {
+  pending: { label: '대기', variant: 'outline' },
+  approved: { label: '승인됨', variant: 'default' },
+  revision_requested: { label: '수정요청', variant: 'destructive' },
+};
 
 const statusConfig: Record<string, { label: string; variant: 'outline' | 'default' | 'secondary' | 'destructive' }> = {
   pending: { label: '확인중', variant: 'outline' },
@@ -71,15 +103,19 @@ export default function BlogDistributionDetailPage({ params }: { params: Promise
   const unwrappedParams = use(params);
   const router = useRouter();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(true);
   const [submission, setSubmission] = useState<BlogDistributionDetail | null>(null);
   const [dailyRecords, setDailyRecords] = useState<DailyRecord[]>([]);
+  const [contentItems, setContentItems] = useState<BlogContentItem[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchSubmissionDetail();
     fetchDailyRecords();
+    fetchContentItems();
   }, [unwrappedParams.id]);
 
   const fetchSubmissionDetail = async () => {
@@ -113,6 +149,18 @@ export default function BlogDistributionDetailPage({ params }: { params: Promise
     }
   };
 
+  const fetchContentItems = async () => {
+    try {
+      const response = await fetch(`/api/admin/blog-distribution/${unwrappedParams.id}/content-items`);
+      if (response.ok) {
+        const data = await response.json();
+        setContentItems(data.contentItems || []);
+      }
+    } catch (error) {
+      console.error('Error fetching content items:', error);
+    }
+  };
+
   const handleStatusChange = async (newStatus: string) => {
     try {
       const response = await fetch(`/api/admin/blog-distribution/${unwrappedParams.id}/status`, {
@@ -138,8 +186,171 @@ export default function BlogDistributionDetailPage({ params }: { params: Promise
     }
   };
 
-  const totalCompletedCount = dailyRecords.reduce((sum, record) => sum + record.completed_count, 0);
+  // 진행률은 content_items 개수 기반으로 계산
+  const totalCompletedCount = contentItems.length;
   const completionRate = submission ? Math.round((totalCompletedCount / submission.total_count) * 100) : 0;
+
+  // 엑셀 파일 업로드 핸들러
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet) as Record<string, unknown>[];
+
+      if (jsonData.length === 0) {
+        toast({
+          title: '오류',
+          description: '엑셀 파일에 데이터가 없습니다.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // 엑셀 데이터를 API 형식으로 변환
+      // 새 형식: 작성제목, 발행일, 상태, 블로그링크, 블로그아이디
+      // 기존 형식도 호환 지원: 블로그URL, 블로그제목, 키워드, 발행일, 메모
+      const items = jsonData.map((row) => ({
+        blog_title: row['작성제목'] || row['블로그제목'] || row['blog_title'] || row['제목'] || '',
+        published_date: row['발행일'] || row['published_date'] || row['날짜'] || '',
+        status: row['상태'] || row['status'] || '대기',
+        blog_url: row['블로그링크'] || row['블로그URL'] || row['blog_url'] || row['URL'] || '',
+        blog_id: row['블로그아이디'] || row['blog_id'] || '',
+        keyword: row['키워드'] || row['keyword'] || '',
+        notes: row['메모'] || row['notes'] || row['비고'] || '',
+      }));
+
+      // API로 업로드
+      const response = await fetch(`/api/admin/blog-distribution/${unwrappedParams.id}/content-items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || '업로드 실패');
+      }
+
+      toast({
+        title: '업로드 완료',
+        description: result.message || `${items.length}건의 콘텐츠가 업로드되었습니다.`,
+      });
+
+      fetchContentItems();
+    } catch (error) {
+      console.error('Error uploading excel:', error);
+      toast({
+        title: '오류',
+        description: error instanceof Error ? error.message : '엑셀 파일 업로드 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // 상태 한글 변환 함수
+  const getStatusLabel = (status: string | null) => {
+    if (!status) return '대기';
+    switch (status) {
+      case 'approved': return '승인됨';
+      case 'revision_requested': return '수정요청';
+      case 'pending':
+      default: return '대기';
+    }
+  };
+
+  // 엑셀 다운로드 핸들러
+  const downloadContentItemsAsExcel = () => {
+    if (!submission || contentItems.length === 0) {
+      toast({
+        title: '알림',
+        description: '다운로드할 콘텐츠가 없습니다.',
+      });
+      return;
+    }
+
+    // 네이버 리뷰 형식에 맞춘 새 엑셀 형식
+    const excelData = contentItems.map((item) => ({
+      '접수번호': submission.submission_number || '',
+      '업체명': submission.company_name || '',
+      '작성제목': item.blog_title || '',
+      '발행일': item.published_date || '',
+      '상태': getStatusLabel(item.status),
+      '블로그링크': item.blog_url || '',
+      '블로그아이디': item.blog_id || '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    ws['!cols'] = [
+      { wch: 18 },  // 접수번호
+      { wch: 20 },  // 업체명
+      { wch: 40 },  // 작성제목
+      { wch: 12 },  // 발행일
+      { wch: 10 },  // 상태
+      { wch: 50 },  // 블로그링크
+      { wch: 20 },  // 블로그아이디
+    ];
+
+    // 배포 타입에 따른 시트명
+    const sheetName = distributionTypeConfig[submission.distribution_type]
+      ? `${distributionTypeConfig[submission.distribution_type]}배포`
+      : '블로그배포';
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+    const fileName = `블로그배포_${submission.submission_number}_${submission.company_name}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+
+    toast({
+      title: '다운로드 완료',
+      description: `${contentItems.length}건의 콘텐츠가 다운로드되었습니다.`,
+    });
+  };
+
+  // 콘텐츠 전체 삭제
+  const handleDeleteAllContent = async () => {
+    if (!confirm('모든 콘텐츠를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/blog-distribution/${unwrappedParams.id}/content-items`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('삭제 실패');
+      }
+
+      toast({
+        title: '삭제 완료',
+        description: '모든 콘텐츠가 삭제되었습니다.',
+      });
+
+      fetchContentItems();
+    } catch (error) {
+      console.error('Error deleting content:', error);
+      toast({
+        title: '오류',
+        description: '콘텐츠 삭제 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -243,8 +454,9 @@ export default function BlogDistributionDetailPage({ params }: { params: Promise
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="overview">개요</TabsTrigger>
+            <TabsTrigger value="contents">콘텐츠 목록</TabsTrigger>
             <TabsTrigger value="daily">일별 기록</TabsTrigger>
           </TabsList>
 
@@ -340,24 +552,125 @@ export default function BlogDistributionDetailPage({ params }: { params: Promise
             )}
           </TabsContent>
 
+          <TabsContent value="contents" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>블로그 콘텐츠 목록</CardTitle>
+                    <CardDescription>
+                      엑셀로 업로드된 블로그 콘텐츠 ({contentItems.length}건)
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* 엑셀 업로드 버튼 숨김 처리 - 데이터 관리 페이지에서 일괄 업로드 사용 */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    {contentItems.length > 0 && (
+                      <>
+                        <Button onClick={downloadContentItemsAsExcel}>
+                          <FileSpreadsheet className="h-4 w-4 mr-2" />
+                          엑셀 다운로드
+                        </Button>
+                        <Button variant="destructive" size="icon" onClick={handleDeleteAllContent}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {contentItems.length > 0 ? (
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="max-h-[500px] overflow-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-12 text-center">순번</TableHead>
+                            <TableHead className="min-w-[200px]">작성 제목</TableHead>
+                            <TableHead className="w-28">발행일</TableHead>
+                            <TableHead className="w-24">상태</TableHead>
+                            <TableHead className="min-w-[250px]">블로그 링크</TableHead>
+                            <TableHead className="w-32">블로그 아이디</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {contentItems.map((item, index) => (
+                            <TableRow key={item.id}>
+                              <TableCell className="text-center text-muted-foreground">
+                                {index + 1}
+                              </TableCell>
+                              <TableCell>
+                                <p className="text-sm line-clamp-2" title={item.blog_title || ''}>
+                                  {item.blog_title || '-'}
+                                </p>
+                              </TableCell>
+                              <TableCell className="text-sm">
+                                {item.published_date || '-'}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={contentStatusConfig[item.status || 'pending']?.variant || 'outline'}>
+                                  {contentStatusConfig[item.status || 'pending']?.label || '대기'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {item.blog_url ? (
+                                  <a
+                                    href={item.blog_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                                  >
+                                    <span className="truncate max-w-[230px]">{item.blog_url}</span>
+                                    <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                                  </a>
+                                ) : (
+                                  '-'
+                                )}
+                              </TableCell>
+                              <TableCell className="text-sm">
+                                {item.blog_id || '-'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>업로드된 콘텐츠가 없습니다.</p>
+                    <p className="text-sm mt-1">엑셀 파일을 업로드하여 콘텐츠를 추가하세요.</p>
+                    <p className="text-xs mt-2 text-muted-foreground">
+                      컬럼: 작성제목, 발행일, 상태, 블로그링크, 블로그아이디
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="daily" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>일별 배포 기록</CardTitle>
                 <CardDescription>
-                  매일 배포된 건수와 메모를 기록합니다
+                  업로드된 콘텐츠의 발행일 기준으로 일별 건수를 표시합니다
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <DailyRecordCalendar
-                  submissionId={unwrappedParams.id}
-                  records={dailyRecords.map(r => ({ date: r.record_date, actual_count: r.completed_count, notes: r.notes }))}
+                <ContentBasedCalendar
+                  contentItems={contentItems}
                   totalCount={submission.total_count}
-                  dailyCount={submission.daily_count}
-                  totalDays={submission.total_days}
-                  createdAt={submission.created_at}
-                  onRecordSave={fetchDailyRecords}
-                  apiEndpoint={`/api/admin/blog-distribution/${unwrappedParams.id}/daily-records`}
+                  startDateStr={submission.start_date}
+                  endDateStr={submission.end_date}
                 />
               </CardContent>
             </Card>

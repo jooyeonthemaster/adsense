@@ -1,5 +1,6 @@
 export interface KakaomapSubmission {
   id: string;
+  submission_number?: string;
   company_name: string;
   kakaomap_url: string;
   daily_count: number;
@@ -11,6 +12,7 @@ export interface KakaomapSubmission {
   created_at: string;
   start_date?: string;
   content_items_count?: number;
+  completed_count?: number;  // 리포트에 등록된 콘텐츠 수 (review_registered_date가 있는 것)
   unread_messages_count?: number;
   actual_count_total?: number;
   progress_percentage?: number;

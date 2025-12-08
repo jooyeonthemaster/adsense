@@ -10,6 +10,7 @@ export interface ContentItem {
 
 export interface KmapSubmission {
   id: string;
+  submission_number?: string;
   company_name: string;
   kakaomap_url: string;
   total_count: number;
@@ -24,6 +25,7 @@ export interface Feedback {
 }
 
 export type ContentFilter = 'all' | 'pending' | 'approved' | 'revised';
+
 
 
 

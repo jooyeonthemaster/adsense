@@ -8,8 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, BookOpen, MessageCircle } from 'lucide-react';
-import Link from 'next/link';
+import { Loader2 } from 'lucide-react';
+import Image from 'next/image';
 
 function LoginContent() {
   const router = useRouter();
@@ -113,18 +113,6 @@ function LoginContent() {
 
   return (
     <div className="min-h-screen flex items-center justify-center gradient-bg p-4 relative overflow-hidden">
-      {/* 사용 설명서 버튼 */}
-      <Link href="/how-to-use" className="fixed top-6 right-6 z-50">
-        <Button 
-          variant="outline" 
-          size="lg"
-          className="bg-white/90 backdrop-blur-sm hover:bg-white hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl border-primary/20"
-        >
-          <BookOpen className="mr-2 h-5 w-5 text-primary" />
-          <span className="font-semibold">사용 설명서</span>
-        </Button>
-      </Link>
-
       {/* 커서 트레일 효과 */}
       <motion.div
         className="fixed w-8 h-8 rounded-full border-2 border-primary/30 pointer-events-none z-50"
@@ -242,15 +230,25 @@ function LoginContent() {
       >
         <Card className="shadow-2xl shadow-primary/5 border-primary/10">
           <CardHeader className="space-y-4 text-center pb-8">
-            {/* 제목 */}
+            {/* 로고 및 제목 */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="space-y-2"
+              className="space-y-3"
             >
+              <div className="flex justify-center">
+                <Image
+                  src="/logo.png"
+                  alt="마자무 로고"
+                  width={120}
+                  height={120}
+                  className="object-contain"
+                  priority
+                />
+              </div>
               <CardTitle className="text-4xl font-bold tracking-tight text-gradient">
-                AdSense
+                마자무
               </CardTitle>
               <CardDescription className="text-base">
                 마케팅 상품 접수 시스템
@@ -481,18 +479,6 @@ function LoginContent() {
               </div>
             )}
 
-            {/* 사용 설명서 링크 (모바일용) */}
-            <div className="pt-4 border-t mt-4">
-              <Link href="/how-to-use">
-                <Button 
-                  variant="ghost" 
-                  className="w-full text-sm text-muted-foreground hover:text-primary"
-                >
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  사용 설명서 보기
-                </Button>
-              </Link>
-            </div>
           </CardContent>
         </Card>
 
@@ -503,7 +489,7 @@ function LoginContent() {
           transition={{ delay: 0.5 }}
           className="text-center text-sm text-muted-foreground mt-6"
         >
-          © 2024 애드센스. All rights reserved.
+          © 2025 마자무. All rights reserved.
         </motion.p>
       </motion.div>
     </div>

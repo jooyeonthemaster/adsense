@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { createClient as createServiceClient } from '@/utils/supabase/service';
 import { requireAuth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
@@ -27,18 +28,26 @@ export async function GET(
       );
     }
 
-    // Fetch daily records
+    // Fetch content items (콘텐츠 기반) - service client 사용 (RLS bypass)
+    const serviceClient = createServiceClient();
+    const { data: contentItems } = await serviceClient
+      .from('cafe_content_items')
+      .select('*')
+      .eq('submission_id', id)
+      .order('upload_order', { ascending: true });
+
+    // Calculate progress based on content items
+    const completedCount = contentItems?.length || 0;
+    const progressPercentage = submission.total_count > 0
+      ? Math.round((completedCount / submission.total_count) * 100)
+      : 0;
+
+    // Also fetch daily records for backward compatibility
     const { data: dailyRecords } = await supabase
       .from('cafe_marketing_daily_records')
       .select('*')
       .eq('submission_id', id)
       .order('record_date', { ascending: false });
-
-    // Calculate progress
-    const completedCount = dailyRecords?.reduce((sum, r) => sum + r.completed_count, 0) || 0;
-    const progressPercentage = submission.total_count > 0
-      ? Math.round((completedCount / submission.total_count) * 100)
-      : 0;
 
     return NextResponse.json({
       success: true,
@@ -47,6 +56,7 @@ export async function GET(
         completed_count: completedCount,
         progress_percentage: progressPercentage,
       },
+      content_items: contentItems || [],
       daily_records: dailyRecords || [],
     });
   } catch (error) {

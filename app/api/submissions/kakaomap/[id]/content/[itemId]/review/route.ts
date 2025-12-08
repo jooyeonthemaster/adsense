@@ -46,8 +46,14 @@ export async function PATCH(
 
     // Update content item review status
     const updateData: any = { review_status };
-    if (review_status === 'revision_requested') {
+
+    // 클라이언트가 검수 완료하면 status도 approved로 변경
+    // (단, 진행률은 review_registered_date 기준으로 별도 계산)
+    if (review_status === 'approved') {
+      updateData.status = 'approved';
+    } else if (review_status === 'revision_requested') {
       updateData.has_been_revised = true;
+      updateData.status = 'rejected';  // 수정 요청 시 rejected로 변경
     }
 
     const { error: updateError } = await supabase
