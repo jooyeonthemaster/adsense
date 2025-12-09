@@ -92,6 +92,7 @@ export async function POST(request: NextRequest) {
       total_requested: count,
       total_generated: reviews.length,
       by_length: {
+        tiny: reviews.filter(r => r.length_type === 'tiny').length,
         short: reviews.filter(r => r.length_type === 'short').length,
         medium: reviews.filter(r => r.length_type === 'medium').length,
         long: reviews.filter(r => r.length_type === 'long').length,
@@ -126,7 +127,7 @@ export async function POST(request: NextRequest) {
         generation_stats: {
           total_requested: 0,
           total_generated: 0,
-          by_length: { short: 0, medium: 0, long: 0 },
+          by_length: { tiny: 0, short: 0, medium: 0, long: 0 },
           by_tone: { '20s': 0, '30s': 0, '40s': 0, '50s': 0, 'mz': 0 },
           by_emoji: { with: 0, without: 0 },
         },

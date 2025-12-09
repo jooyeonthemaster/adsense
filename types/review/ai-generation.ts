@@ -10,12 +10,13 @@ export interface RatioSetting {
 }
 
 // 글자수 옵션
-export type LengthOption = 'short' | 'medium' | 'long';
+export type LengthOption = 'tiny' | 'short' | 'medium' | 'long';
 
 export const LENGTH_OPTIONS: Record<LengthOption, { label: string; range: string; min: number; max: number }> = {
-  short: { label: '짧은', range: '100-200자', min: 100, max: 200 },
-  medium: { label: '중간', range: '200-400자', min: 200, max: 400 },
-  long: { label: '긴', range: '400-600자', min: 400, max: 600 },
+  tiny: { label: '매우 짧은', range: '30-80자', min: 30, max: 80 },
+  short: { label: '짧은', range: '80-150자', min: 80, max: 150 },
+  medium: { label: '중간', range: '150-250자', min: 150, max: 250 },
+  long: { label: '긴', range: '250-400자', min: 250, max: 400 },
 };
 
 // 말투 타겟
@@ -262,9 +263,10 @@ export interface GeneratorUIState {
 // ============================================
 
 export const DEFAULT_LENGTH_RATIOS: RatioSliderConfig[] = [
-  { id: 'short', value: 'short', label: '짧은 (100-200자)', percentage: 30, count: 3, color: '#10b981' },
-  { id: 'medium', value: 'medium', label: '중간 (200-400자)', percentage: 50, count: 5, color: '#3b82f6' },
-  { id: 'long', value: 'long', label: '긴 (400-600자)', percentage: 20, count: 2, color: '#8b5cf6' },
+  { id: 'tiny', value: 'tiny', label: '매우 짧은 (30-80자)', percentage: 20, count: 2, color: '#f43f5e' },
+  { id: 'short', value: 'short', label: '짧은 (80-150자)', percentage: 30, count: 3, color: '#10b981' },
+  { id: 'medium', value: 'medium', label: '중간 (150-250자)', percentage: 35, count: 3, color: '#3b82f6' },
+  { id: 'long', value: 'long', label: '긴 (250-400자)', percentage: 15, count: 2, color: '#8b5cf6' },
 ];
 
 export const DEFAULT_TONE_RATIOS: RatioSliderConfig[] = [

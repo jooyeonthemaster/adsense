@@ -254,17 +254,18 @@ export function AIReviewGenerator({
         keyword: keyword.trim(),
         count,
         business_type: businessType,
+        // count 기반으로 percentage 재계산 (RatioSlider에서 percentage가 동기화 안 되는 문제 해결)
         length_ratios: lengthRatios.map((r) => ({
           value: r.value,
-          percentage: r.percentage,
+          percentage: count > 0 ? Math.round((r.count / count) * 100) : 0,
         })),
         tone_ratios: toneRatios.map((r) => ({
           value: r.value,
-          percentage: r.percentage,
+          percentage: count > 0 ? Math.round((r.count / count) * 100) : 0,
         })),
         emoji_ratios: emojiRatios.map((r) => ({
           value: r.value,
-          percentage: r.percentage,
+          percentage: count > 0 ? Math.round((r.count / count) * 100) : 0,
         })),
         custom_prompt: customPrompt || undefined,
         store_info: hasStoreInfo ? storeInfo : undefined,
@@ -683,18 +684,21 @@ export function AIReviewGenerator({
 
             <Separator />
 
-            {/* 상세 설정 (개수 배분) */}
+            {/* 상세 설정 (개수 배분) - 글자수/말투/이모티콘 설정 */}
             <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-between">
-                  <span className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  className="w-full justify-between bg-blue-50 border-blue-200 hover:bg-blue-100 dark:bg-blue-950 dark:border-blue-800 dark:hover:bg-blue-900"
+                >
+                  <span className="flex items-center gap-2 font-semibold text-blue-700 dark:text-blue-300">
                     <Settings2 className="h-4 w-4" />
-                    상세 개수 배분
+                    📊 글자수 / 말투 / 이모티콘 설정
                   </span>
                   {showAdvanced ? (
-                    <ChevronUp className="h-4 w-4" />
+                    <ChevronUp className="h-4 w-4 text-blue-600" />
                   ) : (
-                    <ChevronDown className="h-4 w-4" />
+                    <ChevronDown className="h-4 w-4 text-blue-600" />
                   )}
                 </Button>
               </CollapsibleTrigger>
