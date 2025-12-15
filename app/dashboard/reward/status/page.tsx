@@ -44,7 +44,6 @@ interface RewardSubmission {
   total_days: number;
   current_day?: number;
   completed_count?: number;
-  progress_percentage?: number;
   status: RewardStatus;
   created_at: string;
   total_points: number;
@@ -65,7 +64,7 @@ export default function RewardStatusPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<RewardStatus | 'all'>('all');
-  const [sortBy, setSortBy] = useState<'date' | 'cost' | 'progress'>('date');
+  const [sortBy, setSortBy] = useState<'date' | 'cost'>('date');
 
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<string | null>(null);
@@ -148,10 +147,6 @@ export default function RewardStatusPage() {
     }
   };
 
-  const calculateProgress = (submission: RewardSubmission) => {
-    return submission.progress_percentage || 0;
-  };
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('ko-KR', {
@@ -174,10 +169,9 @@ export default function RewardStatusPage() {
     .sort((a, b) => {
       if (sortBy === 'date') {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      } else if (sortBy === 'cost') {
-        return b.total_points - a.total_points;
       } else {
-        return calculateProgress(b) - calculateProgress(a);
+        // sortBy === 'cost'
+        return b.total_points - a.total_points;
       }
     });
 
@@ -284,14 +278,13 @@ export default function RewardStatusPage() {
             </SelectContent>
           </Select>
 
-          <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'date' | 'cost' | 'progress')}>
+          <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'date' | 'cost')}>
             <SelectTrigger className="w-full sm:w-32 h-8 text-xs sm:text-sm">
               <SelectValue placeholder="정렬" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="date">접수일순</SelectItem>
               <SelectItem value="cost">비용순</SelectItem>
-              <SelectItem value="progress">진행률순</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -305,7 +298,6 @@ export default function RewardStatusPage() {
                 <TableHead className="text-xs font-semibold">일 접수량</TableHead>
                 <TableHead className="text-xs font-semibold">구동일수</TableHead>
                 <TableHead className="text-xs font-semibold text-center">상태</TableHead>
-                <TableHead className="text-xs font-semibold text-center">진행률</TableHead>
                 <TableHead className="text-xs font-semibold">접수일시</TableHead>
                 <TableHead className="text-xs font-semibold text-center">액션</TableHead>
               </TableRow>
@@ -313,14 +305,13 @@ export default function RewardStatusPage() {
             <TableBody>
               {filteredSubmissions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-sm text-gray-500">
+                  <TableCell colSpan={6} className="text-center py-12 text-sm text-gray-500">
                     접수 내역이 없습니다.
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredSubmissions.map((submission) => {
                   const statusDisplay = statusConfig[submission.status] || { label: submission.status, variant: 'outline' as const };
-                  const progress = calculateProgress(submission);
 
                   return (
                     <TableRow key={submission.id} className="hover:bg-gray-50">
@@ -348,19 +339,6 @@ export default function RewardStatusPage() {
                         <Badge variant={statusDisplay.variant} className="text-xs">
                           {statusDisplay.label}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex flex-col items-center gap-1">
-                          <div className="w-16 bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-emerald-500 rounded-full h-2 transition-all"
-                              style={{ width: `${Math.round(progress)}%` }}
-                            />
-                          </div>
-                          <span className="text-xs font-medium text-emerald-600">
-                            {Math.round(progress)}%
-                          </span>
-                        </div>
                       </TableCell>
                       <TableCell className="text-sm text-gray-600">
                         {formatDate(submission.created_at)}
@@ -420,7 +398,6 @@ export default function RewardStatusPage() {
           ) : (
             filteredSubmissions.map((submission) => {
               const statusDisplay = statusConfig[submission.status];
-              const progress = calculateProgress(submission);
 
               return (
                 <div
@@ -449,22 +426,6 @@ export default function RewardStatusPage() {
                       {statusDisplay.label}
                     </Badge>
                   </div>
-
-                  {/* 진행률 */}
-                  {submission.status === 'in_progress' && progress > 0 && (
-                    <div>
-                      <div className="flex justify-between text-[10px] text-gray-600 mb-0.5">
-                        <span>진행률</span>
-                        <span className="font-medium">{Math.round(progress)}%</span>
-                      </div>
-                      <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-emerald-500 transition-all"
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
 
                   {/* 상세 정보 */}
                   <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">

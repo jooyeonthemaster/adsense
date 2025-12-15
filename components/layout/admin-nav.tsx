@@ -62,9 +62,9 @@ function NavContent({ onClose }: { onClose?: () => void }) {
       <div className="flex h-14 sm:h-16 items-center justify-center border-b border-slate-800">
         <div className="flex items-center gap-2">
           <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-primary flex items-center justify-center">
-            <span className="text-base sm:text-lg font-bold">A</span>
+            <span className="text-base sm:text-lg font-bold">M</span>
           </div>
-          <span className="text-base sm:text-lg font-semibold">애드센스</span>
+          <span className="text-base sm:text-lg font-semibold">마자무</span>
         </div>
       </div>
 
@@ -134,9 +134,9 @@ export function AdminNav() {
         </Sheet>
         <div className="flex items-center gap-2 ml-4">
           <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center">
-            <span className="text-base font-bold">A</span>
+            <span className="text-base font-bold">M</span>
           </div>
-          <span className="text-base font-semibold text-slate-100">애드센스</span>
+          <span className="text-base font-semibold text-slate-100">마자무</span>
         </div>
       </div>
 

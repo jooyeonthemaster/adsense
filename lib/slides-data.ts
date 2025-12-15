@@ -5,7 +5,7 @@ export const slides: Slide[] = [
   {
     id: 1,
     type: 'intro',
-    title: '애드센스 마케팅 플랫폼',
+    title: '마자무 마케팅 플랫폼',
     subtitle: '사용 설명서',
     content: {
       main: 'B2B 마케팅 상품 접수 및 관리 시스템',
@@ -705,7 +705,7 @@ export const slides: Slide[] = [
     title: '이용해주셔서 감사합니다',
     subtitle: 'Thank You for Using',
     content: {
-      main: '애드센스 마케팅 플랫폼과 함께 성장하세요',
+      main: '마자무 마케팅 플랫폼과 함께 성장하세요',
       points: [
         '📞 문의사항 - 관리자에게 언제든 연락하세요',
         '🔧 AS 신청 - 시스템 내에서 간편하게 신청 가능',

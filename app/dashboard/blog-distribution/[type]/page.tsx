@@ -287,22 +287,34 @@ export default function BlogDistributionPage() {
       const totalCost = calculateTotalCost();
       const backendDistributionType = selectedType === 'auto' ? 'automation' : selectedType;
 
-      const requestData = {
-        company_name: formData.businessName,
-        distribution_type: backendDistributionType,
-        content_type: formData.contentType,
-        place_url: formData.placeUrl || '',
-        daily_count: formData.dailyCount,
-        total_count: totalCount,
-        total_days: operationDays,
-        total_points: totalCost,
-        start_date: formData.startDate ? format(formData.startDate, 'yyyy-MM-dd') : null,
-        keywords: formData.keywords ? formData.keywords.split(',').map(k => k.trim()).filter(k => k) : [],
-        guide_text: formData.guideline || null,
-        account_id: formData.useExternalAccount ? formData.externalAccountId : null,
-        charge_count: formData.useExternalAccount ? formData.chargeCount : null,
-        notes: null,
-      };
+      // 외부 계정 충전 요청인 경우 별도 데이터 구조
+      const isExternalAccountRequest = selectedType === 'auto' && formData.useExternalAccount;
+
+      const requestData = isExternalAccountRequest
+        ? {
+            // 외부 계정 충전 요청: account_id, charge_count, distribution_type만 필수
+            distribution_type: backendDistributionType,
+            account_id: formData.externalAccountId,
+            charge_count: formData.chargeCount,
+            notes: null,
+          }
+        : {
+            // 일반 블로그 배포 접수
+            company_name: formData.businessName,
+            distribution_type: backendDistributionType,
+            content_type: formData.contentType,
+            place_url: formData.placeUrl || '',
+            daily_count: formData.dailyCount,
+            total_count: totalCount,
+            total_days: operationDays,
+            total_points: totalCost,
+            start_date: formData.startDate ? format(formData.startDate, 'yyyy-MM-dd') : null,
+            keywords: formData.keywords ? formData.keywords.split(',').map(k => k.trim()).filter(k => k) : [],
+            guide_text: formData.guideline || null,
+            account_id: null,
+            charge_count: null,
+            notes: null,
+          };
 
       const response = await fetch('/api/submissions/blog', {
         method: 'POST',
@@ -318,11 +330,20 @@ export default function BlogDistributionPage() {
 
       const serviceName = service?.name;
 
-      toast({
-        title: `✅ ${serviceName} 접수 완료!`,
-        description: `차감 포인트: ${data.submission?.total_points?.toLocaleString() || totalCost.toLocaleString()}P`,
-        duration: 5000,
-      });
+      // 외부 계정 충전 요청과 일반 접수 구분하여 메시지 표시
+      if (isExternalAccountRequest) {
+        toast({
+          title: '✅ 외부 계정 충전 요청 완료!',
+          description: data.message || `계정 ID: ${formData.externalAccountId}, 충전 건수: ${formData.chargeCount}건`,
+          duration: 5000,
+        });
+      } else {
+        toast({
+          title: `✅ ${serviceName} 접수 완료!`,
+          description: `차감 포인트: ${data.submission?.total_points?.toLocaleString() || totalCost.toLocaleString()}P`,
+          duration: 5000,
+        });
+      }
 
       setTimeout(() => {
         router.push('/dashboard/blog-distribution/status');

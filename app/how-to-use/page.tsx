@@ -51,7 +51,7 @@ export default function HowToUsePage() {
       <div className="h-14 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-6">
         <div className="flex items-center gap-3">
           <Home className="h-5 w-5 text-gray-400" />
-          <span className="text-white font-medium">애드센스 마케팅 플랫폼 사용 설명서</span>
+          <span className="text-white font-medium">마자무 마케팅 플랫폼 사용 설명서</span>
         </div>
         <Link href="/">
           <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">

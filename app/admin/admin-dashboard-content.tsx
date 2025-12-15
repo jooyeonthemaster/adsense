@@ -140,7 +140,7 @@ export function AdminDashboardContent({ stats, cards, recentSubmissions, recentC
           <span className="text-gradient">관리자 대시보드</span>
         </h1>
         <p className="text-sm sm:text-base lg:text-lg text-muted-foreground">
-          애드센스 마케팅 플랫폼 관리 시스템
+          마자무 마케팅 플랫폼 관리 시스템
         </p>
       </motion.div>
 

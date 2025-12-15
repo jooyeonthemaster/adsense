@@ -83,6 +83,108 @@ export async function POST(request: NextRequest) {
       charge_count,
     } = body;
 
+    const supabase = await createClient();
+
+    // Get client's current points and approval status
+    const { data: client, error: clientError } = await supabase
+      .from('clients')
+      .select('points, auto_distribution_approved')
+      .eq('id', user.id)
+      .single();
+
+    if (clientError || !client) {
+      return NextResponse.json(
+        { error: '거래처 정보를 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+
+    // ========================================
+    // 외부 계정 충전 요청 (External Account Charge Request)
+    // - account_id와 charge_count만 있으면 됨
+    // - 포인트 차감 없이 충전 요청만 기록
+    // ========================================
+    const isExternalAccountRequest = account_id && charge_count && distribution_type === 'automation';
+
+    if (isExternalAccountRequest) {
+      // 외부 계정 충전 요청 권한 확인
+      if (!client.auto_distribution_approved) {
+        return NextResponse.json(
+          { error: '자동화 배포 외부 계정 충전은 승인된 회원만 사용할 수 있습니다. 관리자에게 문의하세요.' },
+          { status: 403 }
+        );
+      }
+
+      // 외부 계정 충전 요청 유효성 검사 (account_id, charge_count만 필수)
+      if (!account_id.trim()) {
+        return NextResponse.json(
+          { error: '계정 ID를 입력해주세요.' },
+          { status: 400 }
+        );
+      }
+
+      if (!charge_count || charge_count < 1) {
+        return NextResponse.json(
+          { error: '충전 건수를 1건 이상 입력해주세요.' },
+          { status: 400 }
+        );
+      }
+
+      // Generate submission number
+      const { data: submissionNumberData, error: snError } = await supabase
+        .rpc('generate_submission_number', { p_product_code: 'BD' });
+
+      if (snError) {
+        console.error('Error generating submission number:', snError);
+        return NextResponse.json(
+          { error: '접수번호 생성 중 오류가 발생했습니다.' },
+          { status: 500 }
+        );
+      }
+
+      // 외부 계정 충전 요청 저장 (포인트 차감 없음)
+      const { data: submission, error: submissionError } = await supabase
+        .from('blog_distribution_submissions')
+        .insert({
+          client_id: user.id,
+          submission_number: submissionNumberData,
+          company_name: `외부계정 충전요청 (${account_id})`,
+          distribution_type: 'automation',
+          content_type: 'review', // 기본값
+          place_url: '', // NOT NULL 제약 조건 때문에 빈 문자열 사용
+          daily_count: 0,
+          total_count: charge_count,
+          total_points: 0, // 충전 요청이므로 포인트 차감 없음
+          keywords: null,
+          notes: notes || null,
+          account_id: account_id,
+          charge_count: charge_count,
+          status: 'pending',
+        })
+        .select()
+        .single();
+
+      if (submissionError) {
+        console.error('Error creating external account submission:', submissionError);
+        return NextResponse.json(
+          { error: '충전 요청 생성 중 오류가 발생했습니다.' },
+          { status: 500 }
+        );
+      }
+
+      revalidatePath('/dashboard', 'layout');
+
+      return NextResponse.json({
+        success: true,
+        submission,
+        message: '외부 계정 충전 요청이 접수되었습니다.',
+      });
+    }
+
+    // ========================================
+    // 일반 블로그 배포 접수 (Regular Blog Distribution Submission)
+    // ========================================
+
     // Validation
     if (!company_name || !distribution_type || !content_type || daily_count === undefined) {
       return NextResponse.json(
@@ -121,32 +223,6 @@ export async function POST(request: NextRequest) {
         { error: '올바른 콘텐츠 타입이 아닙니다.' },
         { status: 400 }
       );
-    }
-
-    const supabase = await createClient();
-
-    // Get client's current points and approval status
-    const { data: client, error: clientError } = await supabase
-      .from('clients')
-      .select('points, auto_distribution_approved')
-      .eq('id', user.id)
-      .single();
-
-    if (clientError || !client) {
-      return NextResponse.json(
-        { error: '거래처 정보를 찾을 수 없습니다.' },
-        { status: 404 }
-      );
-    }
-
-    // Validate external account usage for automation distribution
-    if (account_id && distribution_type === 'automation') {
-      if (!client.auto_distribution_approved) {
-        return NextResponse.json(
-          { error: '자동화 배포 외부 계정 충전은 승인된 회원만 사용할 수 있습니다. 관리자에게 문의하세요.' },
-          { status: 403 }
-        );
-      }
     }
 
     // Get price for selected distribution type
