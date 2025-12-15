@@ -1,5 +1,244 @@
 # CHANGELOG - 애드센스 마케팅 상품 접수 시스템
 
+## 2025-12-16 20:00 - [UPDATE] 모든 상세 페이지 뒤로가기 버튼 통합 접수 현황으로 이동하도록 수정
+
+**Changed Files**:
+- app/dashboard/review/kmap/status/[id]/page.tsx (카카오맵 상세)
+- app/dashboard/review/visitor/status/[id]/page.tsx (네이버영수증 상세)
+- app/dashboard/reward/status/[id]/page.tsx (리워드 상세)
+- app/dashboard/blog-distribution/status/detail/[id]/page.tsx (블로그배포 상세)
+- app/dashboard/cafe/status/detail/[id]/page.tsx (카페침투 상세)
+- app/dashboard/experience/detail/[id]/page.tsx (체험단 상세)
+
+**Changes**:
+1. **뒤로가기 버튼 동작 변경**:
+   - 기존: 개별 상품 status 페이지로 이동 (`router.back()` 또는 개별 status 링크)
+   - 수정: 통합 접수 현황 페이지로 이동 (`/dashboard/submissions?category={}&product={}`)
+
+2. **각 상품별 product 파라미터 매핑 로직 추가**:
+   - 카카오맵: `product=kakaomap`
+   - 네이버영수증: `product=receipt`
+   - 리워드: `product=place`
+   - 블로그배포: distribution_type → product 매핑 (video→blog-video, place→blog-place 등)
+   - 카페침투: service_type → product 매핑 (cafe→infiltration-cafe, community→infiltration-community)
+   - 체험단: experience_type → product 매핑 (blog-experience→experience-blog 등)
+
+3. **누락된 뒤로가기 버튼 추가**:
+   - 블로그배포 상세 페이지: useRouter, Button, ArrowLeft 추가
+   - 카페침투 상세 페이지: useRouter, ArrowLeft 추가
+
+4. **버튼 텍스트 통일**:
+   - "뒤로가기" → "목록으로" (일관성)
+
+**Reason**:
+- 통합 접수 현황 페이지가 메인 진입점이 된 후, 상세 페이지에서 뒤로가기 시 개별 status 페이지로 이동하는 것이 사용자 흐름과 맞지 않음
+- 필터링된 카테고리/상품으로 돌아가야 사용자가 원하는 목록으로 바로 복귀 가능
+
+**Impact**:
+- 모든 상세 페이지에서 "목록으로" 버튼 클릭 시 통합 접수 현황 페이지의 해당 카테고리/상품 필터 뷰로 이동
+- 사용자 경험 개선: 일관된 네비게이션 흐름 제공
+
+---
+
+## 2025-12-16 19:30 - [FIX] 통합 접수 현황 페이지 상세보기 및 리포트 다운로드 버튼 404 오류 수정
+
+**Changed Files**:
+- components/dashboard/submissions/SubmissionTableRow.tsx (Before: 153 lines → After: 157 lines)
+- components/dashboard/submissions/SubmissionCard.tsx (Before: 159 lines → After: 167 lines)
+
+**Changes**:
+1. **상세보기 버튼 라우팅 수정**:
+   - 기존: 모든 비-체험단 상품에 `/detail/` 경로 추가
+   - 수정: 상품 타입별로 올바른 경로 생성
+   - `/detail/` 필요: blog, cafe
+   - `/detail/` 불필요: place, receipt, kakaomap, experience
+
+2. **리포트 다운로드 버튼 비활성화 조건 수정**:
+   - 기존: `submission.product_type !== 'experience'` (체험단만 제외)
+   - 수정: `!['place', 'experience'].includes(submission.product_type)` (리워드, 체험단 제외)
+
+**Reason**:
+- 각 상품별 상세 페이지 라우팅 구조 불일치로 인한 404 에러 발생
+- 리워드는 리포트 다운로드 API가 없는데 버튼이 활성화되어 클릭 시 오류 발생
+
+**Impact**:
+- 리워드, 네이버영수증, 카카오맵 상세보기 정상 작동
+- 리워드 리포트 다운로드 버튼 비활성화
+- 블로그배포, 카페침투, 네이버영수증, 카카오맵 리포트 다운로드 정상 작동
+
+---
+
+## 2025-12-16 - [REFACTOR] 침투 마케팅 카테고리 통합 (카페 + 커뮤니티)
+
+**Changed Files**:
+- config/submission-products.ts (카테고리 구조 변경)
+- app/dashboard/cafe/page.tsx (통합 폼 + 탭 네비게이션)
+- app/api/submissions/cafe/route.ts (service_type 추가)
+- components/layout/client-nav.tsx (네비게이션 업데이트)
+- hooks/dashboard/useAllSubmissions.ts (service_type 필터링)
+- lib/submission-utils.ts (service_type 처리 로직)
+- types/admin/submissions.ts (service_type 추가)
+- components/admin/cafe-marketing/CafeMarketingHeader.tsx (제목 변경)
+- app/admin/cafe-marketing/[id]/page.tsx (service_type 표시)
+- app/admin/data-management/page.tsx (카테고리명 변경)
+- supabase/migrations/20250118_cafe_marketing_add_service_type.sql (신규)
+
+**Changes**:
+1. **카테고리 재구조화**:
+   - `cafe` 카테고리 → `infiltration` 카테고리로 변경
+   - 아이콘: Coffee → Target
+   - 색상: amber → orange
+   - 하위 상품: `infiltration-cafe`, `infiltration-community`
+
+2. **통합 접수 폼**:
+   - 상단 탭 네비게이션으로 카페/커뮤니티 선택
+   - 동일한 폼 구조 공유 (업체명, 지역, 콘텐츠 등)
+   - `service_type` 필드로 구분 저장
+
+3. **데이터베이스 마이그레이션**:
+   - `cafe_marketing_submissions` 테이블에 `service_type` 컬럼 추가
+   - CHECK 제약조건: 'cafe' 또는 'community'만 허용
+   - 인덱스 생성으로 필터링 최적화
+
+4. **네비게이션 단순화**:
+   - `/dashboard/infiltration` 중간 페이지 삭제
+   - `/dashboard/cafe`로 직접 라우팅
+
+5. **관리자 페이지 업데이트**:
+   - 헤더 제목: "카페 침투 마케팅" → "침투 마케팅"
+   - 상세 페이지: service_type에 따라 동적 제목 표시
+   - 데이터 관리: "카페 침투" → "침투 마케팅"
+
+6. **유틸리티 함수 업데이트**:
+   - `getProductInfo`: service_type 기반 제품 정보 조회
+   - `getDetailInfo`: 동적 서비스 레이블 표시
+   - `useAllSubmissions`: service_type 필터링 로직 추가
+
+**Reason**:
+- 사용자 요청: 카페와 커뮤니티를 하나의 "침투 마케팅" 카테고리로 통합
+- UX 개선: 중복 페이지 제거, 일관된 접수 프로세스
+- 데이터 구조: 단일 테이블에서 service_type으로 구분 관리
+- 확장성: 향후 다른 침투 마케팅 유형 추가 용이
+
+**Impact**:
+- 클라이언트 대시보드: 침투 마케팅 카테고리 하나로 표시
+- 관리자 페이지: 기존 카페 마케팅 데이터 그대로 유지
+- 필터링: service_type 기반 세분화된 필터링 가능
+- 가이드: `cafe-marketing`, `community-marketing` productKey로 별도 등록 가능
+
+## 2025-12-15 - [REFACTOR] review/[type]/page.tsx 리뷰 마케팅 페이지 리팩토링
+
+**Changed Files**:
+- app/dashboard/review/[type]/page.tsx (Before: 1023 lines → After: 171 lines)
+- hooks/review/useReviewForm.ts (신규 - 348 lines)
+- components/dashboard/review-marketing/ServiceTypeSelector.tsx (신규 - 77 lines)
+- components/dashboard/review-marketing/PaymentInfoCard.tsx (신규 - 136 lines)
+- components/dashboard/review-marketing/SubmissionInfoCard.tsx (신규 - 256 lines)
+- components/dashboard/review-marketing/VisitorOptionsCard.tsx (신규 - 139 lines)
+- components/dashboard/review-marketing/KmapOptionsCard.tsx (신규 - 135 lines)
+- components/dashboard/review-marketing/EmailConfirmDialog.tsx (신규 - 115 lines)
+- components/dashboard/review-marketing/constants.ts (신규 - 64 lines)
+- components/dashboard/review-marketing/index.ts (신규 - 18 lines)
+
+**Changes**:
+1. **커스텀 훅 분리 (useReviewForm)**:
+   - 폼 상태 관리 (visitor/kmap 폼 데이터)
+   - 가격 정보 fetch 로직
+   - URL 변경 핸들러 (네이버/카카오)
+   - 검증 및 제출 로직
+   - 계산된 값 (totalDays, totalCount, totalCost)
+   - 주말/금요일 시작일 계산 로직
+
+2. **UI 컴포넌트 분리**:
+   - ServiceTypeSelector: 리뷰 서비스 선택 카드
+   - PaymentInfoCard: 결제 정보 표시 카드
+   - SubmissionInfoCard: 접수 정보 입력 (업체명, URL, 날짜 등)
+   - VisitorOptionsCard: 네이버 영수증 옵션 (사진, 원고, 서류 안내)
+   - KmapOptionsCard: 카카오맵 옵션 (사진 비율, 별점, 원고)
+   - EmailConfirmDialog: 이메일 서류 확인 다이얼로그
+
+3. **상수 분리 (constants.ts)**:
+   - createServices: 서비스 목록 생성 함수
+   - INITIAL_VISITOR_FORM: 초기 방문자 폼 데이터
+   - INITIAL_KMAP_FORM: 초기 카카오맵 폼 데이터
+   - SUPPORT_EMAIL: 지원 이메일 상수
+
+4. **메인 페이지 간소화**:
+   - 1023줄 → 171줄로 83% 감소
+   - 컴포넌트 조합 + 라우팅 로직만 담당
+   - 모든 상태/로직은 커스텀 훅으로 위임
+
+**Reason**:
+- 500줄 제한 규칙 준수
+- 코드 재사용성 향상 (커스텀 훅, 컴포넌트)
+- 유지보수성 개선
+- 관심사 분리 원칙 적용
+
+**Impact**:
+- 기능 변경 없음 (100% 동일한 동작)
+- 모든 파일이 500줄 미만으로 분리됨
+- 컴포넌트와 훅이 재사용 가능한 모듈로 분리됨
+- types/review-marketing/types.ts의 기존 타입 재사용
+
+---
+
+## 2025-12-15 - [REFACTOR] DailyRecordsBulkUpload 컴포넌트 대규모 리팩토링
+
+**Changed Files**:
+- components/admin/data-management/DailyRecordsBulkUpload.tsx (Before: 1193 lines → After: 127 lines)
+- components/admin/data-management/types.ts (신규 - 99 lines)
+- components/admin/data-management/constants.ts (신규 - 77 lines)
+- components/admin/data-management/index.ts (신규 - 41 lines)
+- components/admin/data-management/utils/template-generator.ts (신규 - 381 lines)
+- components/admin/data-management/utils/excel-parser.ts (신규 - 347 lines)
+- components/admin/data-management/utils/api.ts (신규 - 89 lines)
+- components/admin/data-management/utils/index.ts (신규 - 3 lines)
+- components/admin/data-management/components/RecordTableRow.tsx (신규 - 187 lines)
+- components/admin/data-management/components/RecordTableHeader.tsx (신규 - 93 lines)
+- components/admin/data-management/components/ValidationPreview.tsx (신규 - 115 lines)
+- components/admin/data-management/components/FileUploadSection.tsx (신규 - 58 lines)
+- components/admin/data-management/components/TemplateDownloadSection.tsx (신규 - 26 lines)
+- components/admin/data-management/components/DeployResultAlert.tsx (신규 - 57 lines)
+- components/admin/data-management/components/RecordsTable.tsx (신규 - 27 lines)
+- components/admin/data-management/components/index.ts (신규 - 7 lines)
+
+**Changes**:
+1. **타입 및 상수 분리**:
+   - types.ts: 모든 인터페이스 및 타입 정의
+   - constants.ts: 카테고리, 상품, 시트 매핑 상수
+
+2. **유틸리티 함수 분리**:
+   - template-generator.ts: 엑셀 템플릿 생성 로직
+   - excel-parser.ts: 엑셀 파싱 및 검증 로직
+   - api.ts: 배포 API 호출 로직
+
+3. **UI 컴포넌트 분리**:
+   - TemplateDownloadSection: 템플릿 다운로드 섹션
+   - FileUploadSection: 파일 업로드 섹션
+   - ValidationPreview: 검증 결과 미리보기 (탭 + 테이블 + 배포 버튼)
+   - DeployResultAlert: 배포 결과 알림
+   - RecordsTable: 레코드 테이블 래퍼
+   - RecordTableHeader: 타입별 테이블 헤더
+   - RecordTableRow: 타입별 테이블 행
+
+4. **메인 컴포넌트 간소화**:
+   - 1193줄 → 127줄로 89% 감소
+   - 상태 관리 + 핸들러 + 렌더링만 담당
+   - useCallback으로 성능 최적화
+
+**Reason**:
+- 500줄 제한 규칙 준수
+- 코드 재사용성 향상
+- 유지보수성 개선
+- 관심사 분리 원칙 적용
+
+**Impact**:
+- 기능 변경 없음 (100% 동일한 동작)
+- 모든 파일이 500줄 미만으로 분리됨
+- 타입, 상수, 유틸리티, 컴포넌트가 재사용 가능한 모듈로 분리됨
+
+---
+
 ## 2025-12-09 - [FIX] 블로그 배포 일별 기록을 콘텐츠 발행일 기준으로 변경
 
 **Changed Files**:

@@ -1,4 +1,4 @@
-import { TrendingUp, Calendar, DollarSign } from 'lucide-react';
+import { TrendingUp, Calendar } from 'lucide-react';
 import { AllSubmissionsStats } from '@/types/submission';
 
 interface StatsCardsProps {
@@ -7,7 +7,7 @@ interface StatsCardsProps {
 
 export function StatsCards({ stats }: StatsCardsProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
       <div className="p-4 rounded-lg border border-gray-200 bg-white shadow-sm">
         <div className="flex items-center justify-between">
           <div>
@@ -37,18 +37,6 @@ export function StatsCards({ stats }: StatsCardsProps) {
             <p className="text-2xl font-bold text-emerald-900">{stats.completed}</p>
           </div>
           <TrendingUp className="h-8 w-8 text-emerald-400" />
-        </div>
-      </div>
-
-      <div className="p-4 rounded-lg border border-purple-200 bg-purple-50 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-purple-600 mb-1">총 비용</p>
-            <p className="text-2xl font-bold text-purple-900">
-              {stats.total_cost.toLocaleString()}P
-            </p>
-          </div>
-          <DollarSign className="h-8 w-8 text-purple-400" />
         </div>
       </div>
     </div>

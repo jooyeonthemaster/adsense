@@ -13,18 +13,11 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import {
   LogOut,
   Menu,
-  ChevronDown,
   Gift,
   MessageSquare,
   Users,
-  Coffee,
   FileText,
   ClipboardList,
   ChevronLeft,
@@ -33,6 +26,7 @@ import {
   AlertCircle,
   ArrowRight,
   X,
+  Target,
 } from 'lucide-react';
 import Image from 'next/image';
 import {
@@ -42,64 +36,39 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-// 네비게이션 메뉴 구조 (요구사항.txt 기준)
+// 네비게이션 메뉴 구조 (개편됨)
+// - 모든 카테고리: 클릭 시 바로 해당 폼 페이지로 이동
+// - 폼 페이지 내에서 서비스 타입 선택 가능
 const navigationSections = [
   {
     id: 'reward',
     title: '리워드',
     icon: Gift,
-    collapsible: true,
-    items: [
-      { name: '리워드 접수', href: '/dashboard/reward/submit', icon: Gift },
-      { name: '접수 현황 확인', href: '/dashboard/reward/status', icon: ClipboardList },
-    ],
+    href: '/dashboard/reward/submit',
   },
   {
     id: 'review',
     title: '리뷰 마케팅',
     icon: MessageSquare,
-    collapsible: true,
-    items: [
-      { name: '네이버 영수증', href: '/dashboard/review/visitor', icon: MessageSquare },
-      { name: '네이버 영수증 접수 현황', href: '/dashboard/review/visitor/status', icon: ClipboardList },
-      { name: '카카오맵', href: '/dashboard/review/kmap', icon: MessageSquare },
-      { name: '카카오맵 접수 현황', href: '/dashboard/review/kmap/status', icon: ClipboardList },
-    ],
+    href: '/dashboard/review',
   },
   {
     id: 'experience',
     title: '체험단 마케팅',
     icon: Users,
-    collapsible: true,
-    items: [
-      { name: '블로그 체험단', href: '/dashboard/experience/blog', icon: Users },
-      { name: '샤오홍슈(중국인 체험단)', href: '/dashboard/experience/xiaohongshu', icon: Users },
-      { name: '블로그 기자단', href: '/dashboard/experience/journalist', icon: Users },
-      { name: '블로그 인플루언서', href: '/dashboard/experience/influencer', icon: Users },
-      { name: '체험단 접수 현황', href: '/dashboard/experience/status', icon: ClipboardList },
-    ],
+    href: '/dashboard/experience',
   },
   {
     id: 'blog-distribution',
     title: '블로그 배포',
     icon: FileText,
-    collapsible: true,
-    items: [
-      { name: '영상 배포', href: '/dashboard/blog-distribution/video', icon: FileText },
-      { name: '자동화 배포', href: '/dashboard/blog-distribution/auto', icon: FileText },
-      { name: '리뷰어 배포', href: '/dashboard/blog-distribution/reviewer', icon: FileText },
-      { name: '블로그 배포 접수 현황', href: '/dashboard/blog-distribution/status', icon: ClipboardList },
-    ],
+    href: '/dashboard/blog-distribution',
   },
   {
-    id: 'cafe',
-    title: '카페침투 마케팅',
-    icon: Coffee,
-    collapsible: true,
-    items: [
-      { name: '카페 마케팅 접수', href: '/dashboard/cafe', icon: Coffee },
-      { name: '카페 마케팅 접수 현황', href: '/dashboard/cafe/status', icon: ClipboardList },
-    ],
+    id: 'infiltration',
+    title: '침투 마케팅',
+    icon: Target,
+    href: '/dashboard/cafe',
   },
 ];
 
@@ -131,7 +100,6 @@ function NavContent({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [openSections, setOpenSections] = useState<string[]>(['reward', 'review', 'experience', 'blog-distribution']);
   const [showProfileTutorial, setShowProfileTutorial] = useState(true);
 
   const handleLogout = async () => {
@@ -142,14 +110,6 @@ function NavContent({
     } catch (error) {
       console.error('Logout failed:', error);
     }
-  };
-
-  const toggleSection = (sectionId: string) => {
-    setOpenSections((prev) =>
-      prev.includes(sectionId)
-        ? prev.filter((id) => id !== sectionId)
-        : [...prev, sectionId]
-    );
   };
 
   return (
@@ -306,149 +266,38 @@ function NavContent({
         <TooltipProvider delayDuration={300}>
           {navigationSections.map((section) => {
             const SectionIcon = section.icon;
+            const isActive = pathname === section.href || pathname?.startsWith(section.href + '/');
 
-            // 카페침투 마케팅은 collapsible이 아닌 단일 링크
-            if (!section.collapsible && 'href' in section && section.href) {
-              const isActive = pathname === section.href || pathname?.startsWith(section.href + '/');
-
-              const linkContent = (
-                <Link
-                  key={section.id}
-                  href={section.href}
-                  onClick={() => onClose?.()}
-                  className={cn(
-                    'flex items-center gap-2 px-3 py-2 text-xs transition-colors',
-                    isActive
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-700 hover:bg-gray-100',
-                    isCollapsed && 'justify-center'
-                  )}
-                >
-                  <SectionIcon className="h-4 w-4 flex-shrink-0" />
-                  {!isCollapsed && section.title}
-                </Link>
-              );
-
-              if (isCollapsed) {
-                return (
-                  <Tooltip key={section.id}>
-                    <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                    <TooltipContent side="right">
-                      <p>{section.title}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              }
-
-              return linkContent;
-            }
-
-            // collapsible 섹션
-            const isOpen = openSections.includes(section.id);
+            const linkContent = (
+              <Link
+                key={section.id}
+                href={section.href}
+                onClick={() => onClose?.()}
+                className={cn(
+                  'flex items-center gap-2 px-3 py-2.5 text-xs transition-colors',
+                  isActive
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100',
+                  isCollapsed && 'justify-center'
+                )}
+              >
+                <SectionIcon className="h-4 w-4 flex-shrink-0" />
+                {!isCollapsed && <span className="font-medium">{section.title}</span>}
+              </Link>
+            );
 
             if (isCollapsed) {
-              // collapsed 상태에서는 서브메뉴를 아이콘 클릭 시 tooltip으로 표시
               return (
                 <Tooltip key={section.id}>
-                  <TooltipTrigger asChild>
-                    <div className="px-3 py-2 flex justify-center hover:bg-gray-100 transition-colors cursor-pointer">
-                      <SectionIcon className="h-4 w-4 text-blue-600" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="p-0">
-                    <div className="py-1">
-                      <p className="px-3 py-1.5 text-xs font-semibold text-gray-500">{section.title}</p>
-                      {section.items?.map((item) => {
-                        // 다른 항목이 더 구체적으로 매칭되는지 확인
-                        const hasMoreSpecificMatch = section.items?.some(
-                          (other) =>
-                            other.href !== item.href &&
-                            pathname?.startsWith(other.href) &&
-                            other.href.length > item.href.length
-                        );
-                        const isActive =
-                          pathname === item.href ||
-                          (pathname?.startsWith(item.href + '/') && !hasMoreSpecificMatch);
-                        const ItemIcon = item.icon;
-
-                        return (
-                          <Link
-                            key={item.name}
-                            href={item.href}
-                            onClick={() => onClose?.()}
-                            className={cn(
-                              'flex items-center gap-2 px-3 py-1.5 text-xs transition-colors w-48',
-                              isActive
-                                ? 'bg-blue-600 text-white'
-                                : 'text-gray-700 hover:bg-gray-100'
-                            )}
-                          >
-                            <ItemIcon className="h-3.5 w-3.5" />
-                            {item.name}
-                          </Link>
-                        );
-                      })}
-                    </div>
+                  <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>{section.title}</p>
                   </TooltipContent>
                 </Tooltip>
               );
             }
 
-            return (
-              <Collapsible
-                key={section.id}
-                open={isOpen}
-                onOpenChange={() => toggleSection(section.id)}
-              >
-                <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between px-3 py-2 hover:bg-gray-100 transition-colors">
-                    <div className="flex items-center gap-1.5">
-                      <SectionIcon className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                      <span className="text-xs font-medium text-gray-900">{section.title}</span>
-                    </div>
-                    <ChevronDown
-                      className={cn(
-                        'h-3.5 w-3.5 text-gray-500 transition-transform flex-shrink-0',
-                        isOpen && 'rotate-180'
-                      )}
-                    />
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="bg-gray-50">
-                  {section.items?.map((item) => {
-                    // 다른 항목이 더 구체적으로 매칭되는지 확인
-                    const hasMoreSpecificMatch = section.items?.some(
-                      (other) =>
-                        other.href !== item.href &&
-                        pathname?.startsWith(other.href) &&
-                        other.href.length > item.href.length
-                    );
-                    // 정확히 일치하거나, 하위 경로이면서 더 구체적인 매칭이 없을 때만 활성화
-                    const isActive =
-                      pathname === item.href ||
-                      (pathname?.startsWith(item.href + '/') && !hasMoreSpecificMatch);
-                    const ItemIcon = item.icon;
-
-                    return (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        onClick={() => onClose?.()}
-                        className={cn(
-                          'flex items-center gap-1.5 pl-8 pr-3 py-1.5 text-xs transition-colors',
-                          isActive
-                            ? 'bg-blue-600 text-white'
-                            : 'text-gray-700 hover:bg-gray-200'
-                        )}
-                      >
-                        <ItemIcon className="h-3.5 w-3.5 flex-shrink-0" />
-                        {item.name}
-                      </Link>
-                    );
-                  })}
-                </CollapsibleContent>
-              </Collapsible>
-            );
+            return linkContent;
           })}
         </TooltipProvider>
       </nav>

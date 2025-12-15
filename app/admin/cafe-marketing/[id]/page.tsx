@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,309 +22,33 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ArrowLeft, Loader2, ExternalLink, FileSpreadsheet, Download, Upload } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { CafeContentBasedCalendar } from '@/components/admin/cafe-marketing/CafeContentBasedCalendar';
-import * as XLSX from 'xlsx';
-
-interface CafeMarketingDetail {
-  id: string;
-  client_id: string;
-  company_name: string;
-  place_url: string | null;
-  content_type: 'review' | 'info';
-  region: string;
-  cafe_details: Array<{ name: string; count: number }>;
-  total_count: number;
-  has_photo: boolean;
-  guideline: string | null;
-  photo_urls: string[] | null;
-  script_status: 'pending' | 'writing' | 'completed';
-  script_url: string | null;
-  total_points: number;
-  status: string;
-  created_at: string;
-  clients?: {
-    company_name: string;
-    contact_person: string | null;
-    email: string | null;
-    phone: string | null;
-  };
-}
-
-interface DailyRecord {
-  record_date: string;
-  completed_count: number;
-  notes?: string;
-}
-
-interface ContentItem {
-  id: string;
-  submission_id: string;
-  upload_order: number;
-  post_title: string | null;
-  published_date: string | null;
-  status: string | null;
-  post_url: string | null;
-  writer_id: string | null;
-  cafe_name: string | null;
-  notes: string | null;
-  created_at: string;
-}
-
-const contentStatusConfig: Record<string, { label: string; variant: 'outline' | 'default' | 'secondary' | 'destructive' }> = {
-  pending: { label: '대기', variant: 'outline' },
-  approved: { label: '승인됨', variant: 'default' },
-  revision_requested: { label: '수정요청', variant: 'destructive' },
-};
-
-const statusConfig: Record<string, { label: string; variant: 'outline' | 'default' | 'secondary' | 'destructive' }> = {
-  pending: { label: '확인중', variant: 'outline' },
-  approved: { label: '접수완료', variant: 'default' },
-  script_writing: { label: '원고작성중', variant: 'default' },
-  script_completed: { label: '원고완료', variant: 'default' },
-  in_progress: { label: '구동중', variant: 'default' },
-  completed: { label: '완료', variant: 'secondary' },
-  cancelled: { label: '중단', variant: 'destructive' },
-  as_in_progress: { label: 'AS 진행 중', variant: 'default' },
-};
-
-const contentTypeConfig: Record<string, string> = {
-  review: '후기성',
-  info: '정보성',
-};
-
-const scriptStatusConfig: Record<string, { label: string }> = {
-  pending: { label: '대기중' },
-  writing: { label: '작성중' },
-  completed: { label: '완료' },
-};
+import { useCafeMarketingDetail } from '@/hooks/admin/useCafeMarketingDetail';
+import {
+  contentStatusConfig,
+  statusConfig,
+  contentTypeConfig,
+  scriptStatusConfig,
+} from '@/components/admin/cafe-marketing-detail';
 
 export default function CafeMarketingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
   const router = useRouter();
-  const { toast } = useToast();
 
-  const [loading, setLoading] = useState(true);
-  const [submission, setSubmission] = useState<CafeMarketingDetail | null>(null);
-  const [dailyRecords, setDailyRecords] = useState<DailyRecord[]>([]);
-  const [contentItems, setContentItems] = useState<ContentItem[]>([]);
-  const [activeTab, setActiveTab] = useState('overview');
-  const [uploading, setUploading] = useState(false);
-
-  useEffect(() => {
-    fetchSubmissionDetail();
-    fetchDailyRecords();
-    fetchContentItems();
-  }, [unwrappedParams.id]);
-
-  const fetchSubmissionDetail = async () => {
-    try {
-      const response = await fetch(`/api/admin/cafe-marketing/${unwrappedParams.id}`);
-      if (!response.ok) throw new Error('Failed to fetch');
-
-      const data = await response.json();
-      setSubmission(data.submission);
-    } catch (error) {
-      console.error('Error fetching submission:', error);
-      toast({
-        title: '오류',
-        description: '접수 정보를 불러오는데 실패했습니다.',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchDailyRecords = async () => {
-    try {
-      const response = await fetch(`/api/admin/cafe-marketing/${unwrappedParams.id}/daily-records`);
-      if (response.ok) {
-        const data = await response.json();
-        setDailyRecords(data.records || []);
-      }
-    } catch (error) {
-      console.error('Error fetching daily records:', error);
-    }
-  };
-
-  const fetchContentItems = async () => {
-    try {
-      const response = await fetch(`/api/admin/cafe-marketing/${unwrappedParams.id}/content-items`);
-      if (response.ok) {
-        const data = await response.json();
-        setContentItems(data.contentItems || []);
-      }
-    } catch (error) {
-      console.error('Error fetching content items:', error);
-    }
-  };
-
-  // 엑셀 파일 업로드 핸들러
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
-
-      if (jsonData.length === 0) {
-        toast({
-          title: '오류',
-          description: '엑셀 파일에 데이터가 없습니다.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      // 엑셀 컬럼 매핑 (한글/영문 지원)
-      const items = jsonData.map((row) => ({
-        post_title: row['작성제목'] || row['제목'] || row['post_title'] || '',
-        published_date: row['발행일'] || row['published_date'] || row['날짜'] || '',
-        status: row['상태'] || row['status'] || '대기',
-        post_url: row['리뷰링크'] || row['글링크'] || row['post_url'] || row['URL'] || '',
-        writer_id: row['작성아이디'] || row['작성 아이디'] || row['writer_id'] || '',
-        cafe_name: row['카페명'] || row['카페'] || row['cafe_name'] || '',
-        notes: row['메모'] || row['notes'] || row['비고'] || '',
-      }));
-
-      // API 호출
-      const response = await fetch(`/api/admin/cafe-marketing/${unwrappedParams.id}/content-items`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '업로드 실패');
-      }
-
-      const result = await response.json();
-      toast({
-        title: '업로드 완료',
-        description: result.message,
-      });
-      fetchContentItems();
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      toast({
-        title: '업로드 오류',
-        description: error instanceof Error ? error.message : '파일 업로드 중 오류가 발생했습니다.',
-        variant: 'destructive',
-      });
-    } finally {
-      setUploading(false);
-      // 파일 입력 초기화
-      event.target.value = '';
-    }
-  };
-
-  // 엑셀 다운로드 핸들러
-  const handleDownloadExcel = () => {
-    if (!submission) return;
-
-    const getStatusLabel = (status: string | null) => {
-      if (!status) return '대기';
-      return contentStatusConfig[status]?.label || status;
-    };
-
-    const excelData = contentItems.map((item) => ({
-      '접수번호': (submission as any).submission_number || '',
-      '업체명': submission.company_name || '',
-      '작성제목': item.post_title || '',
-      '발행일': item.published_date || '',
-      '상태': getStatusLabel(item.status),
-      '리뷰링크': item.post_url || '',
-      '작성아이디': item.writer_id || '',
-      '카페명': item.cafe_name || '',
-      '메모': item.notes || '',
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(excelData);
-    ws['!cols'] = [
-      { wch: 18 },  // 접수번호
-      { wch: 20 },  // 업체명
-      { wch: 40 },  // 작성제목
-      { wch: 12 },  // 발행일
-      { wch: 10 },  // 상태
-      { wch: 50 },  // 리뷰링크
-      { wch: 20 },  // 작성아이디
-      { wch: 20 },  // 카페명
-      { wch: 30 },  // 메모
-    ];
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, '콘텐츠 목록');
-    XLSX.writeFile(wb, `카페마케팅_${submission.company_name}_콘텐츠.xlsx`);
-  };
-
-  // 템플릿 다운로드 핸들러
-  const handleDownloadTemplate = () => {
-    const templateData = [
-      {
-        '접수번호': 'CM-2025-0001',
-        '업체명': '예시업체',
-        '작성제목': '예시 제목입니다',
-        '발행일': '2025-01-01',
-        '상태': '대기',
-        '리뷰링크': 'https://cafe.naver.com/...',
-        '작성아이디': 'writer123',
-        '카페명': '강남맘카페',
-        '메모': '',
-      },
-    ];
-
-    const ws = XLSX.utils.json_to_sheet(templateData);
-    ws['!cols'] = [
-      { wch: 18 },
-      { wch: 20 },
-      { wch: 40 },
-      { wch: 12 },
-      { wch: 10 },
-      { wch: 50 },
-      { wch: 20 },
-      { wch: 20 },
-      { wch: 30 },
-    ];
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, '템플릿');
-    XLSX.writeFile(wb, '카페마케팅_콘텐츠_템플릿.xlsx');
-  };
-
-  const handleStatusChange = async (newStatus: string) => {
-    try {
-      const response = await fetch(`/api/admin/cafe-marketing/${unwrappedParams.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!response.ok) throw new Error('Failed to update status');
-
-      toast({
-        title: '상태 변경 완료',
-        description: '상태가 변경되었습니다.',
-      });
-      fetchSubmissionDetail();
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        title: '오류',
-        description: '상태 변경에 실패했습니다.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  // 콘텐츠 기반 진행률 계산
-  const totalCompletedCount = contentItems.length;
-  const completionRate = submission ? Math.round((totalCompletedCount / submission.total_count) * 100) : 0;
+  const {
+    loading,
+    submission,
+    contentItems,
+    activeTab,
+    uploading,
+    totalCompletedCount,
+    completionRate,
+    setActiveTab,
+    handleFileUpload,
+    handleDownloadExcel,
+    handleDownloadTemplate,
+    handleStatusChange,
+  } = useCafeMarketingDetail(unwrappedParams.id);
 
   if (loading) {
     return (
@@ -354,7 +78,9 @@ export default function CafeMarketingDetailPage({ params }: { params: Promise<{ 
             </Button>
             <div>
               <h1 className="text-2xl font-bold">{submission.company_name}</h1>
-              <p className="text-sm text-muted-foreground">카페 침투 마케팅 상세 정보</p>
+              <p className="text-sm text-muted-foreground">
+                {submission.service_type === 'community' ? '커뮤니티' : '카페 침투'} 마케팅 상세 정보
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">

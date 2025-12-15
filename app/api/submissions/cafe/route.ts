@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
     const user = await requireAuth(['client']);
     const body = await request.json();
     const {
+      service_type,
       company_name,
       place_url,
       content_type,
@@ -84,9 +85,18 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validation
-    if (!company_name || !content_type || !region || !cafe_details || !Array.isArray(cafe_details)) {
+    if (!service_type || !company_name || !content_type || !region || !cafe_details || !Array.isArray(cafe_details)) {
       return NextResponse.json(
         { error: '필수 항목을 모두 입력해주세요.' },
+        { status: 400 }
+      );
+    }
+
+    // Validate service type
+    const validServiceTypes = ['cafe', 'community'];
+    if (!validServiceTypes.includes(service_type)) {
+      return NextResponse.json(
+        { error: '올바른 서비스 타입이 아닙니다.' },
         { status: 400 }
       );
     }
@@ -208,6 +218,7 @@ export async function POST(request: NextRequest) {
       .insert({
         client_id: user.id,
         submission_number: submissionNumberData,
+        service_type,
         company_name,
         place_url: place_url || null,
         content_type,
@@ -241,6 +252,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create point transaction record
+    const serviceLabel = service_type === 'cafe' ? '카페 침투' : '커뮤니티';
     await supabase.from('point_transactions').insert({
       client_id: user.id,
       transaction_type: 'deduct',
@@ -248,7 +260,7 @@ export async function POST(request: NextRequest) {
       balance_after: newBalance,
       reference_type: 'cafe_submission',
       reference_id: submission.id,
-      description: `카페 침투 마케팅 접수 (${company_name} - ${region})`,
+      description: `${serviceLabel} 마케팅 접수 (${company_name} - ${region})`,
     });
 
     // Revalidate all dashboard pages to show updated points immediately

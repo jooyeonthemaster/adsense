@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,222 +32,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, ExternalLink, Loader2, MoreVertical, Eye, List, Grid3x3, Building2, ChevronDown, CalendarIcon, X, Copy, Check } from 'lucide-react';
+import { Search, ExternalLink, Loader2, Eye, List, Grid3x3, Building2, ChevronDown, CalendarIcon, X, Copy, Check, MoreVertical } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { useToast } from '@/hooks/use-toast';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-
-interface PlaceSubmission {
-  id: string;
-  submission_number?: string;
-  client_id: string;
-  company_name: string;
-  place_url: string;
-  place_mid: string;
-  daily_count: number;
-  total_days: number;
-  total_points: number;
-  status: string;
-  created_at: string;
-  start_date: string | null;
-  notes: string | null;
-  completed_count?: number;
-  current_day?: number;
-  progress_percentage?: number;
-  clients?: {
-    company_name: string;
-    contact_person: string | null;
-    email: string | null;
-  };
-}
-
-const statusConfig: Record<string, { label: string; variant: 'outline' | 'default' | 'secondary' | 'destructive' }> = {
-  pending: { label: '확인중', variant: 'outline' },
-  approved: { label: '접수완료', variant: 'default' },
-  in_progress: { label: '구동중', variant: 'default' },
-  completed: { label: '완료', variant: 'secondary' },
-  cancelled: { label: '중단됨', variant: 'destructive' },
-  as_in_progress: { label: 'AS 진행 중', variant: 'default' },
-};
+import { useRewardManagement } from '@/hooks/admin/useRewardManagement';
+import { statusConfig } from '@/components/admin/reward-management';
 
 export default function RewardManagementPage() {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [submissions, setSubmissions] = useState<PlaceSubmission[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  const copyToClipboard = async (submissionNumber: string) => {
-    try {
-      await navigator.clipboard.writeText(submissionNumber);
-      setCopiedId(submissionNumber);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch (error) {
-      console.error('Failed to copy:', error);
-    }
-  };
-
-  // View mode states
-  const [viewMode, setViewMode] = useState<'list' | 'group'>('list');
-  const [groupBy, setGroupBy] = useState<'client'>('client');
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-
-  // Calendar filter states
-  const [createdDateFilter, setCreatedDateFilter] = useState<Date | undefined>();
-  const [startDateFilter, setStartDateFilter] = useState<Date | undefined>();
-
-  useEffect(() => {
-    fetchSubmissions();
-  }, []);
-
-  const fetchSubmissions = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/admin/reward');
-      if (!response.ok) throw new Error('Failed to fetch');
-
-      const data = await response.json();
-      setSubmissions(data.submissions || []);
-    } catch (error) {
-      console.error('Error fetching reward submissions:', error);
-      toast({
-        variant: 'destructive',
-        title: '오류',
-        description: '데이터를 불러오는데 실패했습니다.',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStatusChange = async (submissionId: string, newStatus: string) => {
-    try {
-      const response = await fetch(`/api/admin/reward/${submissionId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update status');
-      }
-
-      toast({
-        title: '상태 변경 완료',
-        description: '접수 상태가 변경되었습니다.',
-      });
-
-      await fetchSubmissions();
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        variant: 'destructive',
-        title: '오류',
-        description: '상태 변경 중 오류가 발생했습니다.',
-      });
-    }
-  };
-
-  // Group toggle function
-  const toggleGroup = (groupName: string) => {
-    setExpandedGroups((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(groupName)) {
-        newSet.delete(groupName);
-      } else {
-        newSet.add(groupName);
-      }
-      return newSet;
-    });
-  };
-
-  const filteredSubmissions = submissions.filter((sub) => {
-    const matchesSearch =
-      sub.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sub.place_mid?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sub.clients?.company_name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
-
-    // 접수일 필터
-    let matchesCreatedDate = true;
-    if (createdDateFilter) {
-      const filterStart = new Date(createdDateFilter);
-      filterStart.setHours(0, 0, 0, 0);
-      const filterEnd = new Date(createdDateFilter);
-      filterEnd.setHours(23, 59, 59, 999);
-      const createdAt = new Date(sub.created_at);
-      matchesCreatedDate = createdAt >= filterStart && createdAt <= filterEnd;
-    }
-
-    // 구동일 필터 (선택한 날짜가 구동 기간 내에 포함되는지 확인)
-    let matchesStartDate = true;
-    if (startDateFilter) {
-      const selectedDate = new Date(startDateFilter);
-      selectedDate.setHours(0, 0, 0, 0);
-
-      // 구동 시작일
-      const runStartDate = sub.start_date ? new Date(sub.start_date) : new Date(sub.created_at);
-      runStartDate.setHours(0, 0, 0, 0);
-
-      // 구동 종료일 = 시작일 + (구동일수 - 1)
-      const runEndDate = new Date(runStartDate);
-      runEndDate.setDate(runEndDate.getDate() + (sub.total_days || 1) - 1);
-      runEndDate.setHours(23, 59, 59, 999);
-
-      // 선택한 날짜가 구동 기간 내에 있는지 확인
-      matchesStartDate = selectedDate >= runStartDate && selectedDate <= runEndDate;
-    }
-
-    return matchesSearch && matchesStatus && matchesCreatedDate && matchesStartDate;
-  });
-
-  // Grouped data generation
-  const groupedData = () => {
-    const groups = new Map<string, PlaceSubmission[]>();
-
-    filteredSubmissions.forEach((sub) => {
-      const key = sub.clients?.company_name || '거래처 없음';
-
-      if (!groups.has(key)) {
-        groups.set(key, []);
-      }
-      groups.get(key)!.push(sub);
-    });
-
-    return Array.from(groups.entries()).map(([name, items]) => ({
-      name,
-      items,
-      totalPoints: items.reduce((sum, item) => sum + item.total_points, 0),
-      count: items.length,
-      inProgress: items.filter(i => ['pending', 'in_progress', 'approved'].includes(i.status)).length,
-      completed: items.filter(i => i.status === 'completed').length,
-    }));
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-  };
-
-  const stats = {
-    total: submissions.length,
-    pending: submissions.filter(s => s.status === 'pending').length,
-    in_progress: submissions.filter(s => s.status === 'in_progress' || s.status === 'approved').length,
-    completed: submissions.filter(s => s.status === 'completed').length,
-  };
+  const {
+    loading,
+    searchQuery,
+    statusFilter,
+    copiedId,
+    viewMode,
+    expandedGroups,
+    createdDateFilter,
+    startDateFilter,
+    filteredSubmissions,
+    groupedData,
+    stats,
+    setSearchQuery,
+    setStatusFilter,
+    setViewMode,
+    setCreatedDateFilter,
+    setStartDateFilter,
+    handleStatusChange,
+    copyToClipboard,
+    toggleGroup,
+    formatDate,
+  } = useRewardManagement();
 
   if (loading) {
     return (
@@ -257,6 +76,8 @@ export default function RewardManagementPage() {
       </div>
     );
   }
+
+  const grouped = groupedData;
 
   return (
     <div className="space-y-6">
@@ -278,8 +99,8 @@ export default function RewardManagementPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>확인중</CardDescription>
-            <CardTitle className="text-3xl text-amber-600">{stats.pending}</CardTitle>
+            <CardDescription>총 비용</CardDescription>
+            <CardTitle className="text-3xl">{stats.total_cost.toLocaleString()}P</CardTitle>
           </CardHeader>
         </Card>
         <Card>
@@ -547,9 +368,9 @@ export default function RewardManagementPage() {
       )}
 
       {/* Group View */}
-      {viewMode === 'group' && (
+      {viewMode === 'group' && grouped && (
         <div className="space-y-4">
-          {groupedData().map((group) => (
+          {grouped.map((group) => (
             <Collapsible
               key={group.name}
               open={expandedGroups.has(group.name)}
@@ -570,7 +391,7 @@ export default function RewardManagementPage() {
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <p className="text-2xl font-bold text-emerald-600">{group.totalPoints.toLocaleString()} P</p>
+                          <p className="text-2xl font-bold text-emerald-600">{group.totalCost.toLocaleString()} P</p>
                           <p className="text-xs text-muted-foreground">총 사용 포인트</p>
                         </div>
                         <ChevronDown

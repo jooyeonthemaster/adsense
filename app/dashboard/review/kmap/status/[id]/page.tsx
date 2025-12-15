@@ -305,7 +305,7 @@ export default function KakaomapContentReviewPage({
             contentCount={contentItems.length}
             pendingCount={pendingCount}
             approvedCount={approvedCount}
-            onBack={() => router.push('/dashboard/review/kmap/status')}
+            onBack={() => router.push('/dashboard/submissions?category=review&product=kakaomap')}
             onBulkApprove={handleBulkApprove}
             isProcessing={processingReview}
           />

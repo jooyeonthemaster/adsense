@@ -1,10 +1,12 @@
 'use client';
 
 import { use, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, FileText, TrendingUp, Activity } from 'lucide-react';
+import { Calendar, FileText, TrendingUp, Activity, ArrowLeft } from 'lucide-react';
 import { DailyRecordCalendar } from '@/components/admin/review-marketing/DailyRecordCalendar';
 
 interface BlogDistributionSubmission {
@@ -69,6 +71,7 @@ export default function BlogDistributionDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const unwrappedParams = use(params);
+  const router = useRouter();
   const [submission, setSubmission] = useState<BlogDistributionSubmission | null>(null);
   const [dailyRecords, setDailyRecords] = useState<DailyRecord[]>([]);
   const [progress, setProgress] = useState<Progress>({ totalCompletedCount: 0, completionRate: 0 });
@@ -115,10 +118,27 @@ export default function BlogDistributionDetailPage({
     );
   }
 
+  // 블로그 배포 타입에 따른 product 파라미터 결정
+  const getProductParam = () => {
+    if (!submission) return 'blog-video';
+    const typeMap: Record<string, string> = {
+      'video': 'blog-video',
+      'automation': 'blog-automation',
+      'reviewer': 'blog-reviewer',
+    };
+    return typeMap[submission.distribution_type] || 'blog-video';
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">블로그 배포 상세</h1>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/submissions?category=blog&product=${getProductParam()}`)}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            목록으로
+          </Button>
+          <h1 className="text-2xl font-bold">블로그 배포 상세</h1>
+        </div>
         <Badge className={statusColors[submission.status] || 'bg-gray-100 text-gray-800'}>
           {statusLabels[submission.status] || submission.status}
         </Badge>

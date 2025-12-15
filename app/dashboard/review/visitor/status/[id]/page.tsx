@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,243 +8,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeft, Download, Package, Image as ImageIcon, Loader2, ExternalLink } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { DailyRecordCalendar } from '@/components/admin/review-marketing/DailyRecordCalendar';
-import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
-import * as XLSX from 'xlsx';
-
-// 콘텐츠 아이템 타입
-interface ContentItemExtended {
-  id: string;
-  upload_order: number;
-  script_text: string | null;
-  review_registered_date: string | null;
-  receipt_date: string | null;
-  review_status: string;
-  review_link: string | null;
-  review_id: string | null;
-  created_at: string;
-}
-
-interface ReceiptReviewDetail {
-  id: string;
-  client_id: string;
-  company_name: string;
-  place_url: string;
-  daily_count: number;
-  total_count: number;
-  has_photo: boolean;
-  has_script: boolean;
-  guide_text: string | null;
-  total_points: number;
-  status: string;
-  created_at: string;
-  business_license_url?: string;
-  photo_urls?: string[];
-  actual_count_total?: number;
-  progress_percentage?: number;
-}
-
-interface DailyRecord {
-  date: string;
-  actual_count: number;
-  notes?: string;
-}
-
-const statusConfig: Record<string, { label: string; variant: 'outline' | 'default' | 'secondary' | 'destructive' }> = {
-  pending: { label: '확인중', variant: 'outline' },
-  approved: { label: '구동중', variant: 'default' }, // Legacy
-  in_progress: { label: '구동중', variant: 'default' },
-  completed: { label: '완료', variant: 'secondary' },
-  cancelled: { label: '중단됨', variant: 'destructive' },
-};
+import { useVisitorReviewDetail } from '@/hooks/dashboard/useVisitorReviewDetail';
+import { statusConfig } from '@/components/dashboard/visitor-review-detail';
 
 export default function ClientVisitorReviewDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
   const router = useRouter();
-  const { toast } = useToast();
 
-  const [loading, setLoading] = useState(true);
-  const [downloadLoading, setDownloadLoading] = useState(false);
-  const [submission, setSubmission] = useState<ReceiptReviewDetail | null>(null);
-  const [dailyRecords, setDailyRecords] = useState<DailyRecord[]>([]);
-  const [activeTab, setActiveTab] = useState('content-list');
-  const [contentItems, setContentItems] = useState<ContentItemExtended[]>([]);
-
-  useEffect(() => {
-    fetchSubmissionDetail();
-    fetchDailyRecords();
-    fetchContentItems();
-  }, [unwrappedParams.id]);
-
-  const fetchContentItems = async () => {
-    try {
-      const response = await fetch(`/api/submissions/receipt/${unwrappedParams.id}/content`);
-      if (response.ok) {
-        const data = await response.json();
-        setContentItems(data.items || []);
-      }
-    } catch (error) {
-      console.error('Error fetching content items:', error);
-    }
-  };
-
-  const fetchSubmissionDetail = async () => {
-    try {
-      const response = await fetch(`/api/submissions/receipt/${unwrappedParams.id}`);
-      if (!response.ok) throw new Error('Failed to fetch');
-
-      const data = await response.json();
-      setSubmission(data.submission);
-    } catch (error) {
-      console.error('Error fetching submission:', error);
-      toast({
-        title: '오류',
-        description: '데이터를 불러오는데 실패했습니다.',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchDailyRecords = async () => {
-    try {
-      const response = await fetch(`/api/submissions/receipt/${unwrappedParams.id}/daily-records`);
-      if (response.ok) {
-        const data = await response.json();
-        setDailyRecords(data.records || []);
-      }
-    } catch (error) {
-      console.error('Error fetching daily records:', error);
-    }
-  };
-
-  const downloadAllFiles = async () => {
-    if (!submission) return;
-
-    const filesToDownload: string[] = [];
-
-    if (submission.business_license_url) {
-      filesToDownload.push(submission.business_license_url);
-    }
-    if (submission.photo_urls) {
-      filesToDownload.push(...submission.photo_urls);
-    }
-
-    if (filesToDownload.length === 0) {
-      toast({
-        title: '알림',
-        description: '다운로드할 파일이 없습니다.',
-      });
-      return;
-    }
-
-    try {
-      setDownloadLoading(true);
-      const zip = new JSZip();
-
-      for (let i = 0; i < filesToDownload.length; i++) {
-        const url = filesToDownload[i];
-        const response = await fetch(url);
-        const blob = await response.blob();
-
-        const urlParts = url.split('/');
-        const fileName = urlParts[urlParts.length - 1];
-
-        let folderName = '';
-        if (url === submission.business_license_url) {
-          folderName = 'business_license/';
-        } else if (submission.photo_urls?.includes(url)) {
-          folderName = 'photos/';
-        }
-
-        zip.file(folderName + fileName, blob);
-      }
-
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      const zipFileName = `${submission.company_name}_${unwrappedParams.id.slice(0, 8)}_files.zip`;
-      saveAs(zipBlob, zipFileName);
-
-      toast({
-        title: '다운로드 완료',
-        description: '파일이 다운로드되었습니다.',
-      });
-    } catch (error) {
-      console.error('Download error:', error);
-      toast({
-        title: '오류',
-        description: '파일 다운로드 중 오류가 발생했습니다.',
-        variant: 'destructive',
-      });
-    } finally {
-      setDownloadLoading(false);
-    }
-  };
-
-  const totalActualCount = dailyRecords.reduce((sum, record) => sum + record.actual_count, 0);
-  const completionRate = submission ? Math.round((totalActualCount / submission.total_count) * 100) : 0;
-
-  // 콘텐츠 기준 진행률 계산
-  const contentProgressPercentage = submission?.total_count
-    ? Math.min(Math.round((contentItems.length / submission.total_count) * 100), 100)
-    : 0;
-
-  // 상태 배지 표시
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <Badge className="bg-green-100 text-green-700">승인됨</Badge>;
-      case 'revision_requested':
-        return <Badge className="bg-amber-100 text-amber-700">수정요청</Badge>;
-      default:
-        return <Badge variant="outline">대기</Badge>;
-    }
-  };
-
-  // 콘텐츠 엑셀 다운로드
-  const handleContentExcelDownload = () => {
-    if (contentItems.length === 0) {
-      toast({
-        title: '알림',
-        description: '다운로드할 데이터가 없습니다.',
-      });
-      return;
-    }
-
-    const excelData = contentItems.map((item, idx) => ({
-      '순번': idx + 1,
-      '리뷰원고': item.script_text || '',
-      '리뷰등록날짜': item.review_registered_date || '',
-      '영수증날짜': item.receipt_date || '',
-      '상태': item.review_status === 'approved' ? '승인됨' : item.review_status === 'revision_requested' ? '수정요청' : '대기',
-      '리뷰링크': item.review_link || '',
-      '리뷰아이디': item.review_id || '',
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(excelData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, '콘텐츠 목록');
-
-    // 컬럼 너비 설정
-    ws['!cols'] = [
-      { wch: 6 },   // 순번
-      { wch: 50 },  // 리뷰원고
-      { wch: 14 },  // 리뷰등록날짜
-      { wch: 14 },  // 영수증날짜
-      { wch: 10 },  // 상태
-      { wch: 30 },  // 리뷰링크
-      { wch: 15 },  // 리뷰아이디
-    ];
-
-    XLSX.writeFile(wb, `방문자리뷰_${submission?.company_name || 'report'}_${new Date().toISOString().slice(0, 10)}.xlsx`);
-
-    toast({
-      title: '다운로드 완료',
-      description: '엑셀 파일이 다운로드되었습니다.',
-    });
-  };
+  const {
+    loading,
+    downloadLoading,
+    submission,
+    dailyRecords,
+    activeTab,
+    contentItems,
+    totalActualCount,
+    completionRate,
+    contentProgressPercentage,
+    setActiveTab,
+    downloadAllFiles,
+    fetchDailyRecords,
+    getStatusBadge,
+    handleContentExcelDownload,
+  } = useVisitorReviewDetail(unwrappedParams.id);
 
   if (loading) {
     return (
@@ -268,9 +55,9 @@ export default function ClientVisitorReviewDetailPage({ params }: { params: Prom
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => router.back()}>
+            <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard/submissions?category=review&product=receipt')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              뒤로가기
+              목록으로
             </Button>
             <div>
               <h1 className="text-2xl font-bold">{submission.company_name}</h1>
@@ -399,7 +186,9 @@ export default function ClientVisitorReviewDetailPage({ params }: { params: Prom
                               {item.receipt_date || '-'}
                             </TableCell>
                             <TableCell className="text-center">
-                              {getStatusBadge(item.review_status)}
+                              <Badge variant={getStatusBadge(item.review_status).variant}>
+                                {getStatusBadge(item.review_status).label}
+                              </Badge>
                             </TableCell>
                             <TableCell>
                               {item.review_link ? (

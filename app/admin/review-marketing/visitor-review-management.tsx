@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useVisitorReviewManagement } from '@/hooks/admin/useVisitorReviewManagement';
+import { StatsCards, statusConfig } from '@/components/admin/visitor-review-management';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -44,216 +45,31 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 
-interface ReceiptReviewSubmission {
-  id: string;
-  submission_number: string;
-  client_id: string;
-  company_name: string;
-  place_url: string;
-  daily_count: number;
-  total_count: number;
-  has_photo: boolean;
-  has_script: boolean;
-  guide_text: string | null;
-  total_points: number;
-  status: string;
-  created_at: string;
-  actual_count_total?: number;
-  progress_percentage?: number;
-  content_items_count?: number;
-  clients?: {
-    company_name: string;
-    contact_person: string | null;
-    email: string | null;
-  };
-}
-
-const statusConfig: Record<string, { label: string; variant: 'outline' | 'default' | 'secondary' | 'destructive' }> = {
-  pending: { label: '확인중', variant: 'outline' },
-  approved: { label: '구동중', variant: 'default' }, // Legacy - will be migrated to in_progress
-  in_progress: { label: '구동중', variant: 'default' },
-  completed: { label: '완료', variant: 'secondary' },
-  cancelled: { label: '중단됨', variant: 'destructive' },
-  as_in_progress: { label: 'AS 진행 중', variant: 'default' },
-};
-
 export function VisitorReviewManagement() {
-  const [loading, setLoading] = useState(true);
-  const [submissions, setSubmissions] = useState<ReceiptReviewSubmission[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [groupBy, setGroupBy] = useState<'list' | 'client'>('list');
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  // Calendar filter states
-  const [createdDateFilter, setCreatedDateFilter] = useState<Date | undefined>();
-  const [startDateFilter, setStartDateFilter] = useState<Date | undefined>();
-
-  // Copy submission number to clipboard
-  const copyToClipboard = async (submissionNumber: string) => {
-    try {
-      await navigator.clipboard.writeText(submissionNumber);
-      setCopiedId(submissionNumber);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch (error) {
-      console.error('Failed to copy:', error);
-    }
-  };
-
-  const toggleGroup = (groupName: string) => {
-    setExpandedGroups((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(groupName)) {
-        newSet.delete(groupName);
-      } else {
-        newSet.add(groupName);
-      }
-      return newSet;
-    });
-  };
-
-  useEffect(() => {
-    fetchSubmissions();
-  }, []);
-
-  const fetchSubmissions = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/admin/review-marketing/visitor');
-      if (!response.ok) throw new Error('Failed to fetch');
-
-      const data = await response.json();
-      setSubmissions(data.submissions || []);
-    } catch (error) {
-      console.error('Error fetching visitor reviews:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Calculate progress percentage - API에서 계산된 값 사용
-  const getProgressPercentage = (sub: ReceiptReviewSubmission) => {
-    // progress_percentage가 있으면 그대로 사용, 없으면 content_items 기반 계산
-    if (sub.progress_percentage !== undefined) {
-      return sub.progress_percentage;
-    }
-    if (sub.total_count === 0) return 0;
-    const contentCount = sub.content_items_count || sub.actual_count_total || 0;
-    // 콘텐츠가 있으면 최소 1% 보장
-    const rawProgress = (contentCount / sub.total_count) * 100;
-    return contentCount > 0
-      ? Math.max(1, Math.min(Math.round(rawProgress), 100))
-      : 0;
-  };
-
-  // Progress bar width (capped at 100%)
-  const getProgressBarWidth = (sub: ReceiptReviewSubmission) => {
-    return Math.min(getProgressPercentage(sub), 100);
-  };
-
-  // Calculate deadline
-  const getDeadline = (sub: ReceiptReviewSubmission) => {
-    const startDate = new Date(sub.created_at);
-    const estimatedDays = Math.ceil(sub.total_count / sub.daily_count);
-    const deadline = new Date(startDate);
-    deadline.setDate(deadline.getDate() + estimatedDays);
-    return deadline.toLocaleDateString('ko-KR');
-  };
-
-  // Handle status change
-  const handleStatusChange = async (submissionId: string, newStatus: string) => {
-    try {
-      const response = await fetch(`/api/admin/review-marketing/visitor/${submissionId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update status');
-      }
-
-      // Refresh submissions list
-      await fetchSubmissions();
-    } catch (error) {
-      console.error('Error updating status:', error);
-      alert('상태 변경 중 오류가 발생했습니다.');
-    }
-  };
-
-  // Apply filters
-  const filteredSubmissions = submissions.filter((sub) => {
-    const matchesSearch =
-      sub.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sub.clients?.company_name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
-
-    // 접수일 필터
-    let matchesCreatedDate = true;
-    if (createdDateFilter) {
-      const filterStart = new Date(createdDateFilter);
-      filterStart.setHours(0, 0, 0, 0);
-      const filterEnd = new Date(createdDateFilter);
-      filterEnd.setHours(23, 59, 59, 999);
-      const createdAt = new Date(sub.created_at);
-      matchesCreatedDate = createdAt >= filterStart && createdAt <= filterEnd;
-    }
-
-    // 구동일 필터 (선택한 날짜가 구동 기간 내에 포함되는지 확인)
-    let matchesStartDate = true;
-    if (startDateFilter) {
-      const selectedDate = new Date(startDateFilter);
-      selectedDate.setHours(0, 0, 0, 0);
-
-      // 구동 시작일 (영수증은 접수일 = 구동 시작일)
-      const runStartDate = new Date(sub.created_at);
-      runStartDate.setHours(0, 0, 0, 0);
-
-      // 구동 종료일 = 시작일 + 예상 구동일수 - 1
-      const estimatedDays = Math.ceil(sub.total_count / sub.daily_count);
-      const runEndDate = new Date(runStartDate);
-      runEndDate.setDate(runEndDate.getDate() + estimatedDays - 1);
-      runEndDate.setHours(23, 59, 59, 999);
-
-      // 선택한 날짜가 구동 기간 내에 있는지 확인
-      matchesStartDate = selectedDate >= runStartDate && selectedDate <= runEndDate;
-    }
-
-    return matchesSearch && matchesStatus && matchesCreatedDate && matchesStartDate;
-  });
-
-  // Group by client
-  const groupedData = () => {
-    if (groupBy === 'list') return null;
-
-    const groups = new Map<string, ReceiptReviewSubmission[]>();
-    filteredSubmissions.forEach((sub) => {
-      const key = sub.clients?.company_name || '거래처 없음';
-      if (!groups.has(key)) {
-        groups.set(key, []);
-      }
-      groups.get(key)!.push(sub);
-    });
-
-    return Array.from(groups.entries()).map(([name, items]) => ({
-      name,
-      items,
-      totalCost: items.reduce((sum, item) => sum + item.total_points, 0),
-      count: items.length,
-      inProgress: items.filter(i => ['pending', 'approved'].includes(i.status)).length,
-      completed: items.filter(i => i.status === 'completed').length,
-    }));
-  };
-
-  const stats = {
-    total: submissions.length,
-    in_progress: submissions.filter((s) => ['pending', 'approved'].includes(s.status)).length,
-    completed: submissions.filter((s) => s.status === 'completed').length,
-    total_cost: submissions.reduce((sum, s) => sum + s.total_points, 0),
-  };
+  const {
+    loading,
+    searchQuery,
+    statusFilter,
+    groupBy,
+    expandedGroups,
+    copiedId,
+    createdDateFilter,
+    startDateFilter,
+    filteredSubmissions,
+    groupedData,
+    stats,
+    setSearchQuery,
+    setStatusFilter,
+    setGroupBy,
+    setCreatedDateFilter,
+    setStartDateFilter,
+    copyToClipboard,
+    toggleGroup,
+    getProgressPercentage,
+    getProgressBarWidth,
+    getDeadline,
+    handleStatusChange,
+  } = useVisitorReviewManagement();
 
   if (loading) {
     return (
@@ -263,54 +79,12 @@ export function VisitorReviewManagement() {
     );
   }
 
-  const grouped = groupedData();
+  const grouped = groupedData;
 
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>전체 캠페인</CardDescription>
-            <CardTitle className="text-3xl">{stats.total}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">
-              진행중 {stats.in_progress}개 · 완료 {stats.completed}개
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>진행중</CardDescription>
-            <CardTitle className="text-3xl text-blue-600">{stats.in_progress}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">현재 진행 중인 캠페인</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>완료</CardDescription>
-            <CardTitle className="text-3xl text-green-600">{stats.completed}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">완료된 캠페인</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>총 비용</CardDescription>
-            <CardTitle className="text-3xl">{stats.total_cost.toLocaleString()}P</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">누적 포인트</p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatsCards stats={stats} />
 
       {/* Filters */}
       <Card>

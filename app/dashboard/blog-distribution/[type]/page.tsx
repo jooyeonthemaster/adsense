@@ -346,7 +346,7 @@ export default function BlogDistributionPage() {
       }
 
       setTimeout(() => {
-        router.push('/dashboard/blog-distribution/status');
+        router.push('/dashboard/submissions');
         router.refresh();
       }, 1500);
     } catch (error) {

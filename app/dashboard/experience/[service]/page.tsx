@@ -250,9 +250,9 @@ export default function ExperienceServicePage() {
         duration: 5000,
       });
 
-      // 성공 시 접수 현황 페이지로 이동
+      // 성공 시 통합 접수 현황 페이지로 이동
       setTimeout(() => {
-        router.push('/dashboard/experience/status');
+        router.push('/dashboard/submissions');
         router.refresh();
       }, 1500);
     } catch (error: any) {

@@ -23,8 +23,8 @@ const CATEGORY_CONFIG = {
     icon: FileText,
   },
   cafe: {
-    title: '카페 침투',
-    description: '카페 침투 마케팅의 일별 완료 기록을 등록합니다.',
+    title: '침투 마케팅',
+    description: '카페 침투 및 커뮤니티 마케팅의 일별 완료 기록을 등록합니다.',
     icon: Coffee,
   },
 } as const;

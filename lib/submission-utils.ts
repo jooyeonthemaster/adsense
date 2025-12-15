@@ -50,6 +50,14 @@ export const getProductInfo = (submission: UnifiedSubmission) => {
     return productConfig['experience-blog'];
   }
 
+  if (submission.product_type === 'cafe' && submission.service_type) {
+    const key = `infiltration-${submission.service_type}` as keyof typeof productConfig;
+    if (productConfig[key]) {
+      return productConfig[key];
+    }
+    return productConfig['infiltration-cafe'];
+  }
+
   // 기본 타입으로 찾기
   const config = productConfig[submission.product_type as keyof typeof productConfig];
   if (config) {
@@ -186,7 +194,8 @@ export const getDetailInfo = (submission: UnifiedSubmission): string => {
     case 'blog':
       return `${submission.daily_count}건/일 × ${submission.total_days}일 (${submission.distribution_type})`;
     case 'cafe':
-      return `${submission.total_count}건 (${submission.cafe_list?.length || 0}개 카페)`;
+      const serviceLabel = submission.service_type === 'community' ? '커뮤니티' : '카페';
+      return `${submission.total_count}건 (${submission.cafe_list?.length || 0}개 ${serviceLabel})`;
     case 'experience':
       return `${submission.team_count}팀 (${submission.experience_type})`;
     default:

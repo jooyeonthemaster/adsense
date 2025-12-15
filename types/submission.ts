@@ -124,6 +124,7 @@ export interface UnifiedSubmission {
   has_photo?: boolean;
   script_status?: string;
   script_url?: string;
+  service_type?: 'cafe' | 'community';
 
   // Experience-specific
   experience_type?: string;

@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Coffee, Sparkles, Camera, CheckCircle2, Users, Info, AlertCircle, BookOpen, ChevronDown, Loader2 } from 'lucide-react';
+import { Coffee, Sparkles, Camera, CheckCircle2, Users, Info, AlertCircle, BookOpen, ChevronDown, Loader2, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ProductGuideSection } from '@/components/dashboard/ProductGuideSection';
 import { extractNaverPlaceMID, fetchBusinessInfoByMID } from '@/utils/naver-place';
@@ -38,6 +38,7 @@ export default function CafeMarketingPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
+    serviceType: 'cafe' as 'cafe' | 'community',
     businessName: '',
     placeUrl: '',
     placeMid: '',
@@ -198,6 +199,7 @@ export default function CafeMarketingPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          service_type: formData.serviceType,
           company_name: formData.businessName,
           place_url: formData.placeUrl,
           place_mid: formData.placeMid || null,
@@ -237,9 +239,9 @@ export default function CafeMarketingPage() {
         duration: 5000,
       });
 
-      // 1.5초 후 접수 현황 페이지로 이동
+      // 1.5초 후 통합 접수 현황 페이지로 이동
       setTimeout(() => {
-        router.push('/dashboard/cafe/status');
+        router.push('/dashboard/submissions');
         router.refresh(); // 서버 데이터 새로고침
       }, 1500);
     } catch (error) {
@@ -253,32 +255,131 @@ export default function CafeMarketingPage() {
     }
   };
 
+  // ProductGuide Key 동적 결정
+  const productKey = formData.serviceType === 'cafe' ? 'cafe-marketing' : 'community-marketing';
+
+  // 서비스 탭 구성
+  const serviceTabs = [
+    {
+      id: 'cafe' as const,
+      name: '카페 침투',
+      icon: Coffee,
+    },
+    {
+      id: 'community' as const,
+      name: '커뮤니티 마케팅',
+      icon: MessageSquare,
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-white px-3 sm:px-4 lg:px-6 pt-4 pb-6">
-      <div className="max-w-7xl mx-auto">
-        <ProductGuideSection productKey="cafe-marketing" />
+    <div className="min-h-screen bg-white">
+      {/* 상단 탭 네비게이션 */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex space-x-8" aria-label="Tabs">
+            {serviceTabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = formData.serviceType === tab.id;
+
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, serviceType: tab.id }))}
+                  className={`
+                    group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors
+                    ${isActive
+                      ? 'border-sky-500 text-sky-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }
+                  `}
+                >
+                  <Icon className={`
+                    mr-2 h-5 w-5
+                    ${isActive ? 'text-sky-500' : 'text-gray-400 group-hover:text-gray-500'}
+                  `} />
+                  {tab.name}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
+
+      {/* 메인 콘텐츠 */}
+      <div className="px-3 sm:px-4 lg:px-6 pt-4 pb-6">
+        <div className="max-w-7xl mx-auto">
+          <ProductGuideSection productKey={productKey} />
         
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 상단 2열 그리드 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* 왼쪽: 매체 선택 카드 */}
+            {/* 왼쪽: 서비스 선택 카드 */}
             <Card className="border-gray-200">
               <CardHeader className="pb-3">
-                <CardTitle className="text-gray-900 text-base">매체 선택</CardTitle>
-                <CardDescription className="text-gray-600 text-sm">카페 침투 마케팅 서비스</CardDescription>
+                <CardTitle className="text-gray-900 text-base">서비스 선택</CardTitle>
+                <CardDescription className="text-gray-600 text-sm">원하시는 침투 마케팅 서비스를 선택하세요</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="grid grid-cols-1 gap-2 pt-0">
                 <button
                   type="button"
-                  className="group relative w-full p-4 rounded-lg border-2 transition-all duration-300 border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                  onClick={() => setFormData(prev => ({ ...prev, serviceType: 'cafe' }))}
+                  className={`
+                    relative w-full p-3 rounded-lg border-2 text-left transition-all duration-200
+                    ${formData.serviceType === 'cafe'
+                      ? 'border-amber-500 bg-amber-50 shadow-md'
+                      : 'border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50/50'
+                    }
+                  `}
                 >
-                  <div className="relative flex flex-col items-center gap-2">
-                    <div className="text-4xl">
-                      <Coffee className="h-12 w-12 text-amber-600" />
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-amber-500">
+                      <Coffee className="h-5 w-5 text-white" />
                     </div>
-                    <div>
-                      <div className="font-bold text-lg text-gray-900">카페 침투</div>
-                      <div className="text-xs text-gray-500 mt-0.5">지역 커뮤니티 카페 마케팅</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`font-semibold text-sm ${formData.serviceType === 'cafe' ? 'text-amber-700' : 'text-gray-900'}`}>
+                          카페 침투
+                        </span>
+                        {formData.serviceType === 'cafe' && (
+                          <Badge variant="secondary" className="bg-amber-500 text-white text-xs px-2 py-0">
+                            선택됨
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-600 mt-0.5">네이버 카페 등 지역 커뮤니티 마케팅</p>
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, serviceType: 'community' }))}
+                  className={`
+                    relative w-full p-3 rounded-lg border-2 text-left transition-all duration-200
+                    ${formData.serviceType === 'community'
+                      ? 'border-purple-500 bg-purple-50 shadow-md'
+                      : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/50'
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-purple-500">
+                      <MessageSquare className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`font-semibold text-sm ${formData.serviceType === 'community' ? 'text-purple-700' : 'text-gray-900'}`}>
+                          커뮤니티 마케팅
+                        </span>
+                        {formData.serviceType === 'community' && (
+                          <Badge variant="secondary" className="bg-purple-500 text-white text-xs px-2 py-0">
+                            선택됨
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-600 mt-0.5">다양한 온라인 커뮤니티 침투 마케팅</p>
                     </div>
                   </div>
                 </button>
@@ -548,6 +649,7 @@ export default function CafeMarketingPage() {
             </CardContent>
           </Card>
         </form>
+        </div>
       </div>
     </div>
   );

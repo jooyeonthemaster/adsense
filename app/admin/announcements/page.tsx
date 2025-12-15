@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,215 +42,39 @@ import {
   Link as LinkIcon,
   ExternalLink,
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-
-interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  priority: 'low' | 'normal' | 'high' | 'urgent';
-  target_audience: 'all' | 'client' | 'admin';
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  expires_at: string | null;
-  created_by?: string | null;
-  link_url?: string | null;
-  link_text?: string | null;
-}
+import { useAnnouncements } from '@/hooks/admin/useAnnouncements';
+import {
+  PRIORITY_VARIANTS,
+  PRIORITY_LABELS,
+  AUDIENCE_LABELS,
+} from '@/components/admin/announcements';
 
 export default function AnnouncementsPage() {
-  const { toast } = useToast();
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
-  const [formData, setFormData] = useState({
-    title: '',
-    content: '',
-    priority: 'normal' as 'low' | 'normal' | 'high' | 'urgent',
-    target_audience: 'client' as 'all' | 'client' | 'admin',
-    expires_at: '',
-    link_url: '',
-    link_text: '',
-  });
-
-  // 공지사항 목록 불러오기
-  const fetchAnnouncements = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/admin/announcements');
-      if (!response.ok) throw new Error('공지사항을 불러오는데 실패했습니다');
-      const data = await response.json();
-      setAnnouncements(data);
-    } catch (error) {
-      toast({
-        title: '오류',
-        description: '공지사항을 불러오는데 실패했습니다',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAnnouncements();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // 공지사항 생성/수정
-  const handleSubmit = async () => {
-    try {
-      if (!formData.title || !formData.content) {
-        toast({
-          title: '입력 오류',
-          description: '제목과 내용을 입력해주세요',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      const url = '/api/admin/announcements';
-      const method = selectedAnnouncement ? 'PUT' : 'POST';
-      const body = selectedAnnouncement
-        ? { ...formData, id: selectedAnnouncement.id }
-        : formData;
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) throw new Error('공지사항 저장에 실패했습니다');
-
-      toast({
-        title: '성공',
-        description: `공지사항이 ${selectedAnnouncement ? '수정' : '생성'}되었습니다`,
-      });
-
-      setDialogOpen(false);
-      resetForm();
-      fetchAnnouncements();
-    } catch (error) {
-      toast({
-        title: '오류',
-        description: '공지사항 저장에 실패했습니다',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  // 공지사항 삭제
-  const handleDelete = async () => {
-    if (!selectedAnnouncement) return;
-
-    try {
-      const response = await fetch(
-        `/api/admin/announcements?id=${selectedAnnouncement.id}`,
-        { method: 'DELETE' }
-      );
-
-      if (!response.ok) throw new Error('공지사항 삭제에 실패했습니다');
-
-      toast({
-        title: '성공',
-        description: '공지사항이 삭제되었습니다',
-      });
-
-      setDeleteDialogOpen(false);
-      setSelectedAnnouncement(null);
-      fetchAnnouncements();
-    } catch (error) {
-      toast({
-        title: '오류',
-        description: '공지사항 삭제에 실패했습니다',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  // 활성/비활성 토글
-  const toggleActive = async (announcement: Announcement) => {
-    try {
-      const response = await fetch('/api/admin/announcements', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: announcement.id,
-          is_active: !announcement.is_active,
-        }),
-      });
-
-      if (!response.ok) throw new Error('상태 변경에 실패했습니다');
-
-      toast({
-        title: '성공',
-        description: `공지사항이 ${!announcement.is_active ? '활성화' : '비활성화'}되었습니다`,
-      });
-
-      fetchAnnouncements();
-    } catch (error) {
-      toast({
-        title: '오류',
-        description: '상태 변경에 실패했습니다',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  // 수정 다이얼로그 열기
-  const openEditDialog = (announcement: Announcement) => {
-    setSelectedAnnouncement(announcement);
-    setFormData({
-      title: announcement.title,
-      content: announcement.content,
-      priority: announcement.priority,
-      target_audience: announcement.target_audience,
-      expires_at: announcement.expires_at
-        ? format(new Date(announcement.expires_at), "yyyy-MM-dd'T'HH:mm")
-        : '',
-      link_url: announcement.link_url || '',
-      link_text: announcement.link_text || '',
-    });
-    setDialogOpen(true);
-  };
-
-  // 폼 초기화
-  const resetForm = () => {
-    setSelectedAnnouncement(null);
-    setFormData({
-      title: '',
-      content: '',
-      priority: 'normal',
-      target_audience: 'client',
-      expires_at: '',
-      link_url: '',
-      link_text: '',
-    });
-  };
+  const {
+    announcements,
+    loading,
+    dialogOpen,
+    deleteDialogOpen,
+    selectedAnnouncement,
+    formData,
+    setDialogOpen,
+    setDeleteDialogOpen,
+    setFormData,
+    handleSubmit,
+    handleDelete,
+    toggleActive,
+    openEditDialog,
+    openCreateDialog,
+    openDeleteDialog,
+  } = useAnnouncements();
 
   // 우선순위 배지
   const getPriorityBadge = (priority: string) => {
-    const variants = {
-      urgent: 'destructive',
-      high: 'default',
-      normal: 'secondary',
-      low: 'outline',
-    } as const;
-    const labels = {
-      urgent: '긴급',
-      high: '높음',
-      normal: '보통',
-      low: '낮음',
-    };
     return (
-      <Badge variant={variants[priority as keyof typeof variants]}>
-        {labels[priority as keyof typeof labels]}
+      <Badge variant={PRIORITY_VARIANTS[priority as keyof typeof PRIORITY_VARIANTS]}>
+        {PRIORITY_LABELS[priority as keyof typeof PRIORITY_LABELS]}
       </Badge>
     );
   };
@@ -269,8 +92,7 @@ export default function AnnouncementsPage() {
   };
 
   const getAudienceLabel = (audience: string) => {
-    const labels = { all: '전체', client: '거래처', admin: '관리자' };
-    return labels[audience as keyof typeof labels];
+    return AUDIENCE_LABELS[audience as keyof typeof AUDIENCE_LABELS];
   };
 
   if (loading) {
@@ -299,12 +121,7 @@ export default function AnnouncementsPage() {
             </p>
           </div>
         </div>
-        <Button
-          onClick={() => {
-            resetForm();
-            setDialogOpen(true);
-          }}
-        >
+        <Button onClick={openCreateDialog}>
           <Plus className="h-4 w-4 mr-2" />
           공지사항 등록
         </Button>
@@ -429,10 +246,7 @@ export default function AnnouncementsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => {
-                          setSelectedAnnouncement(announcement);
-                          setDeleteDialogOpen(true);
-                        }}
+                        onClick={() => openDeleteDialog(announcement)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -565,10 +379,7 @@ export default function AnnouncementsPage() {
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => {
-                setDialogOpen(false);
-                resetForm();
-              }}
+              onClick={() => setDialogOpen(false)}
             >
               취소
             </Button>

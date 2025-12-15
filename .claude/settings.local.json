@@ -69,7 +69,12 @@
       "Bash(timeout /t 30 /nobreak)",
       "Bash(del \"c:\\Users\\jooye\\Desktop\\20251101marketing\\supabase\\migrations\\20251205_update_total_days_constraint.sql\")",
       "Bash(grep:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(wc:*)",
+      "Bash(git checkout:*)",
+      "Bash(git stash:*)",
+      "Bash(du -sh:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []

@@ -6,6 +6,8 @@ import {
   Coffee,
   Users,
   ClipboardList,
+  Target,
+  MessageSquare,
 } from 'lucide-react';
 import { ProductType, SubmissionStatus } from '@/types/submission';
 
@@ -31,9 +33,9 @@ export const categoryStructure = {
     bgColor: 'bg-emerald-100',
     textColor: 'text-emerald-600',
   },
-  cafe: {
-    label: '카페침투 마케팅',
-    icon: Coffee,
+  infiltration: {
+    label: '침투 마케팅',
+    icon: Target,
     bgColor: 'bg-orange-100',
     textColor: 'text-orange-600',
   },
@@ -98,14 +100,25 @@ export const productConfig = {
     subType: 'reviewer' as const,
     category: 'blog',
   },
-  cafe: {
-    label: '카페침투 마케팅',
+  'infiltration-cafe': {
+    label: '카페 침투',
     icon: Coffee,
-    bgColor: 'bg-orange-100',
-    textColor: 'text-orange-600',
+    bgColor: 'bg-amber-100',
+    textColor: 'text-amber-600',
     detailPath: '/dashboard/cafe/status',
     productType: 'cafe' as const,
-    category: 'cafe',
+    subType: 'cafe' as const,
+    category: 'infiltration',
+  },
+  'infiltration-community': {
+    label: '커뮤니티 마케팅',
+    icon: MessageSquare,
+    bgColor: 'bg-purple-100',
+    textColor: 'text-purple-600',
+    detailPath: '/dashboard/cafe/status',
+    productType: 'cafe' as const,
+    subType: 'community' as const,
+    category: 'infiltration',
   },
   'experience-blog': {
     label: '블로그 체험단',
@@ -161,7 +174,7 @@ export const categoryProducts: Record<string, string[]> = {
     'experience-influencer',
   ],
   blog: ['blog-video', 'blog-automation', 'blog-reviewer'],
-  cafe: ['cafe'],
+  infiltration: ['infiltration-cafe', 'infiltration-community'],
 };
 
 // 상태 설정

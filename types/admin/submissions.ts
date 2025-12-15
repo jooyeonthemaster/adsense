@@ -39,7 +39,8 @@ export interface UnifiedSubmission {
   distribution_type?: 'reviewer' | 'video' | 'automation';
   keywords?: string[];
 
-  // Cafe (카페 침투) 전용
+  // Cafe (침투 마케팅) 전용
+  service_type?: 'cafe' | 'community';
   region?: string;
   script_status?: 'pending' | 'writing' | 'completed';
   cafe_details?: Array<{ cafe_name: string; post_count: number }>;
@@ -88,7 +89,7 @@ export const TYPE_LABELS: Record<string, string> = {
   receipt: '영수증 리뷰',
   kakaomap: '카카오맵 리뷰',
   blog: '블로그 배포',
-  cafe: '카페 침투',
+  cafe: '침투 마케팅',
   experience: '체험단 마케팅',
 };
 

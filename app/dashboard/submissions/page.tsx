@@ -1,191 +1,45 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Filter } from 'lucide-react';
-import { UnifiedSubmission, AllSubmissionsStats, SubmissionStatus } from '@/types/submission';
-import { productConfig, categoryProducts } from '@/config/submission-products';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Search, Filter, AlertTriangle } from 'lucide-react';
+import { SubmissionStatus } from '@/types/submission';
 import { StatsCards } from '@/components/dashboard/submissions/StatsCards';
 import { CategoryFilter } from '@/components/dashboard/submissions/CategoryFilter';
 import { SubmissionTableRow } from '@/components/dashboard/submissions/SubmissionTableRow';
 import { SubmissionCard } from '@/components/dashboard/submissions/SubmissionCard';
 import { CancelDialog } from '@/components/dashboard/submissions/CancelDialog';
-import { calculateProgress } from '@/lib/submission-utils';
-import { getMockSubmissions, calculateMockStats } from './mockData';
+import { useAllSubmissions } from '@/hooks/dashboard/useAllSubmissions';
 
 export default function AllSubmissionsPage() {
-  const [submissions, setSubmissions] = useState<UnifiedSubmission[]>([]);
-  const [stats, setStats] = useState<AllSubmissionsStats | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Filters
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [productFilter, setProductFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<SubmissionStatus | 'all'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'date' | 'cost' | 'progress'>('date');
-
-  // Cancel dialog
-  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
-  const [selectedSubmission, setSelectedSubmission] = useState<UnifiedSubmission | null>(null);
-
-  useEffect(() => {
-    fetchSubmissions();
-  }, [productFilter, statusFilter, searchQuery, sortBy]);
-
-  const handleCategorySelect = (category: string) => {
-    setSelectedCategory(category);
-
-    if (category === 'all') {
-      setProductFilter('all');
-    } else {
-      const products = categoryProducts[category];
-      if (products.length === 1) {
-        setProductFilter(products[0]);
-      } else {
-        setProductFilter('category-all');
-      }
-    }
-  };
-
-  const handleProductSelect = (product: string) => {
-    setProductFilter(product);
-  };
-
-  const getActiveProducts = (): string[] => {
-    if (selectedCategory === 'all') return [];
-    if (productFilter !== 'all' && productFilter !== 'category-all') {
-      return [productFilter];
-    }
-    return categoryProducts[selectedCategory] || [];
-  };
-
-  const fetchSubmissions = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-
-      if (productFilter !== 'all' && productFilter !== 'category-all') {
-        const config = productConfig[productFilter as keyof typeof productConfig];
-        if (config) {
-          params.append('product_type', config.productType);
-        }
-      }
-
-      if (statusFilter !== 'all') params.append('status', statusFilter);
-      if (searchQuery) params.append('search', searchQuery);
-      if (sortBy) params.append('sort_by', sortBy);
-
-      const response = await fetch(`/api/submissions/all?${params.toString()}`);
-      if (!response.ok) throw new Error('Failed to fetch submissions');
-
-      const data = await response.json();
-
-      let filteredSubmissions = data.submissions;
-      const activeProducts = getActiveProducts();
-      
-      if (activeProducts.length > 0) {
-        filteredSubmissions = filteredSubmissions.filter((s: UnifiedSubmission) => {
-          for (const [key, config] of Object.entries(productConfig)) {
-            if (config.productType === s.product_type) {
-              const configAny = config as any;
-              if (configAny.subType) {
-                if (config.productType === 'blog' && s.distribution_type === configAny.subType) {
-                  return activeProducts.includes(key);
-                } else if (config.productType === 'experience' && s.experience_type === configAny.subType) {
-                  return activeProducts.includes(key);
-                }
-              } else {
-                return activeProducts.includes(key);
-              }
-            }
-          }
-          return false;
-        });
-      }
-
-      setSubmissions(filteredSubmissions);
-      setStats(data.stats);
-    } catch (error) {
-      console.error('Error fetching submissions:', error);
-
-      // Use mock data
-      const mockSubmissions = getMockSubmissions();
-      let filtered = mockSubmissions;
-
-      // Apply filters
-      const activeProducts = getActiveProducts();
-      if (activeProducts.length > 0) {
-        filtered = filtered.filter((s) => {
-          for (const [key, config] of Object.entries(productConfig)) {
-            if (config.productType === s.product_type) {
-              const configAny = config as any;
-              if (configAny.subType) {
-                if (config.productType === 'blog' && s.distribution_type === configAny.subType) {
-                  return activeProducts.includes(key);
-                } else if (config.productType === 'experience' && s.experience_type === configAny.subType) {
-                  return activeProducts.includes(key);
-                }
-              } else {
-                return activeProducts.includes(key);
-              }
-            }
-          }
-          return false;
-        });
-      }
-
-      if (statusFilter !== 'all') {
-        filtered = filtered.filter((s) => s.status === statusFilter);
-      }
-
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        filtered = filtered.filter(
-          (s) =>
-            s.company_name.toLowerCase().includes(query) || s.place_mid?.includes(query)
-        );
-      }
-
-      // Sort
-      filtered.sort((a, b) => {
-        if (sortBy === 'cost') {
-          return b.total_points - a.total_points;
-        } else if (sortBy === 'progress') {
-          return calculateProgress(b) - calculateProgress(a);
-        } else {
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        }
-      });
-
-      setSubmissions(filtered);
-      setStats(calculateMockStats(mockSubmissions));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCancelClick = (submission: UnifiedSubmission) => {
-    setSelectedSubmission(submission);
-    setCancelDialogOpen(true);
-  };
-
-  const handleConfirmCancel = async () => {
-    if (!selectedSubmission) return;
-
-    try {
-      // TODO: 중단 API 호출
-      alert('중단 신청이 완료되었습니다.');
-      setCancelDialogOpen(false);
-      setSelectedSubmission(null);
-      fetchSubmissions();
-    } catch (error) {
-      console.error('Cancel request error:', error);
-      alert('중단 신청에 실패했습니다.');
-    }
-  };
+  const {
+    submissions,
+    stats,
+    loading,
+    selectedCategory,
+    productFilter,
+    statusFilter,
+    searchQuery,
+    sortBy,
+    cancelDialogOpen,
+    selectedSubmission,
+    downloadingId,
+    asConditionDialogOpen,
+    setSearchQuery,
+    setStatusFilter,
+    setSortBy,
+    setCancelDialogOpen,
+    setAsConditionDialogOpen,
+    handleCategorySelect,
+    handleProductSelect,
+    handleCancelClick,
+    handleConfirmCancel,
+    handleDownloadReport,
+    handleAsRequest,
+  } = useAllSubmissions();
 
   if (loading) {
     return (
@@ -286,6 +140,9 @@ export default function AllSubmissionsPage() {
                     key={submission.id}
                     submission={submission}
                     onCancel={handleCancelClick}
+                    onDownloadReport={handleDownloadReport}
+                    onAsRequest={handleAsRequest}
+                    downloadingId={downloadingId}
                   />
                 ))
               )}
@@ -305,6 +162,9 @@ export default function AllSubmissionsPage() {
                 key={submission.id}
                 submission={submission}
                 onCancel={handleCancelClick}
+                onDownloadReport={handleDownloadReport}
+                onAsRequest={handleAsRequest}
+                downloadingId={downloadingId}
               />
             ))
           )}
@@ -318,6 +178,38 @@ export default function AllSubmissionsPage() {
         submission={selectedSubmission}
         onConfirm={handleConfirmCancel}
       />
+
+      {/* AS 신청 조건 안내 다이얼로그 */}
+      <Dialog open={asConditionDialogOpen} onOpenChange={setAsConditionDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="h-5 w-5" />
+              AS 신청 조건 안내
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex-shrink-0 w-6 h-6 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-sm font-semibold">1</div>
+                <p className="text-sm text-gray-700">작업이 <span className="font-semibold text-gray-900">완료된 상태</span>여야 합니다.</p>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex-shrink-0 w-6 h-6 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-sm font-semibold">2</div>
+                <p className="text-sm text-gray-700">예정 수량 대비 실제 달성 수량이 <span className="font-semibold text-gray-900">20% 이상 부족</span>해야 합니다.</p>
+              </div>
+            </div>
+            <div className="p-3 bg-red-50 border border-red-100 rounded-lg">
+              <p className="text-sm text-red-600 font-medium">현재 작업이 아직 완료되지 않았습니다.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setAsConditionDialogOpen(false)} className="w-full sm:w-auto">
+              확인
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,307 +22,38 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import * as XLSX from 'xlsx';
-import { useToast } from '@/hooks/use-toast';
 import { ReviewContentBasedCalendar } from '@/components/admin/review-marketing/ReviewContentBasedCalendar';
 import { DirectUpload } from '@/components/admin/kakaomap/DirectUpload';
 import { ExcelUpload } from '@/components/admin/kakaomap/ExcelUpload';
-import { ContentItemsList, type ContentItem } from '@/components/admin/kakaomap/ContentItemsList';
+import { ContentItemsList } from '@/components/admin/kakaomap/ContentItemsList';
 import { FeedbackManagement } from '@/components/admin/kakaomap/FeedbackManagement';
 import { GeneralFeedbackView } from '@/components/admin/kakaomap/GeneralFeedbackView';
 import { AIReviewGenerator } from '@/components/admin/kakaomap/AIReviewGenerator';
-import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
-
-interface KakaomapReviewDetail {
-  id: string;
-  client_id: string;
-  submission_number: string;
-  company_name: string;
-  kakaomap_url: string;
-  daily_count: number;
-  total_count: number;
-  total_days: number;
-  has_photo: boolean;
-  photo_ratio: number;
-  star_rating: string;
-  script_type: string;
-  guide_text: string | null;
-  total_points: number;
-  status: string;
-  created_at: string;
-  business_license_url?: string;
-  photo_urls?: string[];
-  clients?: {
-    company_name: string;
-    contact_person: string | null;
-    email: string | null;
-    phone: string | null;
-  };
-}
-
-interface DailyRecord {
-  date: string;
-  actual_count: number;
-  notes?: string;
-}
-
-const statusConfig: Record<string, { label: string; variant: 'outline' | 'default' | 'secondary' | 'destructive' }> = {
-  pending: { label: '접수 대기', variant: 'outline' },
-  waiting_content: { label: '콘텐츠 업로드 중', variant: 'default' },
-  review: { label: '검수 대기', variant: 'outline' },
-  revision_requested: { label: '수정 요청됨', variant: 'destructive' },
-  in_progress: { label: '진행중', variant: 'default' },
-  completed: { label: '완료', variant: 'secondary' },
-  cancelled: { label: '취소됨', variant: 'destructive' },
-  as_in_progress: { label: 'AS 진행 중', variant: 'default' },
-};
-
-const starRatingConfig: Record<string, { label: string }> = {
-  mixed: { label: '4~5점 혼합' },
-  five: { label: '5점대만' },
-  four: { label: '4점대만' },
-};
-
-const contentStatusConfig: Record<string, { label: string; variant: 'outline' | 'default' | 'secondary' | 'destructive' }> = {
-  pending: { label: '대기', variant: 'outline' },
-  approved: { label: '승인됨', variant: 'default' },
-  rejected: { label: '반려', variant: 'destructive' },
-  revision_requested: { label: '수정요청', variant: 'secondary' }, // 레거시 호환
-};
+import { useKakaomapDetail } from '@/hooks/admin/useKakaomapDetail';
+import { statusConfig, starRatingConfig, contentStatusConfig } from '@/components/admin/kakaomap-detail';
 
 export default function KakaomapReviewDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
   const router = useRouter();
-  const { toast } = useToast();
 
-  const [loading, setLoading] = useState(true);
-  const [downloadLoading, setDownloadLoading] = useState(false);
-  const [submission, setSubmission] = useState<KakaomapReviewDetail | null>(null);
-  const [dailyRecords, setDailyRecords] = useState<DailyRecord[]>([]);
-  const [contentItems, setContentItems] = useState<ContentItem[]>([]);
-  const [activeTab, setActiveTab] = useState('overview');
-
-  useEffect(() => {
-    fetchSubmissionDetail();
-    fetchDailyRecords();
-    fetchContentItems();
-  }, [unwrappedParams.id]);
-
-  const fetchSubmissionDetail = async () => {
-    try {
-      const response = await fetch(`/api/admin/kakaomap/${unwrappedParams.id}`);
-      if (!response.ok) throw new Error('Failed to fetch');
-
-      const data = await response.json();
-      setSubmission(data.submission);
-    } catch (error) {
-      console.error('Error fetching submission:', error);
-      toast({
-        title: '오류',
-        description: '데이터를 불러오는데 실패했습니다.',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchDailyRecords = async () => {
-    try {
-      const response = await fetch(`/api/admin/kakaomap/${unwrappedParams.id}/daily-records`);
-      if (response.ok) {
-        const data = await response.json();
-        setDailyRecords(data.records || []);
-      }
-    } catch (error) {
-      console.error('Error fetching daily records:', error);
-    }
-  };
-
-  const fetchContentItems = async () => {
-    try {
-      const response = await fetch(`/api/admin/kakaomap/${unwrappedParams.id}/content`);
-      if (response.ok) {
-        const data = await response.json();
-        setContentItems(data.content_items || []);
-      }
-    } catch (error) {
-      console.error('Error fetching content items:', error);
-    }
-  };
-
-  const handleStatusChange = async (newStatus: string) => {
-    try {
-      const response = await fetch(`/api/admin/kakaomap/${unwrappedParams.id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!response.ok) throw new Error('Failed to update status');
-
-      toast({
-        title: '상태 변경 완료',
-        description: '접수 상태가 변경되었습니다.',
-      });
-      fetchSubmissionDetail();
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        title: '오류',
-        description: '상태 변경에 실패했습니다.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const downloadAllFiles = async () => {
-    if (!submission) return;
-
-    const filesToDownload: string[] = [];
-
-    if (submission.business_license_url) {
-      filesToDownload.push(submission.business_license_url);
-    }
-    if (submission.photo_urls) {
-      filesToDownload.push(...submission.photo_urls);
-    }
-
-    if (filesToDownload.length === 0) {
-      toast({
-        title: '알림',
-        description: '다운로드할 파일이 없습니다.',
-      });
-      return;
-    }
-
-    try {
-      setDownloadLoading(true);
-      const zip = new JSZip();
-
-      for (let i = 0; i < filesToDownload.length; i++) {
-        const url = filesToDownload[i];
-        const response = await fetch(url);
-        const blob = await response.blob();
-
-        const urlParts = url.split('/');
-        const fileName = urlParts[urlParts.length - 1];
-
-        let folderName = '';
-        if (url === submission.business_license_url) {
-          folderName = 'business_license/';
-        } else if (submission.photo_urls?.includes(url)) {
-          folderName = 'photos/';
-        }
-
-        zip.file(folderName + fileName, blob);
-      }
-
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      const zipFileName = `${submission.company_name}_${unwrappedParams.id.slice(0, 8)}_files.zip`;
-      saveAs(zipBlob, zipFileName);
-
-      toast({
-        title: '다운로드 완료',
-        description: '파일이 다운로드되었습니다.',
-      });
-    } catch (error) {
-      console.error('Download error:', error);
-      toast({
-        title: '오류',
-        description: '파일 다운로드 중 오류가 발생했습니다.',
-        variant: 'destructive',
-      });
-    } finally {
-      setDownloadLoading(false);
-    }
-  };
-
-  const handlePublish = async () => {
-    if (!submission) return;
-
-    try {
-      // 사진 비율 체크 없이 바로 배포
-      const response = await fetch(`/api/admin/kakaomap/${unwrappedParams.id}/publish?force=true`, {
-        method: 'POST',
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || '배포에 실패했습니다.');
-      }
-
-      toast({
-        title: '✓ 배포 완료',
-        description: `${result.published_count}개의 콘텐츠가 유저에게 배포되었습니다.`,
-      });
-
-      // 새로고침
-      fetchSubmissionDetail();
-      fetchContentItems();
-    } catch (error) {
-      console.error('Publish error:', error);
-      toast({
-        title: '오류',
-        description: error instanceof Error ? error.message : '배포 중 오류가 발생했습니다.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  // 엑셀 다운로드 (업로드 템플릿과 동일한 형식)
-  const downloadContentItemsAsExcel = () => {
-    if (!submission || contentItems.length === 0) {
-      toast({
-        title: '알림',
-        description: '다운로드할 콘텐츠가 없습니다.',
-      });
-      return;
-    }
-
-    // 업로드 템플릿과 동일한 형식: 접수번호, 업체명, 리뷰원고, 리뷰등록날짜, 영수증날짜, 상태, 리뷰링크, 리뷰아이디
-    const excelData = contentItems.map((item) => ({
-      '접수번호': submission.submission_number || '',
-      '업체명': submission.company_name || '',
-      '리뷰원고': item.script_text || '',
-      '리뷰등록날짜': item.review_registered_date || '',
-      '영수증날짜': item.receipt_date || '',
-      '상태': item.status === 'approved' ? '승인됨' : item.status === 'rejected' ? '수정요청' : '대기',
-      '리뷰링크': item.review_link || '',
-      '리뷰아이디': item.review_id || '',
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(excelData);
-
-    // 컬럼 너비 설정 (업로드 템플릿과 동일)
-    ws['!cols'] = [
-      { wch: 18 },  // 접수번호
-      { wch: 20 },  // 업체명
-      { wch: 60 },  // 리뷰원고
-      { wch: 14 },  // 리뷰등록날짜
-      { wch: 14 },  // 영수증날짜
-      { wch: 10 },  // 상태
-      { wch: 45 },  // 리뷰링크
-      { wch: 18 },  // 리뷰아이디
-    ];
-
-    const wb = XLSX.utils.book_new();
-    // 시트명을 업로드 템플릿과 동일하게 'K맵리뷰'로 설정
-    XLSX.utils.book_append_sheet(wb, ws, 'K맵리뷰');
-
-    const fileName = `K맵리뷰_${submission.company_name}_${new Date().toISOString().split('T')[0]}.xlsx`;
-    XLSX.writeFile(wb, fileName);
-
-    toast({
-      title: '다운로드 완료',
-      description: `${contentItems.length}건의 콘텐츠가 다운로드되었습니다.`,
-    });
-  };
-
-  const totalActualCount = dailyRecords.reduce((sum, record) => sum + record.actual_count, 0);
-  const completionRate = submission ? Math.round((totalActualCount / submission.total_count) * 100) : 0;
+  const {
+    loading,
+    downloadLoading,
+    submission,
+    dailyRecords,
+    contentItems,
+    activeTab,
+    totalActualCount,
+    completionRate,
+    setActiveTab,
+    fetchSubmissionDetail,
+    fetchDailyRecords,
+    fetchContentItems,
+    handleStatusChange,
+    downloadAllFiles,
+    handlePublish,
+    downloadContentItemsAsExcel,
+  } = useKakaomapDetail(unwrappedParams.id);
 
   if (loading) {
     return (

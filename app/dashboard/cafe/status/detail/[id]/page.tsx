@@ -1,6 +1,7 @@
 'use client';
 
 import { use, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Calendar, Coffee, TrendingUp, Activity, ExternalLink, FileSpreadsheet, Download } from 'lucide-react';
+import { Calendar, Coffee, TrendingUp, Activity, ExternalLink, FileSpreadsheet, Download, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CafeContentBasedCalendar } from '@/components/admin/cafe-marketing/CafeContentBasedCalendar';
 import * as XLSX from 'xlsx';
@@ -33,6 +34,7 @@ interface CafeMarketingSubmission {
   script_url: string | null;
   total_points: number;
   status: string;
+  service_type?: 'cafe' | 'community';
   created_at: string;
   updated_at: string;
   completed_count?: number;
@@ -100,6 +102,7 @@ export default function CafeMarketingDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const unwrappedParams = use(params);
+  const router = useRouter();
   const [submission, setSubmission] = useState<CafeMarketingSubmission | null>(null);
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [dailyRecords, setDailyRecords] = useState<DailyRecord[]>([]);
@@ -187,10 +190,23 @@ export default function CafeMarketingDetailPage({
     );
   }
 
+  // 카페 침투 서비스 타입에 따른 product 파라미터 결정
+  const getProductParam = () => {
+    if (!submission) return 'infiltration-cafe';
+    // service_type이 있으면 사용, 없으면 기본값
+    return submission.service_type === 'community' ? 'infiltration-community' : 'infiltration-cafe';
+  };
+
   return (
     <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl sm:text-2xl font-bold">카페 침투 마케팅 상세</h1>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/submissions?category=infiltration&product=${getProductParam()}`)}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            목록으로
+          </Button>
+          <h1 className="text-xl sm:text-2xl font-bold">카페 침투 마케팅 상세</h1>
+        </div>
         <Badge className={statusColors[submission.status] || 'bg-gray-100 text-gray-800'}>
           {statusLabels[submission.status] || submission.status}
         </Badge>

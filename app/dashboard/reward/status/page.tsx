@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,159 +28,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Calendar, TrendingUp, ExternalLink, Filter, Gift, DollarSign, AlertTriangle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-
-type RewardStatus = 'pending' | 'approved' | 'in_progress' | 'completed' | 'cancelled' | 'as_in_progress';
-
-interface RewardSubmission {
-  id: string;
-  submission_number?: string;
-  company_name: string;
-  place_url: string;
-  place_mid: string;
-  daily_count: number;
-  total_days: number;
-  current_day?: number;
-  completed_count?: number;
-  status: RewardStatus;
-  created_at: string;
-  total_points: number;
-}
-
-const statusConfig: Record<RewardStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  pending: { label: '확인중', variant: 'outline' },
-  approved: { label: '접수완료', variant: 'default' },
-  in_progress: { label: '구동중', variant: 'secondary' },
-  completed: { label: '완료', variant: 'secondary' },
-  cancelled: { label: '중단됨', variant: 'destructive' },
-  as_in_progress: { label: 'AS 진행 중', variant: 'default' },
-};
+import { Search, Calendar, TrendingUp, ExternalLink, Filter, Gift, AlertTriangle } from 'lucide-react';
+import { useRewardStatus } from '@/hooks/dashboard/useRewardStatus';
+import { statusConfig, type RewardStatus } from '@/components/dashboard/reward-status';
 
 export default function RewardStatusPage() {
-  const { toast } = useToast();
-  const [submissions, setSubmissions] = useState<RewardSubmission[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<RewardStatus | 'all'>('all');
-  const [sortBy, setSortBy] = useState<'date' | 'cost'>('date');
-
-  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
-  const [selectedSubmission, setSelectedSubmission] = useState<string | null>(null);
-  const [agreedToCancel, setAgreedToCancel] = useState(false);
-  const [asConditionDialogOpen, setAsConditionDialogOpen] = useState(false);
-
-  useEffect(() => {
-    fetchSubmissions();
-  }, []);
-
-  const fetchSubmissions = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/submissions/reward');
-      if (!response.ok) {
-        throw new Error('Failed to fetch submissions');
-      }
-
-      const data = await response.json();
-      setSubmissions(data.submissions || []);
-    } catch (error) {
-      console.error('Error fetching submissions:', error);
-      setSubmissions([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCancelClick = (submissionId: string) => {
-    setSelectedSubmission(submissionId);
-    setAgreedToCancel(false);
-    setCancelDialogOpen(true);
-  };
-
-  const [cancelLoading, setCancelLoading] = useState(false);
-
-  const handleConfirmCancel = async () => {
-    if (!agreedToCancel) {
-      toast({
-        variant: 'destructive',
-        title: '동의 필요',
-        description: '동의하지 않으면 중단 요청을 할 수 없습니다.',
-      });
-      return;
-    }
-
-    if (!selectedSubmission) return;
-
-    setCancelLoading(true);
-    try {
-      const response = await fetch(`/api/submissions/reward/${selectedSubmission}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'cancel' }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || '중단 처리 중 오류가 발생했습니다.');
-      }
-
-      toast({
-        title: '✅ 중단 신청 완료',
-        description: '리워드는 환불이 진행되지 않습니다.',
-      });
-      setCancelDialogOpen(false);
-      setSelectedSubmission(null);
-      setAgreedToCancel(false);
-      fetchSubmissions();
-    } catch (error) {
-      console.error('Cancel error:', error);
-      toast({
-        variant: 'destructive',
-        title: '오류 발생',
-        description: error instanceof Error ? error.message : '중단 처리 중 오류가 발생했습니다.',
-      });
-    } finally {
-      setCancelLoading(false);
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  // 필터링 및 검색
-  const filteredSubmissions = submissions
-    .filter((sub) => {
-      const matchesSearch = sub.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           sub.place_mid?.includes(searchQuery);
-      const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    })
-    .sort((a, b) => {
-      if (sortBy === 'date') {
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      } else {
-        // sortBy === 'cost'
-        return b.total_points - a.total_points;
-      }
-    });
-
-  // 통계 계산
-  const stats = {
-    total: submissions.length,
-    pending: submissions.filter(s => s.status === 'pending').length,
-    in_progress: submissions.filter(s => s.status === 'in_progress' || s.status === 'approved').length,
-    completed: submissions.filter(s => s.status === 'completed').length,
-  };
+  const {
+    loading,
+    searchQuery,
+    statusFilter,
+    sortBy,
+    cancelDialogOpen,
+    agreedToCancel,
+    asConditionDialogOpen,
+    cancelLoading,
+    filteredSubmissions,
+    stats,
+    setSearchQuery,
+    setStatusFilter,
+    setSortBy,
+    setCancelDialogOpen,
+    setAgreedToCancel,
+    setAsConditionDialogOpen,
+    handleCancelClick,
+    handleConfirmCancel,
+    formatDate,
+  } = useRewardStatus();
 
   if (loading) {
     return (
