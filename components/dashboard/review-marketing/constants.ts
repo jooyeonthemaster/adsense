@@ -36,7 +36,7 @@ export const INITIAL_VISITOR_FORM = {
   businessName: '',
   placeUrl: '',
   placeMid: '',
-  dailyCount: 1,
+  dailyCount: 10,
   startDate: null,
   endDate: null,
   photoOption: 'with' as const,
@@ -49,7 +49,7 @@ export const INITIAL_VISITOR_FORM = {
 export const INITIAL_KMAP_FORM = {
   businessName: '',
   kmapUrl: '',
-  dailyCount: 1,
+  dailyCount: 10,
   startDate: null,
   endDate: null,
   hasPhoto: false,
