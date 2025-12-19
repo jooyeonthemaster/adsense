@@ -178,6 +178,10 @@ export const getStatusDisplay = (submission: UnifiedSubmission) => {
  * 중단 가능 여부 확인
  */
 export const canCancel = (submission: UnifiedSubmission): boolean => {
+  // 체험단 마케팅은 중단 불가 (블로거 선정/일정 확인 등 복잡한 프로세스)
+  if (submission.product_type === 'experience') {
+    return false;
+  }
   return ['pending', 'in_progress'].includes(submission.status);
 };
 
@@ -192,6 +196,11 @@ export const getDetailInfo = (submission: UnifiedSubmission): string => {
     case 'kakaomap':
       return `${submission.daily_count}건/일 × ${Math.ceil((submission.total_count || 0) / (submission.daily_count || 1))}일`;
     case 'blog':
+      // 외부계정 충전 요청인 경우
+      if (submission.account_id && submission.charge_count) {
+        return `외부계정 충전 ${submission.charge_count}건`;
+      }
+      // 일반 블로그 배포인 경우
       return `${submission.daily_count}건/일 × ${submission.total_days}일 (${submission.distribution_type})`;
     case 'cafe':
       const serviceLabel = submission.service_type === 'community' ? '커뮤니티' : '카페';

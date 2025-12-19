@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import type { ReceiptReviewSubmission, SortBy } from '@/components/dashboard/visitor-review/types';
 
 export function useVisitorReviewStatus() {
+  const router = useRouter();
   const [submissions, setSubmissions] = useState<ReceiptReviewSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,6 +94,10 @@ export function useVisitorReviewStatus() {
           data.refund_rate ? data.refund_rate * 100 : 0
         }%)`
       );
+
+      // Refresh the page to update points in header
+      router.refresh();
+
       setCancelDialogOpen(false);
       setSelectedSubmission(null);
       setAgreedToCancel(false);

@@ -33,7 +33,7 @@ export async function PUT(
     // Handle cancel action
     if (action === 'cancel') {
       // Only allow cancellation for pending or in_progress status
-      if (!['pending', 'approved'].includes(submission.status)) {
+      if (!['pending', 'in_progress'].includes(submission.status)) {
         return NextResponse.json(
           { error: '취소할 수 없는 상태입니다.' },
           { status: 400 }

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { BlogDistribution, BlogDistributionStats } from '@/components/dashboard/blog-distribution-status/types';
 import * as XLSX from 'xlsx';
 
 export function useBlogDistributionStatus() {
+  const router = useRouter();
   const { toast } = useToast();
   const [submissions, setSubmissions] = useState<BlogDistribution[]>([]);
   const [filteredSubmissions, setFilteredSubmissions] = useState<BlogDistribution[]>([]);
@@ -199,6 +201,10 @@ export function useBlogDistributionStatus() {
         title: '✅ 중단 신청 완료',
         description: refundMessage || '이미 예약 구동된 수량 제외 환불이 진행됩니다.',
       });
+
+      // Refresh the page to update points in header
+      router.refresh();
+
       setCancelDialogOpen(false);
       setSelectedSubmission(null);
       setAgreedToCancel(false);

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { RewardSubmission, RewardStatus } from '@/components/dashboard/reward-status';
 
 export function useRewardStatus() {
+  const router = useRouter();
   const { toast } = useToast();
   const [submissions, setSubmissions] = useState<RewardSubmission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +76,10 @@ export function useRewardStatus() {
         title: '✅ 중단 신청 완료',
         description: '리워드는 환불이 진행되지 않습니다.',
       });
+
+      // Refresh the page to update points in header
+      router.refresh();
+
       setCancelDialogOpen(false);
       setSelectedSubmission(null);
       setAgreedToCancel(false);

@@ -74,8 +74,8 @@ export async function PUT(
       );
     }
 
-    // Check if cancellable (only pending or approved)
-    if (!['pending', 'approved'].includes(submission.status)) {
+    // Check if cancellable (only pending or in_progress)
+    if (!['pending', 'in_progress'].includes(submission.status)) {
       return NextResponse.json(
         { error: '취소할 수 없는 상태입니다.' },
         { status: 400 }

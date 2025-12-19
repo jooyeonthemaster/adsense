@@ -95,9 +95,8 @@ export async function PUT(
 
     // Handle different actions
     if (action === 'cancel') {
-      // Only allow cancellation for certain statuses
-      const cancellableStatuses = ['pending', 'waiting_content'];
-      if (!cancellableStatuses.includes(submission.status)) {
+      // Only allow cancellation for pending or in_progress status
+      if (!['pending', 'in_progress'].includes(submission.status)) {
         return NextResponse.json(
           { error: '취소할 수 없는 상태입니다.' },
           { status: 400 }
@@ -118,8 +117,8 @@ export async function PUT(
         );
       }
 
-      // Refund points (100% for pending/waiting_content)
-      const refundRate = 1.0;
+      // Refund points (100% for pending, 50% for in_progress)
+      const refundRate = submission.status === 'pending' ? 1.0 : 0.5;
       const refundAmount = Math.floor(submission.total_points * refundRate);
       const newBalance = client.points + refundAmount;
 

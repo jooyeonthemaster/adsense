@@ -188,11 +188,13 @@ export function useAllSubmissions() {
         kakaomap: `/api/submissions/kakaomap/${selectedSubmission.id}`,
         blog: `/api/submissions/blog/${selectedSubmission.id}`,
         cafe: `/api/submissions/cafe/${selectedSubmission.id}`,
+        // experience는 중단 불가 (canCancel에서 필터링됨)
       };
 
       const endpoint = apiEndpoints[selectedSubmission.product_type];
       if (!endpoint) {
-        throw new Error('지원되지 않는 상품 유형입니다.');
+        console.error('Unknown product type:', selectedSubmission.product_type, selectedSubmission);
+        throw new Error(`지원되지 않는 상품 유형입니다: ${selectedSubmission.product_type}`);
       }
 
       const response = await fetch(endpoint, {
@@ -215,6 +217,9 @@ export function useAllSubmissions() {
         title: '✅ 중단 신청 완료',
         description: refundMessage || '중단 신청이 처리되었습니다.',
       });
+
+      // Refresh the page to update points in header
+      router.refresh();
 
       setCancelDialogOpen(false);
       setSelectedSubmission(null);

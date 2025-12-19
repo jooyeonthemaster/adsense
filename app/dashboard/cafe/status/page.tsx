@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -83,6 +84,7 @@ const scriptStatusConfig = {
 };
 
 export default function CafeMarketingStatusPage() {
+  const router = useRouter();
   const { toast } = useToast();
   const [submissions, setSubmissions] = useState<CafeSubmission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -156,6 +158,10 @@ export default function CafeMarketingStatusPage() {
         title: '✅ 중단 신청 완료',
         description: refundMessage || '이미 예약 구동된 수량 제외 환불이 진행됩니다.',
       });
+
+      // Refresh the page to update points in header
+      router.refresh();
+
       setCancelDialogOpen(false);
       setSelectedSubmission(null);
       setAgreedToCancel(false);

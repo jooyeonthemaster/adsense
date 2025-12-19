@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -17,6 +18,7 @@ import { StatusMobileCard } from '@/components/dashboard/review/kmap/StatusMobil
 import { calculateStats, formatDate } from '@/utils/review/kmap-status-helpers';
 
 export default function KakaomapReviewStatusPage() {
+  const router = useRouter();
   const { toast } = useToast();
   const [submissions, setSubmissions] = useState<KakaomapSubmission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,6 +113,10 @@ export default function KakaomapReviewStatusPage() {
         description: `환불 금액: ${data.refund_amount?.toLocaleString()}P`,
         duration: 5000,
       });
+
+      // Refresh the page to update points in header
+      router.refresh();
+
       setCancelDialogOpen(false);
       setSelectedSubmission(null);
       setAgreedToCancel(false);
