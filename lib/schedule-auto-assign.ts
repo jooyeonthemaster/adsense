@@ -75,17 +75,6 @@ export const autoAssignRandom = (
   const availableDates = getAvailableDates(startDate, endDate, availableDays);
   const timeSlots = generateTimeSlots(startTime, endTime);
 
-  console.log('[autoAssignRandom] Available dates:', availableDates.length);
-  console.log('[autoAssignRandom] Time slots:', timeSlots.length);
-
-  if (availableDates.length === 0) {
-    throw new Error('선택된 요일에 해당하는 날짜가 없습니다.');
-  }
-
-  if (timeSlots.length === 0) {
-    throw new Error('시간대를 생성할 수 없습니다.');
-  }
-
   return schedules.map((schedule) => ({
     ...schedule,
     visit_date: availableDates[Math.floor(Math.random() * availableDates.length)]
@@ -111,14 +100,6 @@ export const autoAssignDistributed = (
 
   const availableDates = getAvailableDates(startDate, endDate, availableDays);
   const timeSlots = generateTimeSlots(startTime, endTime, 30);
-
-  if (availableDates.length === 0) {
-    throw new Error('선택된 요일에 해당하는 날짜가 없습니다.');
-  }
-
-  if (timeSlots.length === 0) {
-    throw new Error('시간대를 생성할 수 없습니다.');
-  }
 
   return schedules.map((schedule, index) => {
     const dateIndex = Math.floor((index / schedules.length) * availableDates.length);
@@ -148,14 +129,6 @@ export const autoAssignEarliest = (
 
   const availableDates = getAvailableDates(startDate, endDate, availableDays);
   const timeSlots = generateTimeSlots(startTime, endTime, 30);
-
-  if (availableDates.length === 0) {
-    throw new Error('2주 이내에 선택된 요일에 해당하는 날짜가 없습니다.');
-  }
-
-  if (timeSlots.length === 0) {
-    throw new Error('시간대를 생성할 수 없습니다.');
-  }
 
   return schedules.map((schedule, index) => {
     const dateIndex = Math.floor(index / timeSlots.length);
@@ -189,14 +162,6 @@ export const autoAssignEvenly = (
   const interval = Math.floor(availableDates.length / schedules.length);
   const timeSlots = generateTimeSlots(startTime, endTime, 60);
 
-  if (availableDates.length === 0) {
-    throw new Error('선택된 요일에 해당하는 날짜가 없습니다.');
-  }
-
-  if (timeSlots.length === 0) {
-    throw new Error('시간대를 생성할 수 없습니다.');
-  }
-
   return schedules.map((schedule, index) => ({
     ...schedule,
     visit_date: availableDates[Math.min(index * interval, availableDates.length - 1)]
@@ -220,10 +185,6 @@ export const autoAssignSpecificTime = (
   endDate.setDate(endDate.getDate() + 30);
 
   const availableDates = getAvailableDates(startDate, endDate, availableDays);
-
-  if (availableDates.length === 0) {
-    throw new Error('선택된 요일에 해당하는 날짜가 없습니다.');
-  }
 
   return schedules.map((schedule, index) => ({
     ...schedule,

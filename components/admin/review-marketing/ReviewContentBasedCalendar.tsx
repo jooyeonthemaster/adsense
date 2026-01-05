@@ -7,7 +7,7 @@ import { DayButton } from 'react-day-picker';
 
 interface ContentItem {
   id: string;
-  review_registered_date: string | null;
+  review_registered_date?: string | null;
   script_text?: string | null;
 }
 

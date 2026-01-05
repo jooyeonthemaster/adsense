@@ -4,6 +4,20 @@ import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * 마감일 계산 헬퍼 함수
+ */
+function calculateEndDate(startDate: string | null | undefined, totalDays: number | null | undefined): string | null {
+  if (!startDate || !totalDays) return null;
+  try {
+    const start = new Date(startDate);
+    start.setDate(start.getDate() + totalDays - 1); // 시작일 포함이므로 -1
+    return start.toISOString().split('T')[0];
+  } catch {
+    return null;
+  }
+}
+
 interface UnifiedSubmission {
   id: string;
   product_type: 'place' | 'receipt' | 'kakaomap' | 'blog' | 'cafe' | 'experience';
@@ -13,6 +27,8 @@ interface UnifiedSubmission {
   total_points: number;
   created_at: string;
   updated_at: string;
+  start_date?: string; // 구동 시작일
+  end_date?: string | null; // 구동 마감일 (계산됨)
 
   // Product-specific fields
   place_url?: string;
@@ -22,11 +38,17 @@ interface UnifiedSubmission {
   current_day?: number;
   total_count?: number;
 
+  // Reward-specific
+  media_type?: 'twoople' | 'eureka';
+
   // Blog-specific
   distribution_type?: 'reviewer' | 'video' | 'automation';
   keywords?: string[];
+  account_id?: string; // 외부계정 충전용
+  charge_count?: number; // 외부계정 충전용
 
   // Cafe-specific
+  service_type?: 'cafe' | 'community'; // 카페 침투 / 커뮤니티 마케팅 구분
   cafe_list?: string[];
   has_photo?: boolean;
   script_status?: string;
@@ -44,7 +66,6 @@ interface UnifiedSubmission {
 
   // Common optional fields
   notes?: string;
-  start_date?: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -100,8 +121,10 @@ export async function GET(request: NextRequest) {
             daily_count: item.daily_count,
             total_days: item.total_days,
             current_day: calculateCurrentDay(item),
+            media_type: item.media_type || 'twoople', // 투플/유레카 구분
             notes: item.notes,
             start_date: item.start_date,
+            end_date: calculateEndDate(item.start_date, item.total_days),
           });
         });
       }
@@ -120,6 +143,7 @@ export async function GET(request: NextRequest) {
       } else if (receiptData) {
         receiptData.forEach((item) => {
           const mid = extractMidFromUrl(item.place_url);
+          const totalDays = item.daily_count > 0 ? Math.ceil(item.total_count / item.daily_count) : null;
 
           allSubmissions.push({
             id: item.id,
@@ -137,6 +161,7 @@ export async function GET(request: NextRequest) {
             has_photo: item.has_photo,
             notes: item.notes,
             start_date: item.start_date,
+            end_date: calculateEndDate(item.start_date, totalDays),
           });
         });
       }
@@ -154,6 +179,8 @@ export async function GET(request: NextRequest) {
         console.error('Kakaomap submissions error:', kakaomapError);
       } else if (kakaomapData) {
         kakaomapData.forEach((item) => {
+          const totalDays = item.daily_count > 0 ? Math.ceil(item.total_count / item.daily_count) : null;
+
           allSubmissions.push({
             id: item.id,
             product_type: 'kakaomap',
@@ -170,6 +197,7 @@ export async function GET(request: NextRequest) {
             script_status: item.script_confirmed ? 'confirmed' : 'pending',
             notes: item.notes,
             start_date: item.start_date,
+            end_date: calculateEndDate(item.start_date, totalDays),
           });
         });
       }
@@ -187,6 +215,8 @@ export async function GET(request: NextRequest) {
         console.error('Blog submissions error:', blogError);
       } else if (blogData) {
         blogData.forEach((item) => {
+          const totalDays = item.daily_count > 0 ? Math.ceil(item.total_count / item.daily_count) : null;
+
           allSubmissions.push({
             id: item.id,
             product_type: 'blog',
@@ -199,11 +229,14 @@ export async function GET(request: NextRequest) {
             place_url: item.place_url,
             daily_count: item.daily_count,
             total_count: item.total_count,
-            total_days: Math.ceil(item.total_count / item.daily_count),
+            total_days: totalDays ?? undefined,
             distribution_type: item.distribution_type,
             keywords: item.keywords,
+            account_id: item.account_id, // 외부계정 충전용
+            charge_count: item.charge_count, // 외부계정 충전용
             notes: item.notes,
             start_date: item.start_date,
+            end_date: calculateEndDate(item.start_date, totalDays),
           });
         });
       }
@@ -235,6 +268,8 @@ export async function GET(request: NextRequest) {
             team_count: item.team_count,
             keywords: item.keywords,
             notes: item.guide_text,
+            start_date: item.start_date,
+            end_date: null, // 체험단은 캠페인 완료 시점이 마감이므로 미정
             // 진행 상태 필드 추가
             bloggers_registered: item.bloggers_registered,
             bloggers_selected: item.bloggers_selected,
@@ -266,6 +301,9 @@ export async function GET(request: NextRequest) {
                 .filter((name: string | undefined): name is string => Boolean(name))
             : [];
 
+          // 마감일 계산: 일일 건수로 총 기간 계산
+          const totalDays = item.daily_count > 0 ? Math.ceil(item.total_count / item.daily_count) : null;
+
           allSubmissions.push({
             id: item.id,
             product_type: 'cafe',
@@ -277,12 +315,15 @@ export async function GET(request: NextRequest) {
             updated_at: item.updated_at,
             place_url: item.place_url,
             place_mid: placeMid,
+            service_type: item.service_type || 'cafe', // 카페 침투 / 커뮤니티 마케팅 구분
             cafe_list: cafeList,
             has_photo: item.has_photo,
             script_status: item.script_status || 'pending',
             script_url: item.script_url,
             total_count: item.total_count,
             notes: item.guideline || item.notes,
+            start_date: item.start_date,
+            end_date: calculateEndDate(item.start_date, totalDays),
           });
         });
       }

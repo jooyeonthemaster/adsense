@@ -35,11 +35,7 @@ export function ClientDetailDialog({
   open,
   onOpenChange,
 }: ClientDetailDialogProps) {
-  const hasBusinessInfo = client.business_number ||
-    client.business_license_url ||
-    client.representative_name ||
-    client.business_address ||
-    client.tax_email;
+  const hasBusinessInfo = client.business_license_url || client.tax_email;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -120,20 +116,8 @@ export function ClientDetailDialog({
 
             {hasBusinessInfo ? (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid gap-4 text-sm">
                   <div>
-                    <p className="text-muted-foreground mb-1">사업자등록번호</p>
-                    <p className="font-medium">{client.business_number || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground mb-1">대표자명</p>
-                    <p className="font-medium">{client.representative_name || '-'}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <p className="text-muted-foreground mb-1">사업장 주소</p>
-                    <p className="font-medium">{client.business_address || '-'}</p>
-                  </div>
-                  <div className="col-span-2">
                     <p className="text-muted-foreground mb-1">세금계산서 수령 이메일</p>
                     <p className="font-medium flex items-center gap-1">
                       {client.tax_email ? (

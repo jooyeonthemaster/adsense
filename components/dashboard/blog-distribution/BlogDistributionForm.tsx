@@ -133,10 +133,9 @@ export function BlogDistributionForm({
               id="businessName"
               type="text"
               value={formData.businessName}
-              onChange={(e) => onFormChange({ businessName: e.target.value })}
-              placeholder="업체명을 입력하세요"
-              className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
-              disabled={loadingBusinessName}
+              readOnly
+              placeholder="플레이스 링크 입력 시 자동 입력됩니다"
+              className="border-gray-200 bg-gray-50 h-9 text-sm cursor-not-allowed"
             />
             {loadingBusinessName && (
               <p className="text-xs text-blue-600">업체명 자동 입력 중...</p>
@@ -346,21 +345,23 @@ export function BlogDistributionForm({
             )}
           </div>
 
-          {/* 키워드 */}
-          <div className="space-y-2">
-            <Label htmlFor="keywords" className="text-xs font-medium text-gray-700">
-              키워드
-            </Label>
-            <Input
-              id="keywords"
-              type="text"
-              value={formData.keywords}
-              onChange={(e) => onFormChange({ keywords: e.target.value })}
-              placeholder="키워드를 입력하세요 (쉼표로 구분)"
-              className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
-            />
-            <span className="text-xs text-gray-500">여러 키워드는 쉼표(,)로 구분하여 입력하세요</span>
-          </div>
+          {/* 리뷰어 배포 전용: 키워드 */}
+          {selectedType === 'reviewer' && (
+            <div className="space-y-2">
+              <Label htmlFor="keywords" className="text-xs font-medium text-gray-700">
+                키워드
+              </Label>
+              <Input
+                id="keywords"
+                type="text"
+                value={formData.keywords}
+                onChange={(e) => onFormChange({ keywords: e.target.value })}
+                placeholder="키워드를 입력하세요 (쉼표로 구분)"
+                className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+              />
+              <span className="text-xs text-gray-500">여러 키워드는 쉼표(,)로 구분하여 입력하세요</span>
+            </div>
+          )}
 
           {/* 리뷰어 배포 전용: 가이드라인 */}
           {selectedType === 'reviewer' && (
@@ -410,6 +411,8 @@ export function BlogDistributionForm({
     </div>
   );
 }
+
+
 
 
 

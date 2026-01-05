@@ -1,0 +1,122 @@
+<svg width="794" height="1123" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="794" height="1123" fill="#FFFFFF"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="794" height="80" fill="#000000"/>
+  <text x="60" y="50" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#FFFFFF">
+    7. 작업 일정 및 진행 방안
+  </text>
+
+  <!-- Timeline Overview -->
+  <text x="60" y="140" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#000000">
+    예상 작업 일정
+  </text>
+
+  <!-- Phase 1 -->
+  <rect x="60" y="170" width="674" height="120" fill="#FFEBEE" stroke="#D32F2F" stroke-width="2"/>
+  <text x="80" y="200" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#D32F2F">
+    1단계: 긴급 버그 수정 (1일)
+  </text>
+  <text x="95" y="228" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 필수정보 팝업 신규 회원 미표시 버그 [최우선]
+  </text>
+  <text x="95" y="250" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 외부계정 충전 비용 청구 버그
+  </text>
+  <text x="95" y="272" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    → 서비스 운영에 직접 영향, 즉시 처리
+  </text>
+
+  <!-- Phase 2 -->
+  <rect x="60" y="310" width="674" height="140" fill="#FFF3E0" stroke="#F57C00" stroke-width="2"/>
+  <text x="80" y="340" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#F57C00">
+    2단계: 무료 처리 항목 (2~3일)
+  </text>
+  <text x="95" y="368" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 버그 수정 5건 (중단 요청 오류, 탭 이동 등)
+  </text>
+  <text x="95" y="390" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • UI/UX 개선 13건 (매체 추가, 필터, 클릭 이동 등)
+  </text>
+  <text x="95" y="412" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    → 일괄 처리 후 테스트
+  </text>
+  <text x="95" y="434" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#F57C00">
+    ※ 여기까지 무료 (총 20건 완료)
+  </text>
+
+  <!-- Phase 3 -->
+  <rect x="60" y="470" width="674" height="160" fill="#E3F2FD" stroke="#1976D2" stroke-width="2"/>
+  <text x="80" y="500" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#1976D2">
+    3단계: 추가금 항목 (선택) (3~7일)
+  </text>
+  <text x="95" y="528" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    선택하신 항목에 따라 진행 (우선순위 순)
+  </text>
+  <text x="95" y="550" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 우선: AI 리뷰 백그라운드 병렬 처리 (30만원) - 3~4일
+  </text>
+  <text x="95" y="572" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 이후: 20만원 항목들 순차 진행 - 각 1~2일
+  </text>
+  <text x="95" y="594" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 마지막: 50만원 대규모 기능 - 각 3~5일
+  </text>
+  <text x="95" y="616" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#1976D2">
+    ※ 클라이언트와 협의 후 진행
+  </text>
+
+  <!-- Process -->
+  <text x="60" y="670" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#000000">
+    진행 방안
+  </text>
+
+  <rect x="60" y="690" width="674" height="310" fill="#F5F5F5" stroke="#757575" stroke-width="2"/>
+
+  <text x="80" y="720" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#000000">
+    1. 요구사항 최종 확인
+  </text>
+  <text x="95" y="745" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 본 보고서 검토 후 추가/수정 사항 협의
+  </text>
+  <text x="95" y="765" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 엑셀 양식 파일 제공 (대량 업로드, 블로그 배포)
+  </text>
+
+  <text x="80" y="795" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#000000">
+    2. 추가금 항목 선택
+  </text>
+  <text x="95" y="820" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 필요한 항목만 선택 가능
+  </text>
+  <text x="95" y="840" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 우선순위에 따라 단계적 도입 가능
+  </text>
+
+  <text x="80" y="870" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#000000">
+    3. 개발 진행
+  </text>
+  <text x="95" y="895" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 1단계 긴급 버그 즉시 착수
+  </text>
+  <text x="95" y="915" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 각 단계 완료 후 검수 진행
+  </text>
+  <text x="95" y="935" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 피드백 반영 후 다음 단계 진행
+  </text>
+
+  <text x="80" y="965" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#000000">
+    4. 테스트 및 배포
+  </text>
+  <text x="95" y="990" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 각 단계별 테스트 환경 검증 후 운영 배포
+  </text>
+
+  <!-- Footer -->
+  <line x1="60" y1="1050" x2="734" y2="1050" stroke="#000000" stroke-width="1"/>
+  <text x="397" y="1085" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#666666">
+    Page 13
+  </text>
+</svg>

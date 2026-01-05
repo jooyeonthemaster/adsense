@@ -23,6 +23,7 @@ import {
   Gift,
   Megaphone,
   Database,
+  Receipt,
 } from 'lucide-react';
 
 const navigation = [
@@ -37,9 +38,10 @@ const navigation = [
   { name: '리워드 관리', href: '/admin/reward', icon: Gift },
   { name: '체험단 관리', href: '/admin/experience', icon: Sparkles },
   { name: '포인트 관리', href: '/admin/points', icon: DollarSign },
-  { name: 'AS 관리', href: '/admin/as-requests', icon: Settings },
+  { name: '세금계산서 요청', href: '/admin/tax-invoice-requests', icon: Receipt },
+  { name: 'AS & 중단 요청', href: '/admin/as-requests', icon: Settings },
   { name: '공지사항 관리', href: '/admin/announcements', icon: Megaphone },
-  { name: '상품 가이드 관리', href: '/admin/product-guides', icon: Package },
+  { name: '전체 상품 설정', href: '/admin/product-guides', icon: Package },
   { name: '데이터 관리', href: '/admin/data-management', icon: Database },
 ];
 

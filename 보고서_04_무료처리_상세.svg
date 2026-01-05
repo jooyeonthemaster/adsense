@@ -1,0 +1,99 @@
+<svg width="794" height="1123" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="794" height="1123" fill="#FFFFFF"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="794" height="80" fill="#000000"/>
+  <text x="60" y="50" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#FFFFFF">
+    2. 무료 처리 항목 상세 (1/2)
+  </text>
+
+  <!-- Bug Fixes Section -->
+  <text x="60" y="130" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#000000">
+    ▶ 버그 수정 (7건)
+  </text>
+
+  <!-- Item 1 -->
+  <rect x="60" y="150" width="674" height="110" fill="#F8F8F8" stroke="#000000" stroke-width="1"/>
+  <text x="75" y="175" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#000000">
+    1. 외부 계정 충전 비용 계산 오류
+  </text>
+  <text x="90" y="200" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    증상: 블로그 배포에서 외부 계정 선택 시 비용이 청구되지 않음
+  </text>
+  <text x="90" y="222" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    원인: 외부 계정 타입 선택 시 가격 계산 로직 누락
+  </text>
+  <text x="90" y="244" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    작업: pricing.ts 가격 계산 함수 수정
+  </text>
+
+  <!-- Item 2 -->
+  <rect x="60" y="275" width="674" height="110" fill="#F8F8F8" stroke="#000000" stroke-width="1"/>
+  <text x="75" y="300" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#000000">
+    2. 중단 요청 '취소할 수 없는 상태' 오류
+  </text>
+  <text x="90" y="325" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    증상: 구동 중인 건 중단 요청 시 오류 메시지 표시
+  </text>
+  <text x="90" y="347" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    원인: 중단 가능 상태 조건에서 'running' 상태 제외됨
+  </text>
+  <text x="90" y="369" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    작업: 중단 가능 상태에 running 추가, 오류 메시지 개선
+  </text>
+
+  <!-- Item 3 -->
+  <rect x="60" y="400" width="674" height="110" fill="#F8F8F8" stroke="#000000" stroke-width="1"/>
+  <text x="75" y="425" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#000000">
+    3. 신규 가입자 충전 내역 미표시
+  </text>
+  <text x="90" y="450" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    증상: 새로 가입한 아이디에서 충전 요청 후 내역 미표시
+  </text>
+  <text x="90" y="472" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    원인: 초기 포인트 거래 데이터 미생성
+  </text>
+  <text x="90" y="494" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    작업: 신규 가입자 초기 데이터 생성 로직 추가
+  </text>
+
+  <!-- Item 4 - Critical -->
+  <rect x="60" y="525" width="674" height="130" fill="#FFF3CD" stroke="#FF6B6B" stroke-width="2"/>
+  <text x="75" y="550" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#DC3545">
+    4. 필수정보 팝업 신규 회원 미표시 버그 [긴급]
+  </text>
+  <text x="90" y="575" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    증상: 신규 가입자에게 필수 정보 입력 팝업이 나타나지 않음
+  </text>
+  <text x="90" y="597" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    원인: onboarding_completed가 null인 경우 체크 로직 누락
+  </text>
+  <text x="90" y="619" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    작업: dashboard/layout.tsx에서 null 체크 추가
+  </text>
+  <text x="90" y="641" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#DC3545">
+    ※ 신규 가입자 서비스 이용 불가 - 최우선 처리 필요
+  </text>
+
+  <!-- Item 5 -->
+  <rect x="60" y="670" width="674" height="110" fill="#F8F8F8" stroke="#000000" stroke-width="1"/>
+  <text x="75" y="695" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#000000">
+    5. 리워드 탭 이동 오류
+  </text>
+  <text x="90" y="720" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    증상: 리뷰마케팅 클릭 후 다른 탭 클릭 시 이동 안됨
+  </text>
+  <text x="90" y="742" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    원인: 탭 컴포넌트 상태 관리 오류
+  </text>
+  <text x="90" y="764" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    작업: 탭 클릭 이벤트 핸들러 수정
+  </text>
+
+  <!-- Footer -->
+  <line x1="60" y1="1050" x2="734" y2="1050" stroke="#000000" stroke-width="1"/>
+  <text x="397" y="1085" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#666666">
+    Page 4
+  </text>
+</svg>

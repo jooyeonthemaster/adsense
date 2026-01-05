@@ -1,8 +1,10 @@
 import { ClientNav } from '@/components/layout/client-nav';
 import { requireAuth } from '@/lib/auth';
 import { createClient } from '@/utils/supabase/server';
+import { checkProfileCompleteness } from '@/lib/profile-utils';
 import { Toaster } from '@/components/ui/toaster';
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 
 export default async function ClientLayout({
   children,
@@ -15,7 +17,7 @@ export default async function ClientLayout({
   const supabase = await createClient();
   const { data: client } = await supabase
     .from('clients')
-    .select('points, onboarding_completed, representative_name, phone, email, company_name')
+    .select('points, onboarding_completed')
     .eq('id', user.id)
     .single();
 
@@ -24,16 +26,22 @@ export default async function ClientLayout({
     redirect('/onboarding');
   }
 
+  // 프로필 완성도 체크
+  const headersList = await headers();
+  const pathname = headersList.get('x-pathname') || '';
+
+  // /dashboard/notifications 경로는 프로필 체크 제외
+  // (마이페이지에서 프로필을 입력할 수 있도록)
+  const isNotificationsPage = pathname === '/dashboard/notifications';
+
+  // 항상 프로필 완성도 체크 (사이드바 메뉴 비활성화용)
+  const profileCheck = await checkProfileCompleteness(user.id);
+
+  if (!isNotificationsPage && !profileCheck.isComplete) {
+    redirect('/dashboard/notifications?tab=mypage');
+  }
+
   const currentPoints = client?.points || 0;
-
-  // 프로필 필수 정보 미완성 체크
-  const missingFields: string[] = [];
-  if (!client?.company_name?.trim()) missingFields.push('회사명');
-  if (!client?.representative_name?.trim()) missingFields.push('대표자명');
-  if (!client?.phone?.trim()) missingFields.push('연락처');
-  if (!client?.email?.trim()) missingFields.push('이메일');
-
-  const isProfileIncomplete = missingFields.length > 0;
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -42,9 +50,9 @@ export default async function ClientLayout({
           name: user.company_name || user.name,
           points: currentPoints,
         }}
-        profileAlert={isProfileIncomplete ? {
-          missingFields,
-          message: '서비스 이용을 위해 필수 정보를 입력해주세요'
+        profileAlert={!profileCheck.isComplete ? {
+          missingFields: profileCheck.missingFieldLabels,
+          message: '서비스 이용을 위해 프로필을 완성해주세요',
         } : undefined}
       />
       <main className="flex-1 overflow-y-auto bg-slate-50 pt-14 lg:pt-0">

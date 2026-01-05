@@ -3,6 +3,20 @@ import { createClient } from '@/utils/supabase/server';
 import { requireAuth } from '@/lib/auth';
 
 /**
+ * 마감일 계산 헬퍼 함수
+ */
+function calculateEndDate(startDate: string | null | undefined, totalDays: number | null | undefined): string | null {
+  if (!startDate || !totalDays) return null;
+  try {
+    const start = new Date(startDate);
+    start.setDate(start.getDate() + totalDays - 1); // 시작일 포함이므로 -1
+    return start.toISOString().split('T')[0];
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 전체 접수 내역 API - 완전 재작성 + 최대 성능 최적화 버전
  *
  * 성능 최적화:
@@ -175,6 +189,8 @@ export async function GET() {
       return {
         ...sub,
         type: 'place' as const,
+        place_url: sub.place_url, // 업체 링크
+        end_date: calculateEndDate(sub.start_date, sub.total_days), // 마감일
         completed_count: progress.completed,
         current_day: progress.currentDay,
         progress_percentage: progressPercentage,
@@ -184,10 +200,14 @@ export async function GET() {
     const receiptWithDetails = (receiptSubmissions || []).map((sub) => {
       const actualCountTotal = receiptActualCountMap.get(sub.id) || 0;
       const progressPercentage = sub.total_count > 0 ? Math.round((actualCountTotal / sub.total_count) * 100) : 0;
+      // 마감일 계산: 일일 건수로 총 기간 계산
+      const totalDays = sub.daily_count > 0 ? Math.ceil(sub.total_count / sub.daily_count) : null;
 
       return {
         ...sub,
         type: 'receipt' as const,
+        place_url: sub.naver_place_url, // 업체 링크 (네이버 플레이스)
+        end_date: calculateEndDate(sub.start_date, totalDays), // 마감일
         content_items_count: receiptContentCountMap.get(sub.id) || 0,
         unread_messages_count: receiptUnreadCountMap.get(sub.id) || 0,
         pending_revision_count: receiptRevisionCountMap.get(sub.id) || 0,
@@ -199,10 +219,14 @@ export async function GET() {
     const kakaomapWithDetails = (kakaomapSubmissions || []).map((sub) => {
       const contentCount = kakaomapContentCountMap.get(sub.id) || 0;
       const progressPercentage = sub.total_count > 0 ? Math.round((contentCount / sub.total_count) * 100) : 0;
+      // 마감일 계산: 일일 건수로 총 기간 계산
+      const totalDays = sub.daily_count > 0 ? Math.ceil(sub.total_count / sub.daily_count) : null;
 
       return {
         ...sub,
         type: 'kakaomap' as const,
+        place_url: sub.kakaomap_url, // 업체 링크 (카카오맵)
+        end_date: calculateEndDate(sub.start_date, totalDays), // 마감일
         content_items_count: contentCount,
         unread_messages_count: kakaomapUnreadCountMap.get(sub.id) || 0,
         pending_revision_count: kakaomapRevisionCountMap.get(sub.id) || 0,
@@ -217,6 +241,8 @@ export async function GET() {
       return {
         ...sub,
         type: 'blog' as const,
+        place_url: sub.blog_url, // 업체 링크 (블로그/홈페이지)
+        end_date: calculateEndDate(sub.start_date, sub.total_days), // 마감일
         completed_count: completedCount,
         progress_percentage: progressPercentage,
       };
@@ -225,10 +251,14 @@ export async function GET() {
     const cafeWithProgress = (cafeSubmissions || []).map((sub) => {
       const completedCount = cafeCompletedMap.get(sub.id) || 0;
       const progressPercentage = sub.total_count > 0 ? Math.round((completedCount / sub.total_count) * 100) : 0;
+      // 카페 침투는 total_days로 마감일 계산
+      const totalDays = sub.daily_count > 0 ? Math.ceil(sub.total_count / sub.daily_count) : null;
 
       return {
         ...sub,
         type: 'cafe' as const,
+        place_url: sub.reference_url || null, // 참고 URL
+        end_date: calculateEndDate(sub.start_date, totalDays), // 마감일
         completed_count: completedCount,
         progress_percentage: progressPercentage,
       };
@@ -248,6 +278,8 @@ export async function GET() {
       return {
         ...sub,
         type: 'experience' as const,
+        place_url: sub.place_url || null, // 업체 링크
+        end_date: null, // 체험단은 캠페인 완료 시점이 마감이므로 미정
         progress_percentage: progressPercentage,
       };
     });

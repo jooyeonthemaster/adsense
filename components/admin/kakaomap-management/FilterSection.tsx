@@ -71,6 +71,7 @@ export function FilterSection({
           <SelectItem value="in_progress">{KAKAOMAP_STATUS_LABELS.in_progress.label}</SelectItem>
           <SelectItem value="completed">{KAKAOMAP_STATUS_LABELS.completed.label}</SelectItem>
           <SelectItem value="cancelled">{KAKAOMAP_STATUS_LABELS.cancelled.label}</SelectItem>
+          <SelectItem value="cancellation_requested">{KAKAOMAP_STATUS_LABELS.cancellation_requested.label}</SelectItem>
         </SelectContent>
       </Select>
 

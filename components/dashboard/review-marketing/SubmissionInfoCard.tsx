@@ -106,10 +106,9 @@ export function SubmissionInfoCard({
             id="businessName"
             type="text"
             value={businessName}
-            onChange={(e) => handleBusinessNameChange(e.target.value)}
-            placeholder="업체명을 입력하세요"
-            className="border-gray-200 focus:border-purple-500 focus:ring-purple-500/20 h-9 text-sm"
-            disabled={loadingBusinessName}
+            readOnly
+            placeholder="플레이스 링크 입력 시 자동 입력됩니다"
+            className="border-gray-200 bg-gray-50 h-9 text-sm cursor-not-allowed"
           />
         </div>
 

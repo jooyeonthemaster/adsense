@@ -123,10 +123,36 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (!charge_count || charge_count < 1) {
+      if (!charge_count || charge_count < 30) {
         return NextResponse.json(
-          { error: '충전 건수를 1건 이상 입력해주세요.' },
+          { error: '충전 건수는 최소 30건 이상이어야 합니다.' },
           { status: 400 }
+        );
+      }
+
+      // Calculate points for external account charging (10P per unit)
+      const total_points = charge_count * 10;
+
+      // Check if client has enough points
+      if (client.points < total_points) {
+        return NextResponse.json(
+          { error: '포인트가 부족합니다.' },
+          { status: 400 }
+        );
+      }
+
+      // Deduct points
+      const newBalance = client.points - total_points;
+      const { error: updateError } = await supabase
+        .from('clients')
+        .update({ points: newBalance })
+        .eq('id', user.id);
+
+      if (updateError) {
+        console.error('Error updating points:', updateError);
+        return NextResponse.json(
+          { error: '포인트 차감 중 오류가 발생했습니다.' },
+          { status: 500 }
         );
       }
 
@@ -136,13 +162,18 @@ export async function POST(request: NextRequest) {
 
       if (snError) {
         console.error('Error generating submission number:', snError);
+        // Rollback points
+        await supabase
+          .from('clients')
+          .update({ points: client.points })
+          .eq('id', user.id);
         return NextResponse.json(
           { error: '접수번호 생성 중 오류가 발생했습니다.' },
           { status: 500 }
         );
       }
 
-      // 외부 계정 충전 요청 저장 (포인트 차감 없음)
+      // 외부 계정 충전 요청 저장
       const { data: submission, error: submissionError } = await supabase
         .from('blog_distribution_submissions')
         .insert({
@@ -154,7 +185,7 @@ export async function POST(request: NextRequest) {
           place_url: '', // NOT NULL 제약 조건 때문에 빈 문자열 사용
           daily_count: 0,
           total_count: charge_count,
-          total_points: 0, // 충전 요청이므로 포인트 차감 없음
+          total_points: total_points, // 건당 10P 차감
           keywords: null,
           notes: notes || null,
           account_id: account_id,
@@ -166,17 +197,34 @@ export async function POST(request: NextRequest) {
 
       if (submissionError) {
         console.error('Error creating external account submission:', submissionError);
+        // Rollback points
+        await supabase
+          .from('clients')
+          .update({ points: client.points })
+          .eq('id', user.id);
         return NextResponse.json(
           { error: '충전 요청 생성 중 오류가 발생했습니다.' },
           { status: 500 }
         );
       }
 
+      // Create point transaction record
+      await supabase.from('point_transactions').insert({
+        client_id: user.id,
+        transaction_type: 'deduct',
+        amount: -total_points,
+        balance_after: newBalance,
+        reference_type: 'blog_submission',
+        reference_id: submission.id,
+        description: `외부계정 충전 요청 (${account_id} - ${charge_count}건)`,
+      });
+
       revalidatePath('/dashboard', 'layout');
 
       return NextResponse.json({
         success: true,
         submission,
+        new_balance: newBalance,
         message: '외부 계정 충전 요청이 접수되었습니다.',
       });
     }

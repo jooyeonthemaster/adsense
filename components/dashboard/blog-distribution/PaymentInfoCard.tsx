@@ -9,6 +9,7 @@ interface PaymentInfoCardProps {
   dailyCount: number;
   operationDays: number;
   pricingLoading: boolean;
+  isExternalAccountCharge?: boolean;
 }
 
 export function PaymentInfoCard({
@@ -18,6 +19,7 @@ export function PaymentInfoCard({
   dailyCount,
   operationDays,
   pricingLoading,
+  isExternalAccountCharge = false,
 }: PaymentInfoCardProps) {
   return (
     <Card className="border-gray-200">
@@ -57,7 +59,9 @@ export function PaymentInfoCard({
               </div>
             )}
             <div className="text-xs text-white/80">
-              일 {dailyCount}건 × {operationDays}일
+              {isExternalAccountCharge
+                ? `외부계정 충전 ${totalCount}건`
+                : `일 ${dailyCount}건 × ${operationDays}일`}
             </div>
           </div>
         </div>
@@ -77,6 +81,8 @@ export function PaymentInfoCard({
     </Card>
   );
 }
+
+
 
 
 

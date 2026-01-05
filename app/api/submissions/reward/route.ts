@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
       total_days,
       total_points,
       start_date,
+      media_type = 'twoople', // 투플 또는 유레카
     } = body;
 
     // Validation
@@ -122,12 +123,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get price for place traffic (리워드)
-    let pricePerUnit = await getProductPrice(user.id, 'place-traffic');
+    // Get price based on media type (투플: twoople-reward, 유레카: eureka-reward)
+    const pricingSlug = media_type === 'eureka' ? 'eureka-reward' : 'twoople-reward';
+    const mediaName = media_type === 'eureka' ? '유레카' : '투플';
+    let pricePerUnit = await getProductPrice(user.id, pricingSlug);
 
     if (!pricePerUnit) {
       return NextResponse.json(
-        { error: '상품 가격 정보를 찾을 수 없습니다.' },
+        { error: `${mediaName} 상품 가격 정보를 찾을 수 없습니다.` },
         { status: 400 }
       );
     }
@@ -197,6 +200,7 @@ export async function POST(request: NextRequest) {
         total_points,
         status: 'pending',
         start_date: start_date || null, // 클라이언트가 선택한 시작일
+        media_type, // 투플 또는 유레카
         notes: null,
       })
       .select()
@@ -224,7 +228,7 @@ export async function POST(request: NextRequest) {
       balance_after: newBalance,
       reference_type: 'place_submission',
       reference_id: submission.id,
-      description: `리워드 접수 (${company_name} - ${daily_count}타/일 × ${total_days}일)`,
+      description: `${mediaName} 리워드 접수 (${company_name} - ${daily_count}타/일 × ${total_days}일)`,
     });
 
     // Revalidate all dashboard pages to show updated points immediately

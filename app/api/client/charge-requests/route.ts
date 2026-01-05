@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/service';
-import { requireAuth } from '@/lib/auth';
+import { requireOnboardedClient } from '@/lib/auth';
 
 // 클라이언트의 충전 요청 목록 조회
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireAuth(['client']);
+    const user = await requireOnboardedClient();
     const supabase = await createClient();
 
     const { data: chargeRequests, error } = await supabase
@@ -23,8 +23,19 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ chargeRequests: chargeRequests || [] });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in GET /api/client/charge-requests:', error);
+
+    if (error.message === 'OnboardingRequired') {
+      return NextResponse.json(
+        {
+          error: '온보딩을 완료해야 서비스를 이용할 수 있습니다.',
+          redirect: '/onboarding'
+        },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json(
       { error: '충전 요청 내역 조회 중 오류가 발생했습니다.' },
       { status: 500 }
@@ -35,7 +46,7 @@ export async function GET(request: NextRequest) {
 // 충전 요청 생성
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireAuth(['client']);
+    const user = await requireOnboardedClient();
     const supabase = await createClient();
 
     const body = await request.json();
@@ -69,12 +80,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       chargeRequest,
-      message: '충전 요청이 성공적으로 생성되었습니다.' 
+      message: '충전 요청이 성공적으로 생성되었습니다.'
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in POST /api/client/charge-requests:', error);
+
+    if (error.message === 'OnboardingRequired') {
+      return NextResponse.json(
+        {
+          error: '온보딩을 완료해야 서비스를 이용할 수 있습니다.',
+          redirect: '/onboarding'
+        },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json(
       { error: '충전 요청 생성 중 오류가 발생했습니다.' },
       { status: 500 }

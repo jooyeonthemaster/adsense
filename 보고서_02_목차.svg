@@ -1,0 +1,83 @@
+<svg width="794" height="1123" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="794" height="1123" fill="#FFFFFF"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="794" height="80" fill="#000000"/>
+  <text x="60" y="50" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#FFFFFF">
+    목차
+  </text>
+
+  <!-- Content -->
+  <text x="60" y="150" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#000000">
+    1. 요청사항 분류 및 개요
+  </text>
+  <line x1="80" y1="165" x2="500" y2="165" stroke="#CCCCCC" stroke-width="1"/>
+  <text x="80" y="195" font-family="Arial, sans-serif" font-size="16" fill="#666666">
+    • 무료 처리 항목 (20건)
+  </text>
+  <text x="80" y="225" font-family="Arial, sans-serif" font-size="16" fill="#666666">
+    • 추가금 필요 항목 (13건)
+  </text>
+
+  <text x="60" y="290" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#000000">
+    2. 무료 처리 항목 상세
+  </text>
+  <line x1="80" y1="305" x2="500" y2="305" stroke="#CCCCCC" stroke-width="1"/>
+  <text x="80" y="335" font-family="Arial, sans-serif" font-size="16" fill="#666666">
+    • 버그 수정 항목 (7건)
+  </text>
+  <text x="80" y="365" font-family="Arial, sans-serif" font-size="16" fill="#666666">
+    • UI/UX 개선 항목 (13건)
+  </text>
+
+  <text x="60" y="430" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#000000">
+    3. 추가금 필요 항목 상세
+  </text>
+  <line x1="80" y1="445" x2="500" y2="445" stroke="#CCCCCC" stroke-width="1"/>
+  <text x="80" y="475" font-family="Arial, sans-serif" font-size="16" fill="#666666">
+    • 20만원 항목 (8건)
+  </text>
+  <text x="80" y="505" font-family="Arial, sans-serif" font-size="16" fill="#666666">
+    • 30만원 항목 (1건)
+  </text>
+  <text x="80" y="535" font-family="Arial, sans-serif" font-size="16" fill="#666666">
+    • 50만원 항목 (2건)
+  </text>
+  <text x="80" y="565" font-family="Arial, sans-serif" font-size="16" fill="#666666">
+    • 협의 필요 항목 (2건)
+  </text>
+
+  <text x="60" y="630" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#000000">
+    4. 추가금 발생 사유 설명
+  </text>
+  <line x1="80" y1="645" x2="500" y2="645" stroke="#CCCCCC" stroke-width="1"/>
+  <text x="80" y="675" font-family="Arial, sans-serif" font-size="16" fill="#666666">
+    • 각 항목별 기술적 근거
+  </text>
+  <text x="80" y="705" font-family="Arial, sans-serif" font-size="16" fill="#666666">
+    • 작업 범위 및 소요 시간
+  </text>
+
+  <text x="60" y="770" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#000000">
+    5. 비용 총정리
+  </text>
+  <line x1="80" y1="785" x2="500" y2="785" stroke="#CCCCCC" stroke-width="1"/>
+  <text x="80" y="815" font-family="Arial, sans-serif" font-size="16" fill="#666666">
+    • 선택 항목별 비용
+  </text>
+  <text x="80" y="845" font-family="Arial, sans-serif" font-size="16" fill="#666666">
+    • 우선순위 권장사항
+  </text>
+
+  <text x="60" y="910" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#000000">
+    6. 작업 일정 및 진행 방안
+  </text>
+  <line x1="80" y1="925" x2="500" y2="925" stroke="#CCCCCC" stroke-width="1"/>
+
+  <!-- Footer -->
+  <line x1="60" y1="1050" x2="734" y2="1050" stroke="#000000" stroke-width="1"/>
+  <text x="397" y="1085" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#666666">
+    Page 2
+  </text>
+</svg>

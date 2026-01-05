@@ -12,6 +12,21 @@ import {
   canCancel,
 } from '@/lib/submission-utils';
 
+// 구동기간 포맷팅 (MM/DD ~ MM/DD)
+const formatOperationPeriod = (startDate?: string, endDate?: string | null): string => {
+  if (!startDate) return '-';
+
+  const formatShortDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
+  };
+
+  const start = formatShortDate(startDate);
+  if (!endDate) return `${start} ~`;
+
+  return `${start} ~ ${formatShortDate(endDate)}`;
+};
+
 interface SubmissionCardProps {
   submission: UnifiedSubmission;
   onCancel: (submission: UnifiedSubmission) => void;
@@ -97,16 +112,20 @@ export function SubmissionCard({
       )}
 
       {/* 상세 정보 */}
-      <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
-        <div>
+      <div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-100">
+        <div className="col-span-2">
           <p className="text-xs text-gray-500">상세 정보</p>
           <p className="text-sm font-medium">{getDetailInfo(submission)}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">구동기간</p>
+          <p className="text-sm font-medium">{formatOperationPeriod(submission.start_date, submission.end_date)}</p>
         </div>
         <div>
           <p className="text-xs text-gray-500">접수일시</p>
           <p className="text-sm font-medium">{formatDate(submission.created_at)}</p>
         </div>
-        <div className="col-span-2">
+        <div className="col-span-2 text-right">
           <p className="text-xs text-gray-500">총 비용</p>
           <p className="text-sm font-semibold text-sky-600">
             {submission.total_points.toLocaleString()}P

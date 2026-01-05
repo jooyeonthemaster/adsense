@@ -15,12 +15,15 @@ export interface PlaceSubmission {
   completed_count?: number;
   current_day?: number;
   progress_percentage?: number;
+  media_type?: 'twoople' | 'eureka';
   clients?: {
     company_name: string;
     contact_person: string | null;
     email: string | null;
   };
 }
+
+export type MediaTypeFilter = 'all' | 'twoople' | 'eureka';
 
 export interface RewardStats {
   total: number;

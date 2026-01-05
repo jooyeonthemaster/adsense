@@ -20,7 +20,11 @@ export async function middleware(request: NextRequest) {
   );
 
   if (!isAdminRoute && !isClientRoute) {
-    return NextResponse.next();
+    const response = NextResponse.next();
+    const { searchParams } = request.nextUrl;
+    response.headers.set('x-pathname', pathname);
+    response.headers.set('x-search', searchParams.toString());
+    return response;
   }
 
   // Get session cookie
@@ -49,7 +53,12 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/admin', request.url));
     }
 
-    return NextResponse.next();
+    // Add pathname and search to headers for layout access
+    const response = NextResponse.next();
+    const { searchParams } = request.nextUrl;
+    response.headers.set('x-pathname', pathname);
+    response.headers.set('x-search', searchParams.toString());
+    return response;
   } catch {
     return NextResponse.redirect(new URL('/login', request.url));
   }

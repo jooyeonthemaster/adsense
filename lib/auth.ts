@@ -107,6 +107,8 @@ export async function authenticateClient(
     type: 'client',
     company_name: client.company_name,
     points: client.points,
+    onboarding_completed: client.onboarding_completed ?? true, // 기존 사용자 호환성
+    client_type: client.client_type,
   };
 }
 
@@ -168,6 +170,40 @@ export async function requireAuth(
   }
 
   return session.user;
+}
+
+/**
+ * 온보딩을 완료한 클라이언트만 허용하는 인증 함수
+ * @throws Error('OnboardingRequired') - 온보딩 미완료 시
+ */
+export async function requireOnboardedClient(): Promise<AuthUser> {
+  const user = await requireAuth(['client']);
+
+  if (user.onboarding_completed === false) {
+    throw new Error('OnboardingRequired');
+  }
+
+  return user;
+}
+
+/**
+ * 온보딩 + 프로필 완성을 모두 확인하는 인증 함수
+ * @throws Error('OnboardingRequired') - 온보딩 미완료 시
+ * @throws Error('ProfileIncomplete') - 프로필 미완성 시
+ */
+export async function requireCompleteProfile(): Promise<AuthUser> {
+  const user = await requireOnboardedClient();
+
+  const { checkProfileCompleteness } = await import('./profile-utils');
+  const profileCheck = await checkProfileCompleteness(user.id);
+
+  if (!profileCheck.isComplete) {
+    const error = new Error('ProfileIncomplete') as any;
+    error.missingFields = profileCheck.missingFieldLabels;
+    throw error;
+  }
+
+  return user;
 }
 
 // ============================================

@@ -30,9 +30,6 @@ export interface ClientProfile {
   email: string | null;
   business_license_url: string | null;
   business_license_name: string | null;
-  business_number: string | null;
-  representative_name: string | null;
-  business_address: string | null;
   tax_email: string | null;
   profile_updated_at: string | null;
   created_at: string;
@@ -45,9 +42,6 @@ export interface ProfileFormData {
   contact_person: string;
   phone: string;
   email: string;
-  business_number: string;
-  representative_name: string;
-  business_address: string;
   tax_email: string;
 }
 

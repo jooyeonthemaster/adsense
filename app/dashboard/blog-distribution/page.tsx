@@ -1,16 +1,66 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { AlertCircle } from 'lucide-react';
 
-// 블로그 배포 메인 페이지 - 기본 타입으로 리다이렉트
+// 블로그 배포 메인 페이지 - 활성화된 상품으로 리다이렉트
 export default function BlogDistributionPage() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [noActiveProducts, setNoActiveProducts] = useState(false);
 
   useEffect(() => {
-    // 기본값으로 일반 블로그 배포 페이지로 리다이렉트
-    router.replace('/dashboard/blog-distribution/blog');
+    const fetchAndRedirect = async () => {
+      try {
+        const response = await fetch('/api/pricing');
+        const data = await response.json();
+
+        if (data.success && data.activeProducts) {
+          // 블로그 배포 상품 slug와 URL 매핑
+          const blogServices = [
+            { slug: 'video-distribution', url: 'video' },
+            { slug: 'auto-distribution', url: 'auto' },
+            { slug: 'reviewer-distribution', url: 'reviewer' },
+          ];
+
+          // 활성화된 첫 번째 블로그 배포 상품 찾기
+          const activeService = blogServices.find(
+            service => data.activeProducts.includes(service.slug)
+          );
+
+          if (activeService) {
+            router.replace(`/dashboard/blog-distribution/${activeService.url}`);
+          } else {
+            // 활성화된 블로그 배포 상품이 없는 경우
+            setNoActiveProducts(true);
+            setIsLoading(false);
+          }
+        } else {
+          // API 실패 시 기본값으로 video 페이지로 이동
+          router.replace('/dashboard/blog-distribution/video');
+        }
+      } catch (error) {
+        console.error('상품 정보 로드 실패:', error);
+        router.replace('/dashboard/blog-distribution/video');
+      }
+    };
+
+    fetchAndRedirect();
   }, [router]);
+
+  if (noActiveProducts) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center p-8">
+          <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">현재 이용 가능한 서비스가 없습니다</h2>
+          <p className="text-gray-600">블로그 배포 서비스가 일시적으로 중단되었습니다.</p>
+          <p className="text-gray-600">관리자에게 문의해주세요.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">

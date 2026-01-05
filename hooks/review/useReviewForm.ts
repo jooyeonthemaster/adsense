@@ -22,6 +22,7 @@ interface UseReviewFormReturn {
   // State
   selectedType: ReviewType;
   pricing: Record<string, number>;
+  activeProducts: string[];
   loadingPrice: boolean;
   isSubmitting: boolean;
   loadingBusinessName: boolean;
@@ -30,6 +31,7 @@ interface UseReviewFormReturn {
   services: ReviewServiceConfig[];
   currentService: ReviewServiceConfig | undefined;
   isPriceConfigured: boolean;
+  noActiveProducts: boolean;
 
   // Computed values
   totalDays: number;
@@ -55,6 +57,7 @@ export function useReviewForm(initialType: ReviewType): UseReviewFormReturn {
   // State
   const [selectedType, setSelectedType] = useState<ReviewType>(initialType);
   const [pricing, setPricing] = useState<Record<string, number>>({});
+  const [activeProducts, setActiveProducts] = useState<string[]>([]);
   const [loadingPrice, setLoadingPrice] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingBusinessName, setLoadingBusinessName] = useState(false);
@@ -67,8 +70,13 @@ export function useReviewForm(initialType: ReviewType): UseReviewFormReturn {
       try {
         const response = await fetch('/api/pricing');
         const data = await response.json();
-        if (data.success && data.pricing) {
-          setPricing(data.pricing);
+        if (data.success) {
+          if (data.pricing) {
+            setPricing(data.pricing);
+          }
+          if (data.activeProducts) {
+            setActiveProducts(data.activeProducts);
+          }
         }
       } catch (error) {
         console.error('가격 정보 로드 실패:', error);
@@ -79,10 +87,14 @@ export function useReviewForm(initialType: ReviewType): UseReviewFormReturn {
     fetchPricing();
   }, []);
 
-  // 서비스 목록
-  const services = createServices(pricing);
+  // 서비스 목록 (activeProducts로 필터링)
+  const allServices = createServices(pricing);
+  const services = allServices.filter(service =>
+    activeProducts.includes(service.priceKey)
+  );
   const currentService = services.find((s) => s.id === selectedType);
   const isPriceConfigured = !!(currentService && currentService.pricePerUnit > 0);
+  const noActiveProducts = !loadingPrice && services.length === 0;
 
   // 현재 폼 데이터에 따른 계산
   const startDate = selectedType === 'visitor' ? visitorFormData.startDate : kmapFormData.startDate;
@@ -324,6 +336,7 @@ export function useReviewForm(initialType: ReviewType): UseReviewFormReturn {
   return {
     selectedType,
     pricing,
+    activeProducts,
     loadingPrice,
     isSubmitting,
     loadingBusinessName,
@@ -332,6 +345,7 @@ export function useReviewForm(initialType: ReviewType): UseReviewFormReturn {
     services,
     currentService,
     isPriceConfigured,
+    noActiveProducts,
     totalDays,
     totalCount,
     totalCost,

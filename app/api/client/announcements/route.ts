@@ -1,11 +1,11 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireOnboardedClient } from '@/lib/auth';
 
 // GET: 거래처용 공지사항 조회
 export async function GET() {
   try {
-    const user = await requireAuth(['client']);
+    const user = await requireOnboardedClient();
     const supabase = await createClient();
 
     // 활성 공지사항 조회 (전체 또는 거래처 대상)
@@ -24,8 +24,19 @@ export async function GET() {
     }
 
     return NextResponse.json(announcements || []);
-  } catch (error) {
+  } catch (error: any) {
     console.error('서버 오류:', error);
+
+    if (error.message === 'OnboardingRequired') {
+      return NextResponse.json(
+        {
+          error: '온보딩을 완료해야 서비스를 이용할 수 있습니다.',
+          redirect: '/onboarding'
+        },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 });
   }
 }

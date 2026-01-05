@@ -50,6 +50,7 @@ export default function RewardManagementPage() {
     loading,
     searchQuery,
     statusFilter,
+    mediaTypeFilter,
     copiedId,
     viewMode,
     expandedGroups,
@@ -60,6 +61,7 @@ export default function RewardManagementPage() {
     stats,
     setSearchQuery,
     setStatusFilter,
+    setMediaTypeFilter,
     setViewMode,
     setCreatedDateFilter,
     setStartDateFilter,
@@ -68,6 +70,12 @@ export default function RewardManagementPage() {
     toggleGroup,
     formatDate,
   } = useRewardManagement();
+
+  // 매체 타입 표시 설정
+  const mediaTypeConfig = {
+    twoople: { label: '투플', icon: '📱', color: 'bg-sky-100 text-sky-700 border-sky-200' },
+    eureka: { label: '유레카', icon: '💡', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+  };
 
   if (loading) {
     return (
@@ -140,6 +148,18 @@ export default function RewardManagementPage() {
               <SelectItem value="in_progress">구동중</SelectItem>
               <SelectItem value="completed">완료</SelectItem>
               <SelectItem value="cancelled">중단됨</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* 매체 필터 */}
+          <Select value={mediaTypeFilter} onValueChange={(value) => setMediaTypeFilter(value as 'all' | 'twoople' | 'eureka')}>
+            <SelectTrigger className="w-full sm:w-36">
+              <SelectValue placeholder="매체 필터" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체 매체</SelectItem>
+              <SelectItem value="twoople">📱 투플</SelectItem>
+              <SelectItem value="eureka">💡 유레카</SelectItem>
             </SelectContent>
           </Select>
 
@@ -233,6 +253,7 @@ export default function RewardManagementPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>접수번호</TableHead>
+                <TableHead>매체</TableHead>
                 <TableHead>업체명</TableHead>
                 <TableHead>거래처</TableHead>
                 <TableHead>MID</TableHead>
@@ -248,7 +269,7 @@ export default function RewardManagementPage() {
             <TableBody>
               {filteredSubmissions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
                     검색 결과가 없습니다.
                   </TableCell>
                 </TableRow>
@@ -256,6 +277,8 @@ export default function RewardManagementPage() {
                 filteredSubmissions.map((submission) => {
                   const statusDisplay = statusConfig[submission.status] || { label: submission.status, variant: 'outline' as const };
                   const progress = submission.progress_percentage || 0;
+                  const mediaType = submission.media_type || 'twoople';
+                  const mediaDisplay = mediaTypeConfig[mediaType];
 
                   return (
                     <TableRow key={submission.id}>
@@ -279,6 +302,11 @@ export default function RewardManagementPage() {
                         ) : (
                           <span className="text-xs text-muted-foreground">-</span>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={`text-xs font-medium ${mediaDisplay.color}`}>
+                          {mediaDisplay.icon} {mediaDisplay.label}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -410,6 +438,7 @@ export default function RewardManagementPage() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>접수번호</TableHead>
+                            <TableHead>매체</TableHead>
                             <TableHead>업체명</TableHead>
                             <TableHead>MID</TableHead>
                             <TableHead className="text-center">일 접수량</TableHead>
@@ -425,6 +454,8 @@ export default function RewardManagementPage() {
                           {group.items.map((submission) => {
                             const statusDisplay = statusConfig[submission.status] || { label: submission.status, variant: 'outline' as const };
                             const progress = submission.progress_percentage || 0;
+                            const mediaType = submission.media_type || 'twoople';
+                            const mediaDisplay = mediaTypeConfig[mediaType];
 
                             return (
                               <TableRow key={submission.id}>
@@ -448,6 +479,11 @@ export default function RewardManagementPage() {
                                   ) : (
                                     <span className="text-xs text-muted-foreground">-</span>
                                   )}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className={`text-xs font-medium ${mediaDisplay.color}`}>
+                                    {mediaDisplay.icon} {mediaDisplay.label}
+                                  </Badge>
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-2">

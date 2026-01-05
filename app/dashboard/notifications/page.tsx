@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -37,6 +38,26 @@ export default function NotificationsPage() {
     handleFileUpload,
   } = useNotifications();
 
+  // 프로필 완성도 체크 (메모이제이션으로 불필요한 재계산 방지)
+  const isProfileIncomplete = useMemo(() => {
+    if (!profile) return false;
+    return (
+      !profile.contact_person?.trim() ||
+      !profile.company_name?.trim() ||
+      !profile.phone?.trim() ||
+      !profile.email?.trim() ||
+      !profile.tax_email?.trim() ||
+      !profile.business_license_url
+    );
+  }, [profile]);
+
+  // 탭 변경 핸들러
+  // Hooks는 항상 같은 순서로 호출되어야 하므로 조건문 전에 선언
+  // disabled 속성으로 이미 차단되므로 여기서 추가 체크 불필요
+  const handleTabChange = useCallback((value: string) => {
+    setActiveTab(value);
+  }, [setActiveTab]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -51,10 +72,10 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-6">
       {/* 탭 구조 */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={isProfileIncomplete ? 'mypage' : activeTab} onValueChange={handleTabChange} className="w-full">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <TabsList className="grid w-full sm:w-auto grid-cols-2">
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <TabsTrigger value="notifications" className="flex items-center gap-2" disabled={isProfileIncomplete}>
               <Bell className="h-4 w-4" />
               <span className="hidden sm:inline">알림</span>
               {unreadCount > 0 && (

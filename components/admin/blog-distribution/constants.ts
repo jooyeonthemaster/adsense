@@ -16,6 +16,7 @@ export const STATUS_CONFIG: Record<string, StatusConfigItem> = {
   completed: { label: '완료', color: 'bg-green-100 text-green-800' },
   cancelled: { label: '중단', color: 'bg-red-100 text-red-800' },
   as_in_progress: { label: 'AS 진행 중', color: 'bg-amber-100 text-amber-800' },
+  cancellation_requested: { label: '중단요청', color: 'bg-orange-100 text-orange-800' },
 };
 
 // 초기 필터 상태

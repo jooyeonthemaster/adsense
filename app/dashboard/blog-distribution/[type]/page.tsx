@@ -13,7 +13,7 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
-import { Sparkles, Mail } from 'lucide-react';
+import { Sparkles, Mail, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ProductGuideSection } from '@/components/dashboard/ProductGuideSection';
 import { extractNaverPlaceMID, fetchBusinessInfoByMID } from '@/utils/naver-place';
@@ -42,6 +42,7 @@ export default function BlogDistributionPage() {
   const [pricing, setPricing] = useState<Record<string, number>>({});
   const [pricingLoading, setPricingLoading] = useState(true);
   const [isApprovedForAutoDistribution, setIsApprovedForAutoDistribution] = useState(false);
+  const [activeProducts, setActiveProducts] = useState<string[]>([]);
   const [loadingBusinessName, setLoadingBusinessName] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showEmailConfirmDialog, setShowEmailConfirmDialog] = useState(false);
@@ -106,7 +107,9 @@ export default function BlogDistributionPage() {
     : 0;
 
   // 총 건수 계산
-  const totalCount = formData.dailyCount * operationDays;
+  const totalCount = selectedType === 'auto' && formData.useExternalAccount
+    ? formData.chargeCount  // 외부계정 충전: 충전 건수
+    : formData.dailyCount * operationDays;  // 일반 접수: 일 접수량 × 작업일
 
   // URL 파라미터가 변경되면 selectedType 업데이트
   useEffect(() => {
@@ -115,6 +118,13 @@ export default function BlogDistributionPage() {
     }
   }, [typeParam]);
 
+  // 서비스 ID와 slug 매핑
+  const serviceSlugMap: Record<DistributionType, string> = {
+    video: 'video-distribution',
+    auto: 'auto-distribution',
+    reviewer: 'reviewer-distribution',
+  };
+
   // 가격 정보 및 승인 상태 불러오기
   useEffect(() => {
     const fetchPricing = async () => {
@@ -122,8 +132,33 @@ export default function BlogDistributionPage() {
         const response = await fetch('/api/pricing');
         const data = await response.json();
 
-        if (data.success && data.pricing) {
-          setPricing(data.pricing);
+        if (data.success) {
+          // 활성 상품 목록 저장
+          if (data.activeProducts) {
+            setActiveProducts(data.activeProducts);
+
+            // 현재 선택된 서비스가 비활성화된 경우 활성화된 서비스로 리다이렉트
+            const currentSlug = serviceSlugMap[selectedType];
+            if (!data.activeProducts.includes(currentSlug)) {
+              // 활성화된 블로그 배포 상품 찾기
+              const blogSlugs = ['video-distribution', 'auto-distribution', 'reviewer-distribution'];
+              const activeSlug = blogSlugs.find(slug => data.activeProducts.includes(slug));
+
+              if (activeSlug) {
+                // 활성 상품의 URL로 리다이렉트
+                const urlMap: Record<string, string> = {
+                  'video-distribution': 'video',
+                  'auto-distribution': 'auto',
+                  'reviewer-distribution': 'reviewer',
+                };
+                router.replace(`/dashboard/blog-distribution/${urlMap[activeSlug]}`);
+              }
+            }
+          }
+
+          if (data.pricing) {
+            setPricing(data.pricing);
+          }
           setIsApprovedForAutoDistribution(data.auto_distribution_approved || false);
         }
       } catch (error) {
@@ -134,14 +169,17 @@ export default function BlogDistributionPage() {
     };
 
     fetchPricing();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const services: ServiceConfig[] = [
+  // 모든 블로그 배포 서비스 정의 (slug 포함)
+  const allServices: (ServiceConfig & { slug: string })[] = [
     {
       id: 'video',
       name: '영상 배포',
       icon: Video,
       color: 'bg-blue-500',
+      slug: 'video-distribution',
       available: !!pricing['video-distribution'],
       pricePerPost: pricing['video-distribution'] || 0,
       description: '영상 블로그 배포 서비스'
@@ -151,6 +189,7 @@ export default function BlogDistributionPage() {
       name: '자동화 배포',
       icon: Zap,
       color: 'bg-emerald-500',
+      slug: 'auto-distribution',
       available: !!pricing['auto-distribution'],
       pricePerPost: pricing['auto-distribution'] || 0,
       description: '자동화 블로그 배포'
@@ -160,11 +199,20 @@ export default function BlogDistributionPage() {
       name: '리뷰어 배포',
       icon: Users,
       color: 'bg-amber-500',
+      slug: 'reviewer-distribution',
       available: !!pricing['reviewer-distribution'],
       pricePerPost: pricing['reviewer-distribution'] || 0,
       description: '실계정 리뷰어 배포'
     },
   ];
+
+  // 활성화된 상품만 필터링 (is_active = false인 상품은 완전히 숨김)
+  const services: ServiceConfig[] = allServices.filter(
+    service => activeProducts.includes(service.slug)
+  );
+
+  // 블로그 배포 상품이 모두 비활성화된 경우
+  const noActiveProducts = !pricingLoading && services.length === 0;
 
   // 선택된 서비스의 가격이 설정되어 있는지 확인
   const selectedServicePrice = services.find(s => s.id === selectedType)?.pricePerPost;
@@ -218,6 +266,12 @@ export default function BlogDistributionPage() {
   };
 
   const calculateTotalCost = () => {
+    // 외부계정 충전: 건당 10P 고정
+    if (selectedType === 'auto' && formData.useExternalAccount) {
+      return formData.chargeCount * 10;
+    }
+
+    // 일반 접수: 서비스별 가격
     const service = services.find(s => s.id === selectedType);
     const pricePerPost = service?.pricePerPost || 15000;
     return totalCount * pricePerPost;
@@ -236,6 +290,17 @@ export default function BlogDistributionPage() {
         });
         return;
       }
+
+      // 최소 30건 검증
+      if (formData.chargeCount < 30) {
+        toast({
+          variant: 'destructive',
+          title: '입력 오류',
+          description: '충전 건수는 최소 30건 이상이어야 합니다.',
+        });
+        return;
+      }
+
       // 외부 계정은 이메일 확인 없이 바로 제출
       await executeSubmit();
     } else {
@@ -364,6 +429,20 @@ export default function BlogDistributionPage() {
   const serviceKey = mapTypeToSlug(selectedType);
   const selectedService = services.find(s => s.id === selectedType);
 
+  // 모든 블로그 배포 상품이 비활성화된 경우 안내 메시지 표시
+  if (noActiveProducts) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center p-8">
+          <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">현재 이용 가능한 서비스가 없습니다</h2>
+          <p className="text-gray-600">블로그 배포 서비스가 일시적으로 중단되었습니다.</p>
+          <p className="text-gray-600">관리자에게 문의해주세요.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white px-3 sm:px-4 lg:px-6 pt-4 pb-6">
       <div className="max-w-7xl mx-auto">
@@ -386,6 +465,7 @@ export default function BlogDistributionPage() {
                 dailyCount={formData.dailyCount}
                 operationDays={operationDays}
                 pricingLoading={pricingLoading}
+                isExternalAccountCharge={selectedType === 'auto' && formData.useExternalAccount}
               />
             </div>
 

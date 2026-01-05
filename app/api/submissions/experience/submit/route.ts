@@ -48,13 +48,14 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // 클라이언트별 설정된 가격 조회
+    // 클라이언트별 설정된 가격 조회 (is_active 체크 포함)
     const { data: priceData, error: priceError } = await supabase
       .from('client_product_prices')
-      .select('price_per_unit, product_categories!inner(slug)')
+      .select('price_per_unit, product_categories!inner(slug, is_active)')
       .eq('client_id', user.id)
       .eq('product_categories.slug', experienceType)
       .eq('is_visible', true)
+      .eq('product_categories.is_active', true)
       .single();
 
     // 가격 정보가 없으면 에러 반환

@@ -1,0 +1,133 @@
+<svg width="794" height="1123" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="794" height="1123" fill="#FFFFFF"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="794" height="80" fill="#000000"/>
+  <text x="60" y="50" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#FFFFFF">
+    2. 무료 처리 항목 상세 (2/2)
+  </text>
+
+  <!-- Bug Fixes Continued -->
+  <text x="60" y="130" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#000000">
+    ▶ 버그 수정 (계속)
+  </text>
+
+  <!-- Item 6 -->
+  <rect x="60" y="150" width="674" height="110" fill="#F8F8F8" stroke="#000000" stroke-width="1"/>
+  <text x="75" y="175" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#000000">
+    6. 알림 영문 단어 한글 변환
+  </text>
+  <text x="90" y="200" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    증상: 알림에 review, waiting_content 등 영문 표시
+  </text>
+  <text x="90" y="222" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    원인: 알림 타입 enum 값이 그대로 표시됨
+  </text>
+  <text x="90" y="244" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    작업: 알림 타입별 한글 매핑 추가 (review→리뷰, waiting→대기중)
+  </text>
+
+  <!-- Item 7 -->
+  <rect x="60" y="275" width="674" height="110" fill="#F8F8F8" stroke="#000000" stroke-width="1"/>
+  <text x="75" y="300" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#000000">
+    7. 업체명 필드 잠금 처리
+  </text>
+  <text x="90" y="325" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    증상: MID 자동 추출 후에도 업체명 수정 가능
+  </text>
+  <text x="90" y="347" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    원인: 업체명 input 필드가 활성화 상태
+  </text>
+  <text x="90" y="369" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    작업: MID 추출 완료 후 업체명 필드에 readOnly 속성 추가
+  </text>
+
+  <!-- UI/UX Improvements -->
+  <text x="60" y="420" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#000000">
+    ▶ UI/UX 개선 (13건)
+  </text>
+
+  <!-- Compact list for UI items -->
+  <rect x="60" y="440" width="674" height="550" fill="#F8F8F8" stroke="#000000" stroke-width="1"/>
+
+  <text x="75" y="470" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    8. 리워드 매체 [유레카] 추가
+  </text>
+  <text x="90" y="492" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    리워드 접수 폼에 투플/유레카 선택 드롭다운 추가
+  </text>
+
+  <text x="75" y="520" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    9. 리워드 상품명 표시 (투플/유레카)
+  </text>
+  <text x="90" y="542" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    통합 접수 현황에서 매체명으로 표시되도록 수정
+  </text>
+
+  <text x="75" y="570" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    10. 엑셀 다운로드 일일 발행 건수 컬럼 추가
+  </text>
+  <text x="90" y="592" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    카카오맵/영수증/블로그 엑셀에 daily_count 컬럼 추가
+  </text>
+
+  <text x="75" y="620" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    11. 거래처 관리 엑셀 다운로드
+  </text>
+  <text x="90" y="642" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    유형 필터링 후 엑셀 다운로드 버튼 추가
+  </text>
+
+  <text x="75" y="670" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    12. VAT 10% 자동 표시
+  </text>
+  <text x="90" y="692" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    충전 금액에 VAT 포함 금액 표시 (10,000원 → 11,000원)
+  </text>
+
+  <text x="75" y="720" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    13. 블로그 배포 키워드 입력란 제거
+  </text>
+  <text x="90" y="742" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    영상/자동화 배포에서 키워드 입력 필드 숨김 (리뷰어만 유지)
+  </text>
+
+  <text x="75" y="770" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    14. 마이페이지 필드 간소화
+  </text>
+  <text x="90" y="792" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    사업자등록증 첨부 + 이메일만 유지, 나머지 필드 제거
+  </text>
+
+  <text x="75" y="820" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    15. 캐릭터 버튼 클릭 시 대시보드 이동
+  </text>
+  <text x="90" y="842" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    좌측 상단 캐릭터 클릭 시 항상 공지사항 대시보드로 이동
+  </text>
+
+  <text x="75" y="870" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    16. 접수 내역 필터 - 투플/유레카 구분
+  </text>
+  <text x="90" y="892" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    관리자 접수 내역에서 매체별 필터링 추가
+  </text>
+
+  <text x="75" y="920" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    17. 차감/충전 필터링 기능
+  </text>
+  <text x="90" y="942" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    개인 알림에서 차감/충전 필터 버튼 추가
+  </text>
+
+  <text x="75" y="970" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    18~20. 접수 내역/알림/대시보드 클릭 이동 기능
+  </text>
+
+  <!-- Footer -->
+  <line x1="60" y1="1050" x2="734" y2="1050" stroke="#000000" stroke-width="1"/>
+  <text x="397" y="1085" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#666666">
+    Page 5
+  </text>
+</svg>

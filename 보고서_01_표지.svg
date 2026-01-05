@@ -1,0 +1,58 @@
+<svg width="794" height="1123" xmlns="http://www.w3.org/2000/svg">
+  <!-- A4 size: 210mm x 297mm = 794px x 1123px at 96dpi -->
+
+  <!-- Background -->
+  <rect width="794" height="1123" fill="#FFFFFF"/>
+
+  <!-- Header Line -->
+  <line x1="60" y1="100" x2="734" y2="100" stroke="#000000" stroke-width="3"/>
+
+  <!-- Title -->
+  <text x="397" y="250" font-family="Arial, sans-serif" font-size="42" font-weight="bold" text-anchor="middle" fill="#000000">
+    마자무 플랫폼
+  </text>
+  <text x="397" y="310" font-family="Arial, sans-serif" font-size="42" font-weight="bold" text-anchor="middle" fill="#000000">
+    추가 개발 요청사항
+  </text>
+  <text x="397" y="370" font-family="Arial, sans-serif" font-size="42" font-weight="bold" text-anchor="middle" fill="#000000">
+    분석 보고서
+  </text>
+
+  <!-- Subtitle -->
+  <text x="397" y="460" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#666666">
+    클라이언트 요청사항 종합 분석 및 비용 산정
+  </text>
+
+  <!-- Date Box -->
+  <rect x="297" y="530" width="200" height="60" fill="none" stroke="#000000" stroke-width="2"/>
+  <text x="397" y="565" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" fill="#000000">
+    작성일: 2025년 12월 18일
+  </text>
+
+  <!-- Summary Box -->
+  <rect x="197" y="650" width="400" height="180" fill="#F8F8F8" stroke="#000000" stroke-width="2"/>
+  <text x="397" y="690" font-family="Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#000000">
+    요약
+  </text>
+  <text x="397" y="730" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#000000">
+    총 요청사항: 33건
+  </text>
+  <text x="397" y="760" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#000000">
+    무료 처리: 20건
+  </text>
+  <text x="397" y="790" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#000000">
+    추가금 발생: 13건
+  </text>
+
+  <!-- Footer -->
+  <line x1="60" y1="980" x2="734" y2="980" stroke="#000000" stroke-width="2"/>
+  <text x="397" y="1020" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#000000">
+    작성자
+  </text>
+  <text x="397" y="1055" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#000000">
+    일해라컴퍼니
+  </text>
+  <text x="397" y="1085" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#000000">
+    개발 이사 김주연
+  </text>
+</svg>

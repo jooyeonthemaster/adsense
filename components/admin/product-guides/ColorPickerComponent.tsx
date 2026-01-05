@@ -76,3 +76,5 @@ export function ColorPickerComponent({ bgColor, textColor, onChange }: ColorPick
 
 
 
+
+

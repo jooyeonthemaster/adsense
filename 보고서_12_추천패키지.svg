@@ -1,0 +1,121 @@
+<svg width="794" height="1123" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="794" height="1123" fill="#FFFFFF"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="794" height="80" fill="#000000"/>
+  <text x="60" y="50" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#FFFFFF">
+    6. 추천 패키지
+  </text>
+
+  <!-- Package 1 - 필수 -->
+  <text x="60" y="140" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#D32F2F">
+    패키지 A: 필수 안정화 (무료)
+  </text>
+
+  <rect x="60" y="160" width="674" height="180" fill="#FFEBEE" stroke="#D32F2F" stroke-width="3"/>
+  <text x="80" y="195" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000000">
+    포함 항목 (총 20건 - 무료)
+  </text>
+  <text x="95" y="223" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 필수정보 팝업 버그 (긴급) 및 기타 버그 수정 7건
+  </text>
+  <text x="95" y="245" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • UI/UX 개선 13건 (매체 추가, 필터링, 클릭 이동 등)
+  </text>
+
+  <text x="80" y="280" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#D32F2F">
+    총 비용: 0원
+  </text>
+
+  <text x="80" y="310" font-family="Arial, sans-serif" font-size="13" fill="#666666">
+    권장 대상: 모든 클라이언트 필수 적용
+  </text>
+  <text x="80" y="330" font-family="Arial, sans-serif" font-size="13" fill="#666666">
+    예상 작업 기간: 2~3일
+  </text>
+
+  <!-- Package 2 - 추천 -->
+  <text x="60" y="390" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#F57C00">
+    패키지 B: 업무 효율 개선 (추천)
+  </text>
+
+  <rect x="60" y="410" width="674" height="220" fill="#FFF3E0" stroke="#F57C00" stroke-width="3"/>
+  <text x="80" y="445" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000000">
+    포함 항목
+  </text>
+  <text x="95" y="473" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 패키지 A (무료 20건)
+  </text>
+  <text x="95" y="495" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • AI 리뷰 생성 백그라운드 병렬 처리 (30만원)
+  </text>
+  <text x="95" y="517" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 대시보드 필터링 이동 (20만원)
+  </text>
+  <text x="95" y="539" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 카카오맵 승인 알림 (20만원)
+  </text>
+
+  <text x="80" y="574" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#F57C00">
+    총 비용: 70만원
+  </text>
+
+  <text x="80" y="604" font-family="Arial, sans-serif" font-size="13" fill="#666666">
+    권장 대상: 카카오맵 리뷰 다수 진행, 관리자 업무 효율 중시
+  </text>
+  <text x="80" y="624" font-family="Arial, sans-serif" font-size="13" fill="#666666">
+    예상 작업 기간: 1주일
+  </text>
+
+  <!-- Package 3 - 완전체 -->
+  <text x="60" y="680" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#1976D2">
+    패키지 C: 완전 자동화
+  </text>
+
+  <rect x="60" y="700" width="674" height="260" fill="#E3F2FD" stroke="#1976D2" stroke-width="3"/>
+  <text x="80" y="735" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000000">
+    포함 항목
+  </text>
+  <text x="95" y="763" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 패키지 B (70만원)
+  </text>
+  <text x="95" y="785" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 환불 승인 워크플로우 (20만원)
+  </text>
+  <text x="95" y="807" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 전체 상품 블라인드 (20만원)
+  </text>
+  <text x="95" y="829" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 세금계산서 발행 요청 (50만원)
+  </text>
+  <text x="95" y="851" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 블로그 배포 엑셀 접수 양식 (협의 필요)
+  </text>
+
+  <text x="80" y="886" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#1976D2">
+    총 비용: 약 160만원 + 협의 항목
+  </text>
+
+  <text x="80" y="916" font-family="Arial, sans-serif" font-size="13" fill="#666666">
+    권장 대상: 대규모 운영, 완전 자동화 추구
+  </text>
+  <text x="80" y="936" font-family="Arial, sans-serif" font-size="13" fill="#666666">
+    예상 작업 기간: 2주일
+  </text>
+
+  <!-- Recommendation -->
+  <rect x="60" y="980" width="674" height="60" fill="#FFFDE7" stroke="#F57F17" stroke-width="2"/>
+  <text x="397" y="1010" font-family="Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="middle" fill="#F57F17">
+    💡 권장: 패키지 A (무료) 즉시 적용 + 패키지 B 검토
+  </text>
+  <text x="397" y="1032" font-family="Arial, sans-serif" font-size="13" text-anchor="middle" fill="#666666">
+    업무 효율 개선 효과가 가장 큼
+  </text>
+
+  <!-- Footer -->
+  <line x1="60" y1="1070" x2="734" y2="1070" stroke="#000000" stroke-width="1"/>
+  <text x="397" y="1105" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#666666">
+    Page 12
+  </text>
+</svg>

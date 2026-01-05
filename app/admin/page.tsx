@@ -5,7 +5,7 @@ import { AdminDashboardContent } from './admin-dashboard-content';
 async function getStats() {
   const supabase = createClient();
 
-  const [clientsResult, submissionsResult, pointsResult, asRequestsResult, chargeRequestsResult] = await Promise.all([
+  const [clientsResult, submissionsResult, pointsResult, asRequestsResult, chargeRequestsResult, cancellationRequestsResult, taxInvoiceRequestsResult] = await Promise.all([
     supabase.from('clients').select('id', { count: 'exact', head: true }),
     supabase
       .from('place_submissions')
@@ -20,6 +20,14 @@ async function getStats() {
       .from('point_charge_requests')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'pending'),
+    supabase
+      .from('cancellation_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending'),
+    supabase
+      .from('tax_invoice_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending'),
   ]);
 
   const totalClients = clientsResult.count || 0;
@@ -28,6 +36,8 @@ async function getStats() {
     pointsResult.data?.reduce((sum, client) => sum + (client.points || 0), 0) || 0;
   const pendingAsRequests = asRequestsResult.count || 0;
   const pendingChargeRequests = chargeRequestsResult.count || 0;
+  const pendingCancellationRequests = cancellationRequestsResult.count || 0;
+  const pendingTaxInvoiceRequests = taxInvoiceRequestsResult.count || 0;
 
   return {
     totalClients,
@@ -35,6 +45,8 @@ async function getStats() {
     totalPoints,
     pendingAsRequests,
     pendingChargeRequests,
+    pendingCancellationRequests,
+    pendingTaxInvoiceRequests,
   };
 }
 
@@ -160,12 +172,52 @@ async function getRecentChargeRequests() {
   return chargeRequests || [];
 }
 
+async function getRecentTaxInvoiceRequests() {
+  const supabase = createClient();
+
+  // 최근 30일 기준
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
+
+  const { data: taxInvoiceRequests, error } = await supabase
+    .from('tax_invoice_requests')
+    .select(`
+      *,
+      clients (
+        id,
+        company_name,
+        username,
+        contact_person,
+        phone,
+        email,
+        tax_email,
+        business_license_url
+      ),
+      point_transactions (
+        description,
+        created_at
+      )
+    `)
+    .gte('created_at', thirtyDaysAgoISO)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  if (error) {
+    console.error('Error fetching tax invoice requests:', error);
+    return [];
+  }
+
+  return taxInvoiceRequests || [];
+}
+
 export default async function AdminDashboard() {
   await requireAuth(['admin']);
-  const [stats, recentSubmissions, recentChargeRequests] = await Promise.all([
+  const [stats, recentSubmissions, recentChargeRequests, recentTaxInvoiceRequests] = await Promise.all([
     getStats(),
     getRecentSubmissions(),
     getRecentChargeRequests(),
+    getRecentTaxInvoiceRequests(),
   ]);
 
   const cards = [
@@ -186,20 +238,30 @@ export default async function AdminDashboard() {
       value: stats.pendingAsRequests,
       icon: 'AlertCircle' as const,
       description: '처리 대기 중',
+      link: '/admin/as-requests?tab=as',
+    },
+    {
+      title: '중단 요청',
+      value: stats.pendingCancellationRequests,
+      icon: 'XCircle' as const,
+      description: '환불 대기 중',
+      link: '/admin/as-requests?tab=cancellation',
     },
     {
       title: '충전 요청',
       value: stats.pendingChargeRequests,
       icon: 'DollarSign' as const,
       description: '승인 대기 중',
+      link: '/admin/charge-requests',
     },
     {
-      title: '총 포인트',
-      value: stats.totalPoints.toLocaleString(),
-      icon: 'DollarSign' as const,
-      description: '전체 거래처 보유',
+      title: '세금계산서 요청',
+      value: stats.pendingTaxInvoiceRequests,
+      icon: 'FileText' as const,
+      description: '발행 대기 중',
+      link: '/admin/tax-invoice-requests',
     },
   ];
 
-  return <AdminDashboardContent stats={stats} cards={cards} recentSubmissions={recentSubmissions} recentChargeRequests={recentChargeRequests} />;
+  return <AdminDashboardContent stats={stats} cards={cards} recentSubmissions={recentSubmissions} recentChargeRequests={recentChargeRequests} recentTaxInvoiceRequests={recentTaxInvoiceRequests} />;
 }

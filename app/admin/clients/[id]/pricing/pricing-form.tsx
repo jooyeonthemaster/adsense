@@ -23,11 +23,11 @@ interface FormState {
 
 // 대분류 카테고리 그룹 정의
 const categoryGroups = {
-  '리워드': ['place-traffic'],
+  '리워드': ['twoople-reward', 'eureka-reward'],
   '리뷰 마케팅': ['receipt-review', 'kakaomap-review'],
   '체험단 마케팅': ['blog-experience', 'xiaohongshu', 'journalist', 'influencer'],
   '블로그 배포': ['video-distribution', 'auto-distribution', 'reviewer-distribution', 'blog-distribution'],
-  '카페침투 마케팅': ['cafe-marketing'],
+  '침투 마케팅': ['cafe-marketing', 'community-marketing'],
 };
 
 export function PricingForm({

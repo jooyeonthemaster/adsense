@@ -3,16 +3,16 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { extractNaverPlaceMID, fetchBusinessInfoByMID } from '@/utils/naver-place';
 import { format, addDays, differenceInDays } from 'date-fns';
-import { ko } from 'date-fns/locale';
 import type { RewardFormData } from '@/components/dashboard/reward-submit/types';
-import { INITIAL_FORM_DATA, MIN_DAILY_VOLUME, MIN_OPERATION_DAYS } from '@/components/dashboard/reward-submit/constants';
+import { INITIAL_FORM_DATA, MIN_DAILY_VOLUME, MIN_OPERATION_DAYS, REWARD_MEDIA_CONFIG } from '@/components/dashboard/reward-submit/constants';
 
 export function useRewardSubmit(initialPoints: number) {
   const router = useRouter();
   const { toast } = useToast();
   const [formData, setFormData] = useState<RewardFormData>(INITIAL_FORM_DATA);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pricePerHit, setPricePerHit] = useState<number | null>(null);
+  const [pricing, setPricing] = useState<Record<string, number>>({});
+  const [activeProducts, setActiveProducts] = useState<string[]>([]);
   const [loadingPrice, setLoadingPrice] = useState(true);
   const [loadingBusinessName, setLoadingBusinessName] = useState(false);
 
@@ -21,18 +21,58 @@ export function useRewardSubmit(initialPoints: number) {
     ? differenceInDays(formData.endDate, formData.startDate) + 1
     : 0;
 
-  // 가격 설정 여부 확인
-  const isPriceConfigured = pricePerHit !== null && pricePerHit > 0;
+  // 현재 선택된 매체의 pricingSlug 가져오기
+  const selectedMediaConfig = REWARD_MEDIA_CONFIG.find(m => m.id === formData.mediaType);
+  const currentPricingSlug = selectedMediaConfig?.pricingSlug || 'twoople-reward';
+
+  // 현재 선택된 매체의 가격
+  const currentPrice = pricing[currentPricingSlug] || 0;
+
+  // 가격 설정 여부 확인 (현재 선택된 매체 기준)
+  const isPriceConfigured = currentPrice > 0;
+
+  // 활성화된 리워드 매체 필터링
+  const activeMediaConfigs = REWARD_MEDIA_CONFIG.filter(m =>
+    activeProducts.includes(m.pricingSlug)
+  );
+
+  // 활성화된 리워드 상품이 없는지 확인
+  const noActiveProducts = !loadingPrice && activeMediaConfigs.length === 0;
+
+  // 현재 선택된 매체가 비활성화되면 첫 번째 활성화된 매체로 전환
+  useEffect(() => {
+    if (loadingPrice || activeMediaConfigs.length === 0) return;
+
+    const currentMediaConfig = activeMediaConfigs.find(m => m.id === formData.mediaType);
+    if (!currentMediaConfig && activeMediaConfigs.length > 0) {
+      setFormData(prev => ({ ...prev, mediaType: activeMediaConfigs[0].id }));
+    }
+  }, [loadingPrice, activeMediaConfigs, formData.mediaType]);
 
   // 가격 정보 불러오기
   useEffect(() => {
-    const fetchPricing = async () => {
+    const fetchPricingData = async () => {
       try {
         const response = await fetch('/api/pricing');
         const data = await response.json();
 
-        if (data.success && data.pricing && data.pricing['place-traffic']) {
-          setPricePerHit(data.pricing['place-traffic']);
+        if (data.success && data.pricing) {
+          // 리워드 관련 가격만 필터링 (twoople-reward, eureka-reward)
+          const rewardPricingSlugs = REWARD_MEDIA_CONFIG.map(m => m.pricingSlug);
+          const rewardPricing: Record<string, number> = {};
+
+          for (const slug of rewardPricingSlugs) {
+            if (data.pricing[slug]) {
+              rewardPricing[slug] = data.pricing[slug];
+            }
+          }
+
+          setPricing(rewardPricing);
+
+          // 활성화된 상품 목록 저장
+          if (data.activeProducts) {
+            setActiveProducts(data.activeProducts);
+          }
         }
       } catch (error) {
         console.error('가격 정보 로드 실패:', error);
@@ -41,7 +81,7 @@ export function useRewardSubmit(initialPoints: number) {
       }
     };
 
-    fetchPricing();
+    fetchPricingData();
   }, []);
 
   // 플레이스 링크에서 MID 자동 추출 및 업체명 가져오기
@@ -92,10 +132,10 @@ export function useRewardSubmit(initialPoints: number) {
     }
   };
 
-  // 비용 계산
+  // 비용 계산 (선택된 매체의 가격 기준)
   const calculateTotalCost = () => {
     const totalCount = formData.dailyVolume * operationDays;
-    return Math.round((totalCount / 100) * (pricePerHit || 0));
+    return Math.round((totalCount / 100) * currentPrice);
   };
 
   // 시작일 선택 가능 최소 날짜 계산
@@ -146,11 +186,13 @@ export function useRewardSubmit(initialPoints: number) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.twopleSelected) {
+    // 선택된 매체의 가격이 설정되어 있는지 확인
+    if (!isPriceConfigured) {
+      const mediaName = selectedMediaConfig?.name || '선택된 매체';
       toast({
         variant: 'destructive',
-        title: '⚠️ 투플 매체 선택 필요',
-        description: '투플 매체를 선택해주세요.',
+        title: '⚠️ 가격 미설정',
+        description: `${mediaName}의 가격이 설정되지 않았습니다. 관리자에게 문의하세요.`,
       });
       return;
     }
@@ -225,6 +267,7 @@ export function useRewardSubmit(initialPoints: number) {
           total_days: operationDays,
           total_points: totalCost,
           start_date: formData.startDate ? format(formData.startDate, 'yyyy-MM-dd') : null,
+          media_type: formData.mediaType, // 투플 또는 유레카
         }),
       });
 
@@ -264,7 +307,9 @@ export function useRewardSubmit(initialPoints: number) {
     formData,
     setFormData,
     isSubmitting,
-    pricePerHit,
+    pricing, // 매체별 가격 정보
+    activeMediaConfigs, // 활성화된 매체 목록
+    noActiveProducts, // 활성화된 리워드 상품 없음 여부
     loadingPrice,
     loadingBusinessName,
     operationDays,

@@ -51,6 +51,7 @@ export default function ExperienceServicePage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pricing, setPricing] = useState<Record<string, number>>({});
+  const [activeProducts, setActiveProducts] = useState<string[]>([]);
   const [loadingPrice, setLoadingPrice] = useState(true);
   const [loadingBusinessName, setLoadingBusinessName] = useState(false);
 
@@ -61,15 +62,20 @@ export default function ExperienceServicePage() {
     }
   }, [serviceParam]);
 
-  // 가격 정보 불러오기
+  // 가격 정보 및 활성화 상품 불러오기
   useEffect(() => {
     const fetchPricing = async () => {
       try {
         const response = await fetch('/api/pricing');
         const data = await response.json();
 
-        if (data.success && data.pricing) {
-          setPricing(data.pricing);
+        if (data.success) {
+          if (data.pricing) {
+            setPricing(data.pricing);
+          }
+          if (data.activeProducts) {
+            setActiveProducts(data.activeProducts);
+          }
         }
       } catch (error) {
         console.error('가격 정보 로드 실패:', error);
@@ -81,12 +87,34 @@ export default function ExperienceServicePage() {
     fetchPricing();
   }, []);
 
-  const services: ServiceConfig[] = [
-    { id: 'blog', name: '블로그', icon: BookText, color: 'bg-blue-500', available: !!pricing['blog-experience'], pricePerTeam: pricing['blog-experience'] || 0, description: '2주 이내 블로거 리스트 제공' },
-    { id: 'xiaohongshu', name: '샤오홍슈', icon: Image, color: 'bg-rose-500', available: !!pricing['xiaohongshu'], pricePerTeam: pricing['xiaohongshu'] || 0, description: '중국 소셜 마케팅' },
-    { id: 'reporter', name: '실계정 기자단', icon: Users, color: 'bg-emerald-500', available: !!pricing['journalist'], pricePerTeam: pricing['journalist'] || 0, description: '실제 기자 계정 활용' },
-    { id: 'influencer', name: '블로그 인플루언서', icon: Star, color: 'bg-amber-500', available: !!pricing['influencer'], pricePerTeam: pricing['influencer'] || 0, description: '인플루언서 마케팅' },
+  // 전체 서비스 목록
+  // - available: is_active 기반 (관리자 숨김 토글) - 버튼 표시 여부
+  // - pricePerTeam: 가격 기반 - "준비중" 표시 여부
+  const allServices: ServiceConfig[] = [
+    { id: 'blog', name: '블로그', icon: BookText, color: 'bg-blue-500', available: activeProducts.includes('blog-experience'), pricePerTeam: pricing['blog-experience'] || 0, description: '2주 이내 블로거 리스트 제공' },
+    { id: 'xiaohongshu', name: '샤오홍슈', icon: Image, color: 'bg-rose-500', available: activeProducts.includes('xiaohongshu'), pricePerTeam: pricing['xiaohongshu'] || 0, description: '중국 소셜 마케팅' },
+    { id: 'reporter', name: '실계정 기자단', icon: Users, color: 'bg-emerald-500', available: activeProducts.includes('journalist'), pricePerTeam: pricing['journalist'] || 0, description: '실제 기자 계정 활용' },
+    { id: 'influencer', name: '블로그 인플루언서', icon: Star, color: 'bg-amber-500', available: activeProducts.includes('influencer'), pricePerTeam: pricing['influencer'] || 0, description: '인플루언서 마케팅' },
   ];
+
+  // is_active=false인 서비스는 UI에서 완전히 숨김
+  const services = allServices.filter(s => s.available);
+
+  // 현재 선택된 서비스가 숨김 처리된 경우 대시보드로 리다이렉트
+  useEffect(() => {
+    if (!loadingPrice) {
+      const currentService = allServices.find(s => s.id === selectedService);
+      if (currentService && !currentService.available) {
+        toast({
+          variant: 'destructive',
+          title: '서비스 이용 불가',
+          description: '현재 이용할 수 없는 서비스입니다.',
+        });
+        router.push('/dashboard');
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingPrice, selectedService, activeProducts]);
 
   // 선택된 서비스의 가격이 설정되어 있는지 확인
   const selectedServicePrice = services.find(s => s.id === selectedService)?.pricePerTeam;

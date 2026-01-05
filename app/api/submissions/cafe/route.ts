@@ -152,8 +152,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get price for cafe marketing
-    let pricePerUnit = await getProductPrice(user.id, 'cafe-marketing');
+    // Get price based on service type
+    const pricingSlug = service_type === 'community' ? 'community-marketing' : 'cafe-marketing';
+    let pricePerUnit = await getProductPrice(user.id, pricingSlug);
 
     if (!pricePerUnit) {
       return NextResponse.json(

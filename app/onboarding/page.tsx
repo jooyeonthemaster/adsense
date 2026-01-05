@@ -11,29 +11,28 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   Loader2,
   Building2,
-  Megaphone,
   ArrowRight,
   Phone,
   Mail,
   User,
-  Sparkles
+  Sparkles,
+  Upload,
+  UserPlus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type ClientType = 'advertiser' | 'agency';
-
 interface OnboardingData {
-  client_type: ClientType | null;
-  company_name: string;
-  representative_name: string;
   contact_person: string;
+  company_name: string;
   phone: string;
   email: string;
+  tax_email: string;
+  business_license_url: string | null;
+  referrer_username: string;
 }
 
 const STEPS = [
   { id: 'welcome', title: '환영합니다' },
-  { id: 'type', title: '유형 선택' },
   { id: 'info', title: '기본 정보' },
   { id: 'complete', title: '완료' },
 ];
@@ -45,12 +44,8 @@ const CHARACTER_MESSAGES = {
     '저는 마자무예요!',
     '앞으로 마케팅 여정을 함께할 친구가 되어드릴게요.',
   ],
-  type: [
-    '먼저 간단한 질문이 있어요!',
-    '어떤 분이신지 알려주시면\n맞춤 서비스를 제공해 드릴 수 있어요.',
-  ],
   info: [
-    '좋아요! 거의 다 왔어요 ✨',
+    '좋아요! 시작해볼까요? ✨',
     '원활한 서비스 이용을 위해\n몇 가지 정보만 입력해 주세요.',
   ],
   complete: [
@@ -69,13 +64,16 @@ export default function OnboardingPage() {
   const [showContent, setShowContent] = useState(false);
 
   const [formData, setFormData] = useState<OnboardingData>({
-    client_type: null,
-    company_name: '',
-    representative_name: '',
     contact_person: '',
+    company_name: '',
     phone: '',
     email: '',
+    tax_email: '',
+    business_license_url: null,
+    referrer_username: '',
   });
+
+  const [businessLicense, setBusinessLicense] = useState<File | null>(null);
 
   // 초기 로딩 - 이미 온보딩 완료했는지 확인
   useEffect(() => {
@@ -95,11 +93,16 @@ export default function OnboardingPage() {
           return;
         }
 
-        // 기존 데이터로 폼 초기화
+        // 기존 데이터로 폼 초기화 (관리자가 입력한 데이터 pre-fill)
         setFormData(prev => ({
           ...prev,
+          contact_person: profile.contact_person || '',
           company_name: profile.company_name || '',
+          phone: profile.phone || '',
           email: profile.email || '',
+          tax_email: profile.tax_email || '',
+          business_license_url: profile.business_license_url || null,
+          referrer_username: '', // referrer_username은 ID만 있으므로 pre-fill 불가
         }));
 
         setLoading(false);
@@ -152,11 +155,6 @@ export default function OnboardingPage() {
     }
   }, [messageIndex, currentStep]);
 
-  const handleTypeSelect = (type: ClientType) => {
-    setFormData(prev => ({ ...prev, client_type: type }));
-    setCurrentStep(2);
-  };
-
   const handleInputChange = (field: keyof OnboardingData, value: string) => {
     if (field === 'phone') {
       // 전화번호 포맷팅
@@ -176,10 +174,10 @@ export default function OnboardingPage() {
 
   const handleSubmit = async () => {
     // 유효성 검사
-    if (!formData.company_name.trim()) {
+    if (!formData.contact_person.trim()) {
       return;
     }
-    if (!formData.representative_name.trim()) {
+    if (!formData.company_name.trim()) {
       return;
     }
     if (!formData.phone.trim()) {
@@ -188,22 +186,55 @@ export default function OnboardingPage() {
     if (!formData.email.trim()) {
       return;
     }
+    if (!formData.tax_email.trim()) {
+      return;
+    }
+    if (!businessLicense) {
+      return;
+    }
 
     setSubmitting(true);
     try {
+      // First upload business license
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', businessLicense);
+
+      const uploadRes = await fetch('/api/client/upload-license', {
+        method: 'POST',
+        body: uploadFormData,
+      });
+
+      if (!uploadRes.ok) {
+        const uploadError = await uploadRes.json();
+        throw new Error(uploadError.error || '파일 업로드에 실패했습니다.');
+      }
+
+      const uploadData = await uploadRes.json();
+      const businessLicenseUrl = uploadData.url;
+
+      // Then submit onboarding with all data
       const response = await fetch('/api/client/onboarding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          contact_person: formData.contact_person,
+          company_name: formData.company_name,
+          phone: formData.phone,
+          email: formData.email,
+          tax_email: formData.tax_email,
+          business_license_url: businessLicenseUrl,
+          referrer_username: formData.referrer_username || null,
+        }),
       });
 
       if (!response.ok) {
         throw new Error('온보딩 저장 실패');
       }
 
-      setCurrentStep(3);
+      setCurrentStep(2); // Changed from 3 to 2 since we removed one step
     } catch (error) {
       console.error('온보딩 에러:', error);
+      alert(error instanceof Error ? error.message : '온보딩 처리 중 오류가 발생했습니다.');
     } finally {
       setSubmitting(false);
     }
@@ -322,55 +353,24 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {/* Step 1: Type Selection */}
+              {/* Step 1: Basic Info */}
               {currentStep === 1 && (
-                <div className="grid grid-cols-2 gap-4">
-                  <Card
-                    className={cn(
-                      'cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-2',
-                      formData.client_type === 'advertiser'
-                        ? 'border-primary bg-primary/5'
-                        : 'border-transparent hover:border-primary/30'
-                    )}
-                    onClick={() => handleTypeSelect('advertiser')}
-                  >
-                    <CardContent className="p-6 text-center">
-                      <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
-                        <Building2 className="h-8 w-8 text-blue-600" />
-                      </div>
-                      <h3 className="font-bold text-lg mb-2">광고주</h3>
-                      <p className="text-sm text-muted-foreground">
-                        직접 마케팅을<br />진행하시는 분
-                      </p>
-                    </CardContent>
-                  </Card>
-
-                  <Card
-                    className={cn(
-                      'cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-2',
-                      formData.client_type === 'agency'
-                        ? 'border-primary bg-primary/5'
-                        : 'border-transparent hover:border-primary/30'
-                    )}
-                    onClick={() => handleTypeSelect('agency')}
-                  >
-                    <CardContent className="p-6 text-center">
-                      <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-4">
-                        <Megaphone className="h-8 w-8 text-purple-600" />
-                      </div>
-                      <h3 className="font-bold text-lg mb-2">대행사</h3>
-                      <p className="text-sm text-muted-foreground">
-                        고객사 대신<br />마케팅을 대행하시는 분
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-
-              {/* Step 2: Basic Info */}
-              {currentStep === 2 && (
                 <Card className="shadow-xl">
                   <CardContent className="p-6 space-y-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="contact_person" className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-primary" />
+                        담당자명 <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="contact_person"
+                        value={formData.contact_person}
+                        onChange={(e) => handleInputChange('contact_person', e.target.value)}
+                        placeholder="담당자 이름을 입력해주세요"
+                        className="h-11"
+                      />
+                    </div>
+
                     <div className="grid gap-2">
                       <Label htmlFor="company_name" className="flex items-center gap-2">
                         <Building2 className="h-4 w-4 text-primary" />
@@ -381,34 +381,6 @@ export default function OnboardingPage() {
                         value={formData.company_name}
                         onChange={(e) => handleInputChange('company_name', e.target.value)}
                         placeholder="회사명 또는 상호명을 입력해주세요"
-                        className="h-11"
-                      />
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="representative_name" className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-primary" />
-                        대표자명 <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="representative_name"
-                        value={formData.representative_name}
-                        onChange={(e) => handleInputChange('representative_name', e.target.value)}
-                        placeholder="대표자 이름을 입력해주세요"
-                        className="h-11"
-                      />
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="contact_person" className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-primary" />
-                        담당자명 (선택)
-                      </Label>
-                      <Input
-                        id="contact_person"
-                        value={formData.contact_person}
-                        onChange={(e) => handleInputChange('contact_person', e.target.value)}
-                        placeholder="담당자 이름 (대표자와 다른 경우)"
                         className="h-11"
                       />
                     </div>
@@ -443,13 +415,57 @@ export default function OnboardingPage() {
                       />
                     </div>
 
-                    <p className="text-xs text-muted-foreground text-center pt-2">
-                      * 사업자등록증은 나중에 마이페이지에서 업로드할 수 있어요
-                    </p>
+                    <div className="grid gap-2">
+                      <Label htmlFor="tax_email" className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-primary" />
+                        세금계산서 이메일 <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="tax_email"
+                        type="email"
+                        value={formData.tax_email}
+                        onChange={(e) => handleInputChange('tax_email', e.target.value)}
+                        placeholder="tax@company.com"
+                        className="h-11"
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="business_license" className="flex items-center gap-2">
+                        <Upload className="h-4 w-4 text-primary" />
+                        사업자등록증 <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="business_license"
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => setBusinessLicense(e.target.files?.[0] || null)}
+                        className="h-11 cursor-pointer"
+                      />
+                      {businessLicense && (
+                        <p className="text-xs text-muted-foreground">
+                          선택된 파일: {businessLicense.name}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="referrer_username" className="flex items-center gap-2">
+                        <UserPlus className="h-4 w-4 text-primary" />
+                        추천인 ID (선택)
+                      </Label>
+                      <Input
+                        id="referrer_username"
+                        value={formData.referrer_username}
+                        onChange={(e) => handleInputChange('referrer_username', e.target.value)}
+                        placeholder="추천인의 사용자명"
+                        className="h-11"
+                      />
+                    </div>
 
                     <Button
                       onClick={handleSubmit}
-                      disabled={submitting || !formData.company_name || !formData.representative_name || !formData.phone || !formData.email}
+                      disabled={submitting || !formData.contact_person || !formData.company_name || !formData.phone || !formData.email || !formData.tax_email || !businessLicense}
                       className="w-full h-12 gradient-primary hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 text-base"
                     >
                       {submitting ? (
@@ -468,8 +484,8 @@ export default function OnboardingPage() {
                 </Card>
               )}
 
-              {/* Step 3: Complete */}
-              {currentStep === 3 && (
+              {/* Step 2: Complete */}
+              {currentStep === 2 && (
                 <div className="text-center space-y-6">
                   <Button
                     size="lg"

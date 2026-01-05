@@ -94,16 +94,26 @@ export function AdminSubmissionsTable() {
   };
 
   const exportToExcel = () => {
+    const formatDateForExcel = (dateStr?: string) => {
+      if (!dateStr) return '-';
+      return new Date(dateStr).toLocaleDateString('ko-KR', {
+        year: 'numeric', month: '2-digit', day: '2-digit'
+      });
+    };
+
     const excelData = filteredSubmissions.map((submission) => ({
       접수일시: formatDate(submission.created_at),
       접수번호: submission.submission_number || '-',
       거래처: submission.clients?.company_name || '-',
       상품유형: TYPE_LABELS[submission.type] || submission.type,
       업체명: submission.company_name || '-',
+      업체링크: submission.place_url || '-',
+      시작일: formatDateForExcel(submission.start_date),
+      마감일: formatDateForExcel(submission.end_date),
       상세내용: getSubmissionDetails(submission),
       진행률: submission.progress_percentage !== undefined ? `${submission.progress_percentage}%` : '-',
       사용포인트: submission.total_points.toLocaleString(),
-      상태: submission.status,
+      상태: STATUS_LABELS[submission.status] || submission.status,
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(excelData);
@@ -206,7 +216,9 @@ export function AdminSubmissionsTable() {
                       <TableHead className="w-[120px] whitespace-nowrap">거래처</TableHead>
                       <TableHead className="w-[140px] whitespace-nowrap">상품유형</TableHead>
                       <TableHead className="w-[150px] whitespace-nowrap">업체명</TableHead>
-                      <TableHead className="min-w-[250px] whitespace-nowrap">상세내용</TableHead>
+                      <TableHead className="w-[50px] whitespace-nowrap text-center">링크</TableHead>
+                      <TableHead className="w-[160px] whitespace-nowrap">구동기간</TableHead>
+                      <TableHead className="min-w-[200px] whitespace-nowrap">상세내용</TableHead>
                       <TableHead className="w-[80px] whitespace-nowrap">진행률</TableHead>
                       <TableHead className="w-[100px] text-right whitespace-nowrap">사용 포인트</TableHead>
                       <TableHead className="w-[100px] whitespace-nowrap">상태</TableHead>
@@ -216,7 +228,7 @@ export function AdminSubmissionsTable() {
                   <TableBody>
                     {filteredSubmissions.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={10} className="h-24 text-center">
+                        <TableCell colSpan={12} className="h-24 text-center">
                           검색 결과가 없습니다.
                         </TableCell>
                       </TableRow>
@@ -249,7 +261,19 @@ export function AdminSubmissionsTable() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold truncate">{submission.clients?.company_name || '-'}</p>
+                      <div className="flex items-center gap-1">
+                        <p className="text-xs font-semibold truncate">{submission.clients?.company_name || '-'}</p>
+                        {submission.place_url && (
+                          <a
+                            href={submission.place_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 flex-shrink-0"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
                       <p className="text-[10px] text-gray-500 truncate">{submission.company_name || '-'}</p>
                       {submission.submission_number && (
                         <p className="text-[10px] font-mono text-blue-600">{submission.submission_number}</p>
@@ -285,10 +309,18 @@ export function AdminSubmissionsTable() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-100">
                     <div>
                       <p className="text-[10px] text-gray-500 mb-0.5">접수일시</p>
                       <p className="text-xs font-medium">{formatDate(submission.created_at)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-500 mb-0.5">구동기간</p>
+                      <p className="text-xs font-medium">
+                        {submission.start_date
+                          ? `${new Date(submission.start_date).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}${submission.end_date ? ` ~ ${new Date(submission.end_date).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}` : ' ~'}`
+                          : '-'}
+                      </p>
                     </div>
                     <div>
                       <p className="text-[10px] text-gray-500 mb-0.5">사용 포인트</p>

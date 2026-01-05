@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   User,
   Building2,
@@ -16,6 +17,7 @@ import {
   MessageCircle,
   Save,
   Megaphone,
+  AlertCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -54,22 +56,46 @@ export function MyPageTab({
     );
   }
 
-  return (
-    <div className="grid lg:grid-cols-2 gap-6">
-      {/* 기본 정보 */}
-      <BasicInfoCard profile={profile} formData={formData} setFormData={setFormData} />
+  // 프로필 완성도 체크
+  const missingFields = [];
+  if (!profile?.contact_person?.trim()) missingFields.push('담당자명');
+  if (!profile?.company_name?.trim()) missingFields.push('회사명');
+  if (!profile?.phone?.trim()) missingFields.push('연락처');
+  if (!profile?.email?.trim()) missingFields.push('이메일');
+  if (!profile?.tax_email?.trim()) missingFields.push('세금계산서 이메일');
+  if (!profile?.business_license_url) missingFields.push('사업자등록증');
 
-      {/* 사업자 정보 */}
-      <BusinessInfoCard
-        profile={profile}
-        formData={formData}
-        setFormData={setFormData}
-        uploading={uploading}
-        handleFileUpload={handleFileUpload}
-      />
+  const isProfileIncomplete = missingFields.length > 0;
+
+  return (
+    <div className="space-y-6">
+      {/* 프로필 미완성 알림 */}
+      {isProfileIncomplete && (
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertCircle className="h-5 w-5 text-amber-600" />
+          <AlertTitle className="text-amber-900 font-semibold">프로필 완성이 필요합니다</AlertTitle>
+          <AlertDescription className="text-amber-800">
+            서비스 이용을 위해 다음 정보를 입력해주세요: <strong>{missingFields.join(', ')}</strong>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* 기본 정보 */}
+        <BasicInfoCard profile={profile} formData={formData} setFormData={setFormData} />
+
+        {/* 사업자 정보 */}
+        <BusinessInfoCard
+          profile={profile}
+          formData={formData}
+          setFormData={setFormData}
+          uploading={uploading}
+          handleFileUpload={handleFileUpload}
+        />
+      </div>
 
       {/* 저장 버튼 & 1:1 문의 */}
-      <Card className="p-6 lg:col-span-2">
+      <Card className="p-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             {profile?.profile_updated_at && (
@@ -192,6 +218,21 @@ function BasicInfoCard({
             />
           </div>
         </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor="email">이메일</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="example@company.com"
+              className="pl-10"
+            />
+          </div>
+        </div>
       </div>
     </Card>
   );
@@ -218,49 +259,6 @@ function BusinessInfoCard({
       </div>
 
       <div className="space-y-4">
-        <div className="grid gap-2">
-          <Label htmlFor="business_number">사업자등록번호</Label>
-          <Input
-            id="business_number"
-            value={formData.business_number}
-            onChange={(e) => {
-              // 숫자만 추출
-              const nums = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
-              // 000-00-00000 형식으로 포맷팅
-              let formatted = nums;
-              if (nums.length > 3) {
-                formatted = nums.slice(0, 3) + '-' + nums.slice(3);
-              }
-              if (nums.length > 5) {
-                formatted = nums.slice(0, 3) + '-' + nums.slice(3, 5) + '-' + nums.slice(5);
-              }
-              setFormData({ ...formData, business_number: formatted });
-            }}
-            placeholder="000-00-00000"
-            maxLength={12}
-          />
-        </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="representative_name">대표자명</Label>
-          <Input
-            id="representative_name"
-            value={formData.representative_name}
-            onChange={(e) => setFormData({ ...formData, representative_name: e.target.value })}
-            placeholder="대표자 이름"
-          />
-        </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="business_address">사업장 주소</Label>
-          <Input
-            id="business_address"
-            value={formData.business_address}
-            onChange={(e) => setFormData({ ...formData, business_address: e.target.value })}
-            placeholder="사업장 주소"
-          />
-        </div>
-
         <div className="grid gap-2">
           <Label htmlFor="tax_email">세금계산서 수령 이메일</Label>
           <div className="relative">

@@ -6,6 +6,7 @@ export const STATUS_LABELS: Record<SubmissionStatus, string> = {
   completed: '완료',
   cancelled: '취소',
   as_in_progress: 'AS 진행중',
+  cancellation_requested: '중단요청',
 };
 
 export const STATUS_VARIANTS: Record<
@@ -17,6 +18,7 @@ export const STATUS_VARIANTS: Record<
   completed: 'secondary',
   cancelled: 'destructive',
   as_in_progress: 'default',
+  cancellation_requested: 'destructive',
 };
 
 export const TYPE_LABELS: Record<string, string> = {

@@ -1,5 +1,198 @@
 # CHANGELOG - 애드센스 마케팅 상품 접수 시스템
 
+## 2026-01-05 - [ADD] 세금계산서 발행 요청 기능 추가
+
+**Changed Files**:
+- supabase/migrations/20260105_tax_invoice_requests.sql (신규 - DB 테이블 생성)
+- types/database.ts (수정 - TaxInvoiceRequest 타입 추가)
+- app/api/client/tax-invoice-requests/route.ts (신규 - 클라이언트 API)
+- app/api/admin/tax-invoice-requests/route.ts (신규 - 관리자 API)
+- app/dashboard/points/point-transactions-table.tsx (수정 - 세금계산서 요청 버튼 추가)
+- app/admin/page.tsx (수정 - 대시보드 통계에 세금계산서 요청 추가)
+- app/admin/admin-dashboard-content.tsx (수정 - 세금계산서 요청 섹션 추가)
+- app/admin/tax-invoice-requests/page.tsx (신규 - 관리자 세금계산서 요청 관리 페이지)
+- components/layout/admin-nav.tsx (수정 - 네비게이션 메뉴 추가)
+
+**Changes**:
+- 클라이언트: 포인트 충전 내역에서 각 충전 거래마다 "세금계산서 발행 요청" 버튼 추가
+- 요청 상태(대기중/발행완료/거부됨) 배지로 표시
+- 관리자 대시보드에 "세금계산서 요청" 카드 및 최근 요청 섹션 추가
+- 관리자 세금계산서 요청 관리 페이지 (/admin/tax-invoice-requests) 생성
+  - 요청 목록 조회 (검색, 상태 필터링)
+  - 발행 완료/거부 처리 기능
+  - 거래처명 클릭 시 상세 정보 다이얼로그 (회사명, 담당자, 연락처, 세금계산서 이메일, 사업자등록증)
+- 관리자 네비게이션에 "세금계산서 요청" 메뉴 추가
+
+**Reason**:
+- 고객 요청: 포인트 충전 후 세금계산서 발행 요청 기능 필요
+
+**Impact**:
+- 클라이언트가 충전 거래별로 세금계산서 발행 요청 가능
+- 관리자가 요청을 확인하고 처리 가능
+- 동일 거래에 대한 중복 요청 방지 (UNIQUE 제약 조건)
+
+---
+
+## 2026-01-05 - [FIX] 커뮤니티 마케팅 가격 조회 오류 수정
+
+**Changed Files**:
+- app/api/submissions/cafe/route.ts (수정 - service_type에 따른 가격 slug 분기)
+
+**Changes**:
+- 침투 마케팅 접수 시 `service_type`에 따라 올바른 가격 slug 사용
+- 기존: 항상 `cafe-marketing` 사용
+- 수정: `cafe` → `cafe-marketing`, `community` → `community-marketing`
+
+**Reason**:
+- 커뮤니티 마케팅 접수 시에도 카페 마케팅 가격이 적용되는 버그 수정
+- 기본 가격 설정에서 `community-marketing` 가격을 따로 설정해도 적용되지 않았음
+
+**Impact**:
+- 커뮤니티 마케팅에 별도 가격 설정 가능
+
+---
+
+## 2026-01-05 - [FIX] 서버사이드 가격 조회 기본 가격 fallback 누락 수정
+
+**Changed Files**:
+- lib/pricing.ts (수정 - getProductPrice 함수에 기본 가격 fallback 추가)
+
+**Changes**:
+- `getProductPrice()` 함수에서 클라이언트 개별 가격이 없을 때 `default_product_prices` 테이블에서 기본 가격 조회하도록 수정
+- 기존: `client_product_prices`만 조회 → 가격 없으면 null 반환
+- 수정: `client_product_prices` → 없으면 → `default_product_prices` 조회 → 없으면 null 반환
+
+**Reason**:
+- 리워드 접수 시 "투플 상품 가격 정보를 찾을 수 없습니다" 에러 발생
+- `/api/pricing` (클라이언트용)은 기본 가격 fallback 적용됨
+- `/api/submissions/reward/route.ts` 등 서버사이드 API는 `lib/pricing.ts`의 `getProductPrice()` 사용
+- 해당 함수에 기본 가격 fallback 로직이 누락되어 있었음
+
+**Impact**:
+- 개별 가격 설정이 없는 신규 회원도 기본 가격으로 리워드/리뷰 등 접수 가능
+
+---
+
+## 2026-01-05 - [FIX] 관리자 접수 현황 테이블 카카오맵 링크 필드명 오류 수정
+
+**Changed Files**:
+- app/api/admin/submissions/route.ts (수정 - kakao_place_url → kakaomap_url)
+
+**Changes**:
+- 카카오맵 접수의 업체 링크 필드명 오류 수정
+- `sub.kakao_place_url` → `sub.kakaomap_url`로 변경
+
+**Reason**:
+- 접수 현황 테이블에서 카카오맵 접수의 링크와 구동기간이 "-"로 표시되는 버그 수정
+- DB 실제 필드명은 `kakaomap_url`이나 잘못된 필드명 `kakao_place_url` 사용 중이었음
+
+**Impact**:
+- 카카오맵 접수 항목에 업체 링크와 구동기간이 정상 표시됨
+
+---
+
+## 2026-01-05 - [ADD] 접수 현황 테이블에 업체링크, 구동기간 컬럼 추가
+
+**Changed Files**:
+- types/admin/submissions.ts (수정 - place_url, end_date 필드 추가)
+- types/submission.ts (수정 - end_date 필드 추가)
+- app/api/admin/submissions/route.ts (수정 - calculateEndDate 함수, place_url/end_date 매핑 추가)
+- app/api/submissions/all/route.ts (수정 - calculateEndDate 함수, end_date 매핑 추가)
+- app/admin/submissions/admin-submissions-table.tsx (수정 - 링크/구동기간 컬럼, 엑셀 필드 추가)
+- components/admin/submissions/SubmissionTableRow.tsx (수정 - 링크/구동기간 셀 추가)
+- app/dashboard/submissions/page.tsx (수정 - 구동기간 컬럼 추가)
+- components/dashboard/submissions/SubmissionTableRow.tsx (수정 - 구동기간 셀 추가)
+- components/dashboard/submissions/SubmissionCard.tsx (수정 - 구동기간 필드 추가)
+
+**Changes**:
+1. **타입 정의**:
+   - `place_url`: 각 상품별 업체 링크 필드 통합 (네이버 플레이스, 카카오맵, 블로그 등)
+   - `end_date`: 마감일 필드 추가 (시작일 + 총 일수로 계산)
+
+2. **API 수정**:
+   - `calculateEndDate()` 헬퍼 함수 추가 (시작일 + total_days - 1)
+   - 각 상품별 URL 필드를 `place_url`로 통합 매핑
+   - 마감일 자동 계산 로직 추가
+
+3. **관리자 테이블**:
+   - "링크" 컬럼: 클릭 시 업체 페이지 새 탭 오픈 (아이콘 버튼)
+   - "구동기간" 컬럼: MM/DD ~ MM/DD 형식 표시
+   - 모바일 카드에도 동일 정보 표시
+   - 엑셀 다운로드에 업체링크, 시작일, 마감일 필드 추가
+
+4. **거래처 테이블**:
+   - "구동기간" 컬럼 추가
+   - 모바일 카드에 구동기간 정보 추가
+
+**Reason**:
+- 사용자 요청: "업체링크, 시작일, 마감일도 표기되어있어야합니다"
+- 상세 다이얼로그를 열지 않고도 테이블에서 바로 확인 가능하도록 개선
+
+**Impact**:
+- 관리자/클라이언트 모두 접수 현황 테이블에서 업체링크와 구동기간 확인 가능
+- 엑셀 다운로드 시에도 해당 필드 포함
+
+---
+
+## 2026-01-05 - [ADD] 기본 가격 설정 기능 추가
+
+**Changed Files**:
+- supabase/migrations/20260105_default_product_prices.sql (신규)
+- app/api/admin/default-pricing/route.ts (신규, 107줄)
+- components/admin/product-guides/DefaultPricingSettings.tsx (신규, 278줄)
+- app/admin/product-guides/page.tsx (수정)
+- app/api/pricing/route.ts (수정, 79줄 → 108줄)
+- types/database.ts (타입 추가)
+
+**Changes**:
+1. **데이터베이스**: `default_product_prices` 테이블 추가
+   - 각 상품 카테고리별 기본 단가 저장
+   - 신규 회원에게 자동 적용되는 기본 가격
+
+2. **관리자 API**: `/api/admin/default-pricing`
+   - GET: 기본 가격 목록 조회
+   - POST: 기본 가격 저장 (upsert)
+
+3. **관리자 UI**: `/admin/product-guides` 페이지에 "기본 가격 설정" 탭 추가
+   - 대분류별 상품 그룹화
+   - 각 상품별 기본 단가 입력
+   - 설정완료/미설정 상태 표시
+   - 변경사항 감지 및 저장
+
+4. **가격 조회 로직 수정**: `/api/pricing`
+   - 가격 우선순위: 클라이언트 개별 가격 > 기본 가격
+   - 신규 회원도 기본 가격으로 상품 이용 가능
+
+**Reason**:
+- 클라이언트 요청: "처음 회원가입을 하면 관리자가 처음에 가격 설정을 해줘야 하는데, 기본값이 설정되도록 해달라"
+- 신규 회원 가입 시 관리자가 매번 개별 가격 설정을 하지 않아도 됨
+- 기본 가격 설정을 통해 일관된 가격 정책 유지 가능
+
+**Impact**:
+- 신규 회원은 자동으로 기본 가격이 적용됨
+- 기존 회원별 개별 가격 설정 기능은 그대로 유지
+- 개별 가격이 설정된 회원은 기본 가격보다 개별 가격 우선 적용
+
+---
+
+## 2026-01-05 - [UPDATE] 블로그 배포 키워드 필드 리뷰어 전용으로 변경
+
+**Changed Files**:
+- components/dashboard/blog-distribution/BlogDistributionForm.tsx
+
+**Changes**:
+- 키워드 입력 필드를 `selectedType === 'reviewer'` 조건으로 감싸서 리뷰어 배포에서만 표시
+- 영상/자동화 배포에서는 키워드 필드 숨김 처리
+
+**Reason**:
+- 영상/자동화 배포에서는 키워드를 별도로 받지 않기 위함
+- 리뷰어 배포에서만 키워드 입력이 필요함
+
+**Impact**:
+- 블로그 배포 접수 폼에서 리뷰어 선택 시에만 키워드 필드 노출
+
+---
+
 ## 2025-12-16 20:00 - [UPDATE] 모든 상세 페이지 뒤로가기 버튼 통합 접수 현황으로 이동하도록 수정
 
 **Changed Files**:

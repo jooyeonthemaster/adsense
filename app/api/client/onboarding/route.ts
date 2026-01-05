@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, createSession } from '@/lib/auth';
 import { createClient } from '@/utils/supabase/server';
 
 export async function POST(request: Request) {
@@ -8,18 +8,19 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const {
-      client_type,
-      company_name,
-      representative_name,
       contact_person,
+      company_name,
       phone,
       email,
+      tax_email,
+      business_license_url,
+      referrer_username,
     } = body;
 
     // 필수 필드 검증
-    if (!client_type || !['advertiser', 'agency'].includes(client_type)) {
+    if (!contact_person?.trim()) {
       return NextResponse.json(
-        { error: '올바른 클라이언트 유형을 선택해주세요.' },
+        { error: '담당자명을 입력해주세요.' },
         { status: 400 }
       );
     }
@@ -27,13 +28,6 @@ export async function POST(request: Request) {
     if (!company_name?.trim()) {
       return NextResponse.json(
         { error: '회사명을 입력해주세요.' },
-        { status: 400 }
-      );
-    }
-
-    if (!representative_name?.trim()) {
-      return NextResponse.json(
-        { error: '대표자명을 입력해주세요.' },
         { status: 400 }
       );
     }
@@ -52,6 +46,20 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!tax_email?.trim()) {
+      return NextResponse.json(
+        { error: '세금계산서 이메일을 입력해주세요.' },
+        { status: 400 }
+      );
+    }
+
+    if (!business_license_url) {
+      return NextResponse.json(
+        { error: '사업자등록증을 업로드해주세요.' },
+        { status: 400 }
+      );
+    }
+
     // 이메일 형식 검증
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -61,18 +69,44 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!emailRegex.test(tax_email)) {
+      return NextResponse.json(
+        { error: '올바른 세금계산서 이메일 형식을 입력해주세요.' },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
+
+    // Validate referrer if provided
+    let referrer_id = null;
+    if (referrer_username) {
+      const { data: referrer, error: referrerError } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('username', referrer_username)
+        .single();
+
+      if (referrerError || !referrer) {
+        return NextResponse.json(
+          { error: '존재하지 않는 추천인 ID입니다.' },
+          { status: 400 }
+        );
+      }
+      referrer_id = referrer.id;
+    }
 
     // 온보딩 데이터 저장
     const { data: updatedClient, error } = await supabase
       .from('clients')
       .update({
-        client_type,
+        contact_person: contact_person.trim(),
         company_name: company_name.trim(),
-        representative_name: representative_name.trim(),
-        contact_person: contact_person?.trim() || null,
         phone: phone.trim(),
         email: email.trim(),
+        tax_email: tax_email.trim(),
+        business_license_url,
+        referrer_id,
         onboarding_completed: true,
         profile_updated_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -88,6 +122,18 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    // 세션 재생성 (업데이트된 onboarding_completed 값 반영)
+    await createSession({
+      id: updatedClient.id,
+      username: updatedClient.username,
+      name: updatedClient.company_name,
+      type: 'client',
+      company_name: updatedClient.company_name,
+      points: updatedClient.points,
+      onboarding_completed: true, // 업데이트된 값
+      client_type: updatedClient.client_type || null,
+    });
 
     return NextResponse.json({
       message: '온보딩이 완료되었습니다.',

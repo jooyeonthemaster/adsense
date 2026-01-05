@@ -6,6 +6,7 @@ import type {
   GroupedData,
   ViewMode,
   GroupByType,
+  MediaTypeFilter,
 } from '@/components/admin/reward-management/types';
 
 export function useRewardManagement() {
@@ -20,6 +21,7 @@ export function useRewardManagement() {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [createdDateFilter, setCreatedDateFilter] = useState<Date | undefined>();
   const [startDateFilter, setStartDateFilter] = useState<Date | undefined>();
+  const [mediaTypeFilter, setMediaTypeFilter] = useState<MediaTypeFilter>('all');
 
   useEffect(() => {
     fetchSubmissions();
@@ -105,6 +107,10 @@ export function useRewardManagement() {
         sub.clients?.company_name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
 
+      // 매체 타입 필터 (투플/유레카)
+      const matchesMediaType = mediaTypeFilter === 'all' ||
+        (sub.media_type || 'twoople') === mediaTypeFilter;
+
       // 접수일 필터
       let matchesCreatedDate = true;
       if (createdDateFilter) {
@@ -135,9 +141,9 @@ export function useRewardManagement() {
         matchesStartDate = selectedDate >= runStartDate && selectedDate <= runEndDate;
       }
 
-      return matchesSearch && matchesStatus && matchesCreatedDate && matchesStartDate;
+      return matchesSearch && matchesStatus && matchesMediaType && matchesCreatedDate && matchesStartDate;
     });
-  }, [submissions, searchQuery, statusFilter, createdDateFilter, startDateFilter]);
+  }, [submissions, searchQuery, statusFilter, mediaTypeFilter, createdDateFilter, startDateFilter]);
 
   const groupedData = useMemo((): GroupedData[] | null => {
     if (viewMode === 'list') return null;
@@ -183,6 +189,7 @@ export function useRewardManagement() {
     submissions,
     searchQuery,
     statusFilter,
+    mediaTypeFilter,
     copiedId,
     viewMode,
     groupBy,
@@ -195,6 +202,7 @@ export function useRewardManagement() {
 
     setSearchQuery,
     setStatusFilter,
+    setMediaTypeFilter,
     setViewMode,
     setGroupBy,
     setCreatedDateFilter,

@@ -24,6 +24,42 @@ import { cn } from '@/lib/utils';
 import { getPriorityColor } from './constants';
 import type { Announcement, Notification, NotificationFilter } from './types';
 
+// 영어 상태값을 한글로 변환하는 매핑
+const STATUS_LABELS: Record<string, string> = {
+  // 공통 상태
+  pending: '대기',
+  approved: '승인',
+  in_progress: '진행중',
+  completed: '완료',
+  cancelled: '취소',
+  // 카카오맵/리뷰 관련
+  waiting_content: '콘텐츠 대기중',
+  review: '검수중',
+  revision_requested: '수정 요청',
+  as_in_progress: 'AS 진행중',
+  // 중단 관련
+  cancellation_requested: '중단요청',
+  cancellation_approved: '중단승인',
+  // 카페 관련
+  script_writing: '원고 작성중',
+  script_completed: '원고 작성완료',
+  // 충전 요청 관련
+  rejected: '거절됨',
+};
+
+// 알림 메시지 내 영어 상태값을 한글로 변환
+const translateStatusInMessage = (message: string): string => {
+  let translated = message;
+
+  // 상태값 매핑을 순회하며 영어 → 한글 변환
+  Object.entries(STATUS_LABELS).forEach(([eng, kor]) => {
+    // "접수가 waiting_content 되었습니다" 같은 패턴 처리
+    translated = translated.replace(new RegExp(`\\b${eng}\\b`, 'gi'), kor);
+  });
+
+  return translated;
+};
+
 interface NotificationsTabProps {
   announcements: Announcement[];
   notifications: Notification[];
@@ -247,7 +283,7 @@ function PersonalNotificationsCard({
                         <div className="w-2 h-2 bg-primary rounded-full shrink-0 mt-1"></div>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground mb-2">{notification.message}</p>
+                    <p className="text-sm text-muted-foreground mb-2">{translateStatusInMessage(notification.message)}</p>
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">
                         {format(new Date(notification.created_at), 'yyyy-MM-dd HH:mm', {

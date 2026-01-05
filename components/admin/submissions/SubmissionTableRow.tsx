@@ -3,9 +3,24 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
-import { Eye, ExternalLink, Copy, Check } from 'lucide-react';
+import { Eye, ExternalLink, Copy, Check, Link2 } from 'lucide-react';
 import { UnifiedSubmission, STATUS_LABELS, STATUS_VARIANTS, TYPE_LABELS } from '@/types/admin/submissions';
 import { formatDate, getSubmissionDetails } from '@/utils/admin/submission-helpers';
+
+// 구동기간 포맷팅 (MM/DD ~ MM/DD)
+const formatOperationPeriod = (startDate?: string, endDate?: string): string => {
+  if (!startDate) return '-';
+
+  const formatShortDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
+  };
+
+  const start = formatShortDate(startDate);
+  if (!endDate) return `${start} ~`;
+
+  return `${start} ~ ${formatShortDate(endDate)}`;
+};
 
 // 상품 타입별 관리 페이지 URL 매핑
 const getManagementUrl = (type: UnifiedSubmission['type'], id: string): string => {
@@ -78,6 +93,24 @@ export function SubmissionTableRow({
       <TableCell className="font-medium truncate max-w-[120px]">
         {submission.company_name || '-'}
       </TableCell>
+      <TableCell className="text-center">
+        {submission.place_url ? (
+          <a
+            href={submission.place_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-muted transition-colors text-blue-600"
+            title={submission.place_url}
+          >
+            <Link2 className="h-4 w-4" />
+          </a>
+        ) : (
+          <span className="text-xs text-muted-foreground">-</span>
+        )}
+      </TableCell>
+      <TableCell className="whitespace-nowrap text-sm">
+        {formatOperationPeriod(submission.start_date, submission.end_date)}
+      </TableCell>
       <TableCell className="text-sm truncate max-w-[150px]">
         {getSubmissionDetails(submission)}
       </TableCell>
@@ -132,6 +165,8 @@ export function SubmissionTableRow({
     </TableRow>
   );
 }
+
+
 
 
 

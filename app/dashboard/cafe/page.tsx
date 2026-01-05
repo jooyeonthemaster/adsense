@@ -50,9 +50,11 @@ export default function CafeMarketingPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [basePricePerPost, setBasePricePerPost] = useState<number | null>(null);
+  const [cafePricePerPost, setCafePricePerPost] = useState<number | null>(null);
+  const [communityPricePerPost, setCommunityPricePerPost] = useState<number | null>(null);
   const [loadingPrice, setLoadingPrice] = useState(true);
   const [isExtractingMid, setIsExtractingMid] = useState(false);
+  const [activeProducts, setActiveProducts] = useState<string[]>([]);
 
   // 플레이스 링크에서 MID 자동 추출 및 업체명 가져오기
   const handlePlaceUrlChange = async (url: string) => {
@@ -93,18 +95,44 @@ export default function CafeMarketingPage() {
     }
   };
 
-  // 가격이 설정되어 있는지 확인
-  const isPriceConfigured = basePricePerPost !== null && basePricePerPost > 0;
+  // 현재 선택된 서비스의 가격
+  const currentPricePerPost = formData.serviceType === 'cafe' ? cafePricePerPost : communityPricePerPost;
 
-  // 가격 정보 불러오기
+  // 가격이 설정되어 있는지 확인
+  const isPriceConfigured = currentPricePerPost !== null && currentPricePerPost > 0;
+
+  // 가격 정보 및 활성 상품 불러오기
   useEffect(() => {
     const fetchPricing = async () => {
       try {
         const response = await fetch('/api/pricing');
         const data = await response.json();
 
-        if (data.success && data.pricing && data.pricing['cafe-marketing']) {
-          setBasePricePerPost(data.pricing['cafe-marketing']);
+        if (data.success) {
+          // 활성 상품 목록 저장
+          if (data.activeProducts) {
+            setActiveProducts(data.activeProducts);
+
+            // 현재 선택된 서비스가 비활성화된 경우 활성화된 서비스로 변경
+            const currentSlug = formData.serviceType === 'cafe' ? 'cafe-marketing' : 'community-marketing';
+            if (!data.activeProducts.includes(currentSlug)) {
+              // 활성화된 침투 마케팅 상품 찾기
+              if (data.activeProducts.includes('cafe-marketing')) {
+                setFormData(prev => ({ ...prev, serviceType: 'cafe' }));
+              } else if (data.activeProducts.includes('community-marketing')) {
+                setFormData(prev => ({ ...prev, serviceType: 'community' }));
+              }
+            }
+          }
+
+          if (data.pricing) {
+            if (data.pricing['cafe-marketing']) {
+              setCafePricePerPost(data.pricing['cafe-marketing']);
+            }
+            if (data.pricing['community-marketing']) {
+              setCommunityPricePerPost(data.pricing['community-marketing']);
+            }
+          }
         }
       } catch (error) {
         console.error('가격 정보 로드 실패:', error);
@@ -114,6 +142,7 @@ export default function CafeMarketingPage() {
     };
 
     fetchPricing();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const availableCafes = formData.region ? cafesByRegion[formData.region] || [] : [];
@@ -144,7 +173,7 @@ export default function CafeMarketingPage() {
   };
 
   const calculateTotalCost = () => {
-    return calculateTotalCount() * (basePricePerPost || 0);
+    return calculateTotalCount() * (currentPricePerPost || 0);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -258,19 +287,41 @@ export default function CafeMarketingPage() {
   // ProductGuide Key 동적 결정
   const productKey = formData.serviceType === 'cafe' ? 'cafe-marketing' : 'community-marketing';
 
-  // 서비스 탭 구성
-  const serviceTabs = [
+  // 서비스 탭 구성 (활성화된 상품만 표시)
+  const allServiceTabs = [
     {
       id: 'cafe' as const,
       name: '카페 침투',
       icon: Coffee,
+      slug: 'cafe-marketing',
     },
     {
       id: 'community' as const,
       name: '커뮤니티 마케팅',
       icon: MessageSquare,
+      slug: 'community-marketing',
     },
   ];
+
+  // 활성화된 상품만 필터링
+  const serviceTabs = allServiceTabs.filter(tab => activeProducts.includes(tab.slug));
+
+  // 침투 마케팅 상품이 모두 비활성화된 경우
+  const noActiveProducts = !loadingPrice && serviceTabs.length === 0;
+
+  // 모든 침투 마케팅 상품이 비활성화된 경우 안내 메시지 표시
+  if (noActiveProducts) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center p-8">
+          <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">현재 이용 가능한 서비스가 없습니다</h2>
+          <p className="text-gray-600">침투 마케팅 서비스가 일시적으로 중단되었습니다.</p>
+          <p className="text-gray-600">관리자에게 문의해주세요.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -278,31 +329,38 @@ export default function CafeMarketingPage() {
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8" aria-label="Tabs">
-            {serviceTabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = formData.serviceType === tab.id;
+            {loadingPrice ? (
+              <div className="py-4 flex items-center gap-2 text-gray-500">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm">로딩 중...</span>
+              </div>
+            ) : (
+              serviceTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = formData.serviceType === tab.id;
 
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, serviceType: tab.id }))}
-                  className={`
-                    group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors
-                    ${isActive
-                      ? 'border-sky-500 text-sky-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }
-                  `}
-                >
-                  <Icon className={`
-                    mr-2 h-5 w-5
-                    ${isActive ? 'text-sky-500' : 'text-gray-400 group-hover:text-gray-500'}
-                  `} />
-                  {tab.name}
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, serviceType: tab.id }))}
+                    className={`
+                      group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors
+                      ${isActive
+                        ? 'border-sky-500 text-sky-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }
+                    `}
+                  >
+                    <Icon className={`
+                      mr-2 h-5 w-5
+                      ${isActive ? 'text-sky-500' : 'text-gray-400 group-hover:text-gray-500'}
+                    `} />
+                    {tab.name}
+                  </button>
+                );
+              })
+            )}
           </nav>
         </div>
       </div>
@@ -322,67 +380,71 @@ export default function CafeMarketingPage() {
                 <CardDescription className="text-gray-600 text-sm">원하시는 침투 마케팅 서비스를 선택하세요</CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-1 gap-2 pt-0">
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, serviceType: 'cafe' }))}
-                  className={`
-                    relative w-full p-3 rounded-lg border-2 text-left transition-all duration-200
-                    ${formData.serviceType === 'cafe'
-                      ? 'border-amber-500 bg-amber-50 shadow-md'
-                      : 'border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50/50'
-                    }
-                  `}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-amber-500">
-                      <Coffee className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className={`font-semibold text-sm ${formData.serviceType === 'cafe' ? 'text-amber-700' : 'text-gray-900'}`}>
-                          카페 침투
-                        </span>
-                        {formData.serviceType === 'cafe' && (
-                          <Badge variant="secondary" className="bg-amber-500 text-white text-xs px-2 py-0">
-                            선택됨
-                          </Badge>
-                        )}
+                {activeProducts.includes('cafe-marketing') && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, serviceType: 'cafe' }))}
+                    className={`
+                      relative w-full p-3 rounded-lg border-2 text-left transition-all duration-200
+                      ${formData.serviceType === 'cafe'
+                        ? 'border-amber-500 bg-amber-50 shadow-md'
+                        : 'border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50/50'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-amber-500">
+                        <Coffee className="h-5 w-5 text-white" />
                       </div>
-                      <p className="text-xs text-gray-600 mt-0.5">네이버 카페 등 지역 커뮤니티 마케팅</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`font-semibold text-sm ${formData.serviceType === 'cafe' ? 'text-amber-700' : 'text-gray-900'}`}>
+                            카페 침투
+                          </span>
+                          {formData.serviceType === 'cafe' && (
+                            <Badge variant="secondary" className="bg-amber-500 text-white text-xs px-2 py-0">
+                              선택됨
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-600 mt-0.5">네이버 카페 등 지역 커뮤니티 마케팅</p>
+                      </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+                )}
 
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, serviceType: 'community' }))}
-                  className={`
-                    relative w-full p-3 rounded-lg border-2 text-left transition-all duration-200
-                    ${formData.serviceType === 'community'
-                      ? 'border-purple-500 bg-purple-50 shadow-md'
-                      : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/50'
-                    }
-                  `}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-purple-500">
-                      <MessageSquare className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className={`font-semibold text-sm ${formData.serviceType === 'community' ? 'text-purple-700' : 'text-gray-900'}`}>
-                          커뮤니티 마케팅
-                        </span>
-                        {formData.serviceType === 'community' && (
-                          <Badge variant="secondary" className="bg-purple-500 text-white text-xs px-2 py-0">
-                            선택됨
-                          </Badge>
-                        )}
+                {activeProducts.includes('community-marketing') && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, serviceType: 'community' }))}
+                    className={`
+                      relative w-full p-3 rounded-lg border-2 text-left transition-all duration-200
+                      ${formData.serviceType === 'community'
+                        ? 'border-purple-500 bg-purple-50 shadow-md'
+                        : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/50'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-purple-500">
+                        <MessageSquare className="h-5 w-5 text-white" />
                       </div>
-                      <p className="text-xs text-gray-600 mt-0.5">다양한 온라인 커뮤니티 침투 마케팅</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`font-semibold text-sm ${formData.serviceType === 'community' ? 'text-purple-700' : 'text-gray-900'}`}>
+                            커뮤니티 마케팅
+                          </span>
+                          {formData.serviceType === 'community' && (
+                            <Badge variant="secondary" className="bg-purple-500 text-white text-xs px-2 py-0">
+                              선택됨
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-600 mt-0.5">다양한 온라인 커뮤니티 침투 마케팅</p>
+                      </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+                )}
               </CardContent>
             </Card>
 
@@ -397,9 +459,9 @@ export default function CafeMarketingPage() {
                   id="businessName"
                   type="text"
                   value={formData.businessName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, businessName: e.target.value }))}
-                  placeholder="업체명을 입력하세요"
-                  className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+                  readOnly
+                  placeholder="플레이스 링크 입력 시 자동 입력됩니다"
+                  className="border-gray-200 bg-gray-50 h-9 text-sm cursor-not-allowed"
                 />
               </div>
 
@@ -602,7 +664,7 @@ export default function CafeMarketingPage() {
                       <span className="text-sm text-white/90">P</span>
                     </div>
                     <div className="text-xs text-white/80">
-                      건당 {(basePricePerPost || 0).toLocaleString()}P × {calculateTotalCount()}건
+                      건당 {(currentPricePerPost || 0).toLocaleString()}P × {calculateTotalCount()}건
                     </div>
                   </div>
                 </div>

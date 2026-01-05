@@ -52,6 +52,26 @@ export const productConfig = {
     productType: 'place' as const,
     category: 'reward',
   },
+  'reward-twoople': {
+    label: '투플',
+    icon: Gift,
+    bgColor: 'bg-sky-100',
+    textColor: 'text-sky-600',
+    detailPath: '/dashboard/reward/status',
+    productType: 'place' as const,
+    mediaType: 'twoople' as const,
+    category: 'reward',
+  },
+  'reward-eureka': {
+    label: '유레카',
+    icon: Gift,
+    bgColor: 'bg-emerald-100',
+    textColor: 'text-emerald-600',
+    detailPath: '/dashboard/reward/status',
+    productType: 'place' as const,
+    mediaType: 'eureka' as const,
+    category: 'reward',
+  },
   receipt: {
     label: '네이버 영수증',
     icon: Camera,
@@ -165,7 +185,7 @@ export const productConfig = {
 // 카테고리별 세부 상품 매핑
 export const categoryProducts: Record<string, string[]> = {
   all: [],
-  reward: ['place'],
+  reward: ['reward-twoople', 'reward-eureka'],
   review: ['receipt', 'kakaomap'],
   experience: [
     'experience-blog',
@@ -186,6 +206,7 @@ export const statusConfig: Record<
   in_progress: { label: '구동중', variant: 'default' },
   completed: { label: '완료', variant: 'secondary' },
   cancelled: { label: '중단됨', variant: 'destructive' },
+  cancellation_requested: { label: '중단 요청', variant: 'destructive' },
   as_in_progress: { label: 'AS 진행 중', variant: 'default' },
   script_writing: { label: '원고작성중', variant: 'outline' },
   script_completed: { label: '원고작업완료', variant: 'default' },

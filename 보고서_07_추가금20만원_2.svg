@@ -1,0 +1,121 @@
+<svg width="794" height="1123" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="794" height="1123" fill="#FFFFFF"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="794" height="80" fill="#000000"/>
+  <text x="60" y="50" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#FFFFFF">
+    3. 추가금 필요 항목 - 20만원 (2/2)
+  </text>
+
+  <!-- Item 4 -->
+  <rect x="60" y="110" width="674" height="180" fill="#FFF3E0" stroke="#FF9800" stroke-width="2"/>
+  <text x="75" y="140" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000000">
+    4. 전체 상품 기본 가격 설정 - 20만원
+  </text>
+
+  <text x="90" y="170" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#000000">
+    ■ 현재 상태:
+  </text>
+  <text x="100" y="192" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    거래처별 개별 가격만 설정 가능
+  </text>
+
+  <text x="90" y="220" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#000000">
+    ■ 신규 요청:
+  </text>
+  <text x="100" y="242" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    전체 기본 가격 설정 + 거래처별 예외 가격
+  </text>
+
+  <text x="90" y="270" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#FF6B00">
+    ■ 추가금 발생 이유:
+  </text>
+
+  <!-- Item 5 -->
+  <rect x="60" y="310" width="674" height="180" fill="#FFF3E0" stroke="#FF9800" stroke-width="2"/>
+  <text x="75" y="340" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000000">
+    5. 카카오맵 리뷰 승인 시 관리자 알림 - 20만원
+  </text>
+
+  <text x="90" y="370" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#000000">
+    ■ 신규 요청:
+  </text>
+  <text x="100" y="392" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    거래처가 원고 승인 완료 시 관리자에게 알림 발송
+  </text>
+
+  <text x="90" y="420" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#FF6B00">
+    ■ 추가금 발생 이유:
+  </text>
+  <text x="100" y="442" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    • 승인 완료 이벤트 감지 로직 추가
+  </text>
+  <text x="100" y="462" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    • 관리자 알림 생성 및 전송 기능 구현
+  </text>
+
+  <!-- Item 6 -->
+  <rect x="60" y="510" width="674" height="200" fill="#FFF3E0" stroke="#FF9800" stroke-width="2"/>
+  <text x="75" y="540" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000000">
+    6. 관리자 대시보드 필터링된 페이지 이동 - 20만원
+  </text>
+
+  <text x="90" y="570" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#000000">
+    ■ 신규 요청:
+  </text>
+  <text x="100" y="592" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    대시보드 통계 카드 클릭 시 해당 필터가 적용된 페이지로 이동
+  </text>
+  <text x="100" y="612" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    예: "리워드 15건" 클릭 → 접수 내역 (리워드만 필터링)
+  </text>
+
+  <text x="90" y="640" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#FF6B00">
+    ■ 추가금 발생 이유:
+  </text>
+  <text x="100" y="662" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    • URL 쿼리 파라미터 전달 시스템 구현
+  </text>
+  <text x="100" y="682" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    • 접수 내역 페이지에서 자동 필터링 로직 추가
+  </text>
+
+  <!-- Additional Items Summary -->
+  <rect x="60" y="730" width="674" height="240" fill="#E3F2FD" stroke="#2196F3" stroke-width="2"/>
+  <text x="75" y="760" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000000">
+    7~8. 기타 20만원 항목 (2건)
+  </text>
+
+  <text x="90" y="795" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    7. 접수 내역 컬럼 추가 (업체링크/시작일/마감일)
+  </text>
+  <text x="100" y="817" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    관리자 접수 내역, 거래처 통합 접수 현황 테이블에 3개 컬럼 추가
+  </text>
+  <text x="100" y="837" font-family="Arial, sans-serif" font-size="12" fill="#666666">
+    → 기존 데이터 활용, UI 수정만 필요 (간단한 작업)
+  </text>
+
+  <line x1="80" y1="855" x2="714" y2="855" stroke="#BBBBBB" stroke-width="1"/>
+
+  <text x="90" y="880" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    8. 개인 알림 클릭 시 상세페이지 이동
+  </text>
+  <text x="100" y="902" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    알림 타입별 상세 페이지 URL 매핑 및 클릭 이벤트 연결
+  </text>
+  <text x="100" y="922" font-family="Arial, sans-serif" font-size="12" fill="#666666">
+    → UX 개선, 기존 시스템 활용
+  </text>
+
+  <text x="90" y="955" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#1976D2">
+    ※ 7~8번 항목은 상대적으로 간단한 작업으로 20만원 범위 내 처리
+  </text>
+
+  <!-- Footer -->
+  <line x1="60" y1="1050" x2="734" y2="1050" stroke="#000000" stroke-width="1"/>
+  <text x="397" y="1085" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#666666">
+    Page 7
+  </text>
+</svg>

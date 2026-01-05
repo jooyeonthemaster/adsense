@@ -1,0 +1,165 @@
+<svg width="794" height="1123" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="794" height="1123" fill="#FFFFFF"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="794" height="80" fill="#000000"/>
+  <text x="60" y="50" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#FFFFFF">
+    4. 비용 총정리
+  </text>
+
+  <!-- Free Items Summary -->
+  <rect x="60" y="120" width="674" height="100" fill="#E8F5E9" stroke="#4CAF50" stroke-width="2"/>
+  <text x="397" y="155" font-family="Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#2E7D32">
+    무료 처리 항목: 20건
+  </text>
+  <text x="397" y="190" font-family="Arial, sans-serif" font-size="15" text-anchor="middle" fill="#333333">
+    버그 수정 7건 + UI/UX 개선 13건
+  </text>
+
+  <!-- Paid Items Table -->
+  <text x="60" y="260" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#000000">
+    추가금 발생 항목 상세
+  </text>
+
+  <!-- Table Header -->
+  <rect x="60" y="280" width="674" height="40" fill="#000000"/>
+  <text x="130" y="307" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">
+    항목명
+  </text>
+  <text x="550" y="307" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">
+    비용
+  </text>
+
+  <!-- 20만원 항목들 -->
+  <rect x="60" y="320" width="674" height="35" fill="#FFF3E0"/>
+  <text x="80" y="343" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    1. 환불 승인 워크플로우
+  </text>
+  <text x="550" y="343" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#F57C00">
+    200,000원
+  </text>
+
+  <rect x="60" y="355" width="674" height="35" fill="#FFFFFF"/>
+  <text x="80" y="378" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    2. 전체 상품 블라인드 기능
+  </text>
+  <text x="550" y="378" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#F57C00">
+    200,000원
+  </text>
+
+  <rect x="60" y="390" width="674" height="35" fill="#FFF3E0"/>
+  <text x="80" y="413" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    3. 추천인 ID 입력 필드
+  </text>
+  <text x="550" y="413" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#F57C00">
+    200,000원
+  </text>
+
+  <rect x="60" y="425" width="674" height="35" fill="#FFFFFF"/>
+  <text x="80" y="448" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    4. 전체 기본 가격 설정
+  </text>
+  <text x="550" y="448" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#F57C00">
+    200,000원
+  </text>
+
+  <rect x="60" y="460" width="674" height="35" fill="#FFF3E0"/>
+  <text x="80" y="483" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    5. 카카오맵 승인 알림
+  </text>
+  <text x="550" y="483" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#F57C00">
+    200,000원
+  </text>
+
+  <rect x="60" y="495" width="674" height="35" fill="#FFFFFF"/>
+  <text x="80" y="518" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    6. 대시보드 필터링 이동
+  </text>
+  <text x="550" y="518" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#F57C00">
+    200,000원
+  </text>
+
+  <rect x="60" y="530" width="674" height="35" fill="#FFF3E0"/>
+  <text x="80" y="553" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    7. 접수 내역 컬럼 추가
+  </text>
+  <text x="550" y="553" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#F57C00">
+    무료 처리
+  </text>
+
+  <rect x="60" y="565" width="674" height="35" fill="#FFFFFF"/>
+  <text x="80" y="588" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    8. 개인 알림 클릭 이동
+  </text>
+  <text x="550" y="588" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#F57C00">
+    무료 처리
+  </text>
+
+  <!-- 30만원 항목 -->
+  <rect x="60" y="600" width="674" height="40" fill="#FFE0B2"/>
+  <text x="80" y="625" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#333333">
+    9. AI 리뷰 생성 백그라운드 병렬 처리 [추천]
+  </text>
+  <text x="550" y="625" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#E65100">
+    300,000원
+  </text>
+
+  <!-- 50만원 항목들 -->
+  <rect x="60" y="640" width="674" height="40" fill="#FFCDD2"/>
+  <text x="80" y="665" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#333333">
+    10. 회원가입 멘트 관리자 커스텀
+  </text>
+  <text x="550" y="665" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#C62828">
+    500,000원
+  </text>
+
+  <rect x="60" y="680" width="674" height="40" fill="#FFCDD2"/>
+  <text x="80" y="705" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#333333">
+    11. 세금계산서 발행 요청 기능
+  </text>
+  <text x="550" y="705" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#C62828">
+    500,000원
+  </text>
+
+  <!-- 협의 항목들 -->
+  <rect x="60" y="720" width="674" height="35" fill="#E8F5E9"/>
+  <text x="80" y="743" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    12. 대량 업로드 엑셀 템플릿
+  </text>
+  <text x="550" y="743" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#388E3C">
+    협의 필요
+  </text>
+
+  <rect x="60" y="755" width="674" height="35" fill="#E8F5E9"/>
+  <text x="80" y="778" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    13. 블로그 배포 엑셀 접수 양식
+  </text>
+  <text x="550" y="778" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#388E3C">
+    협의 필요
+  </text>
+
+  <!-- Total Line -->
+  <line x1="60" y1="800" x2="734" y2="800" stroke="#000000" stroke-width="2"/>
+
+  <!-- Summary Box -->
+  <rect x="60" y="820" width="674" height="140" fill="#F5F5F5" stroke="#000000" stroke-width="2"/>
+  <text x="397" y="855" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#000000">
+    선택 가능 항목 최소 비용
+  </text>
+  <text x="397" y="890" font-family="Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#D32F2F">
+    20만원 × 6건 = 120만원
+  </text>
+  <text x="397" y="925" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#666666">
+    (전체 선택 시 최대 약 280만원 + 협의 항목)
+  </text>
+  <text x="397" y="950" font-family="Arial, sans-serif" font-size="13" text-anchor="middle" fill="#666666">
+    ※ 필요한 항목만 선택 가능
+  </text>
+
+  <!-- Footer -->
+  <line x1="60" y1="1050" x2="734" y2="1050" stroke="#000000" stroke-width="1"/>
+  <text x="397" y="1085" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#666666">
+    Page 10
+  </text>
+</svg>

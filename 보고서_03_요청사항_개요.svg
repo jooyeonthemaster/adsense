@@ -1,0 +1,105 @@
+<svg width="794" height="1123" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="794" height="1123" fill="#FFFFFF"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="794" height="80" fill="#000000"/>
+  <text x="60" y="50" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#FFFFFF">
+    1. 요청사항 분류 및 개요
+  </text>
+
+  <!-- Total Summary Box -->
+  <rect x="60" y="120" width="674" height="100" fill="#F8F8F8" stroke="#000000" stroke-width="2"/>
+  <text x="397" y="155" font-family="Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#000000">
+    총 요청사항: 33건
+  </text>
+  <text x="397" y="190" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#666666">
+    (2025년 12월 18일 노션 문서 + 추가 슬랙 요청사항 포함)
+  </text>
+
+  <!-- Free Items -->
+  <text x="60" y="270" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#000000">
+    무료 처리 항목 (20건)
+  </text>
+  <rect x="60" y="285" width="674" height="280" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+
+  <text x="80" y="320" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000000">
+    버그 수정 (7건)
+  </text>
+  <text x="100" y="350" font-family="Arial, sans-serif" font-size="14" fill="#333333">
+    • 외부 계정 충전 비용 계산 오류
+  </text>
+  <text x="100" y="375" font-family="Arial, sans-serif" font-size="14" fill="#333333">
+    • 중단 요청 시 '취소할 수 없는 상태' 오류
+  </text>
+  <text x="100" y="400" font-family="Arial, sans-serif" font-size="14" fill="#333333">
+    • 신규 가입자 충전 내역 미표시 버그
+  </text>
+  <text x="100" y="425" font-family="Arial, sans-serif" font-size="14" fill="#333333">
+    • 필수정보 팝업 신규 회원 미표시 버그 (긴급)
+  </text>
+  <text x="100" y="450" font-family="Arial, sans-serif" font-size="14" fill="#333333">
+    • 리워드 탭 이동 오류
+  </text>
+  <text x="100" y="475" font-family="Arial, sans-serif" font-size="14" fill="#333333">
+    • 알림 영문 단어 한글 변환
+  </text>
+  <text x="100" y="500" font-family="Arial, sans-serif" font-size="14" fill="#333333">
+    • 업체명 자동 추출 후 수정 가능 상태 오류
+  </text>
+
+  <line x1="80" y1="520" x2="714" y2="520" stroke="#CCCCCC" stroke-width="1"/>
+
+  <text x="80" y="545" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000000">
+    UI/UX 개선 (13건)
+  </text>
+
+  <!-- Paid Items -->
+  <text x="60" y="620" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#000000">
+    추가금 필요 항목 (13건)
+  </text>
+  <rect x="60" y="635" width="674" height="380" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+
+  <text x="80" y="670" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000000">
+    20만원 항목 (8건)
+  </text>
+  <text x="100" y="700" font-family="Arial, sans-serif" font-size="14" fill="#333333">
+    • 환불 승인 워크플로우, 전체 상품 블라인드, 추천인 ID 입력 필드
+  </text>
+  <text x="100" y="725" font-family="Arial, sans-serif" font-size="14" fill="#333333">
+    • 전체 기본 가격 설정, 카카오맵 승인 알림, 대시보드 필터 이동 등
+  </text>
+
+  <text x="80" y="765" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000000">
+    30만원 항목 (1건)
+  </text>
+  <text x="100" y="795" font-family="Arial, sans-serif" font-size="14" fill="#333333">
+    • AI 리뷰 생성 백그라운드 병렬 처리 (속도 50~70% 개선)
+  </text>
+
+  <text x="80" y="835" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000000">
+    50만원 항목 (2건)
+  </text>
+  <text x="100" y="865" font-family="Arial, sans-serif" font-size="14" fill="#333333">
+    • 회원가입 멘트 관리자 커스텀 (무료 대안 제공)
+  </text>
+  <text x="100" y="890" font-family="Arial, sans-serif" font-size="14" fill="#333333">
+    • 세금계산서 발행 요청 기능
+  </text>
+
+  <text x="80" y="930" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000000">
+    협의 필요 항목 (2건)
+  </text>
+  <text x="100" y="960" font-family="Arial, sans-serif" font-size="14" fill="#333333">
+    • 대량 업로드 엑셀 템플릿 (양식 확인 후)
+  </text>
+  <text x="100" y="985" font-family="Arial, sans-serif" font-size="14" fill="#333333">
+    • 블로그 배포 엑셀 접수 양식 (파일 분석 후)
+  </text>
+
+  <!-- Footer -->
+  <line x1="60" y1="1050" x2="734" y2="1050" stroke="#000000" stroke-width="1"/>
+  <text x="397" y="1085" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#666666">
+    Page 3
+  </text>
+</svg>

@@ -57,6 +57,8 @@ export async function POST(request: NextRequest) {
         email: email || null,
         points: initial_points || 0,
         is_active: true,
+        onboarding_completed: false, // 관리자가 생성한 계정도 온보딩 필수
+        client_type: null,
       })
       .select()
       .single();

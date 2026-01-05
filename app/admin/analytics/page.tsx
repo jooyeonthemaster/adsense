@@ -90,7 +90,10 @@ export default function AnalyticsPage() {
     switch (type) {
       case 'place':
       case 'place-traffic':
-        return '플레이스 유입';
+      case 'twoople-reward':
+        return '투플';
+      case 'eureka-reward':
+        return '유레카';
       case 'receipt':
       case 'receipt-review':
         return '영수증 리뷰';

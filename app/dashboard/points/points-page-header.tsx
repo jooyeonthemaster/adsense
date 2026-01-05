@@ -1,29 +1,64 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Wallet, TrendingUp } from 'lucide-react';
+import { Plus, Wallet, TrendingUp, Clock } from 'lucide-react';
 import { ChargeRequestDialog } from './charge-request-dialog';
 import { motion } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
+
+interface ChargeRequest {
+  id: string;
+  amount: number;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+}
+
+// VAT 계산 (10%)
+const calculateWithVAT = (amount: number) => Math.round(amount * 1.1);
 
 export function PointsPageHeader() {
   const [chargeDialogOpen, setChargeDialogOpen] = useState(false);
   const [currentPoints, setCurrentPoints] = useState<number | null>(null);
+  const [pendingRequests, setPendingRequests] = useState<ChargeRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     // 현재 포인트 조회
     fetch('/api/client/profile')
       .then(res => res.json())
       .then(data => {
         setCurrentPoints(data.points || 0);
+      })
+      .catch(() => {});
+
+    // 대기 중인 충전 요청 조회
+    fetch('/api/client/charge-requests')
+      .then(res => res.json())
+      .then(data => {
+        const pending = (data.chargeRequests || []).filter(
+          (r: ChargeRequest) => r.status === 'pending'
+        );
+        setPendingRequests(pending);
         setLoading(false);
       })
       .catch(() => {
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleDialogClose = (open: boolean) => {
+    setChargeDialogOpen(open);
+    if (!open) {
+      // 다이얼로그 닫힐 때 데이터 새로고침
+      fetchData();
+    }
+  };
 
   return (
     <>
@@ -88,11 +123,62 @@ export function PointsPageHeader() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* 대기 중인 충전 요청 */}
+        {pendingRequests.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Clock className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold text-foreground">대기 중인 충전 요청</h3>
+                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                    {pendingRequests.length}건
+                  </Badge>
+                </div>
+                <div className="space-y-3">
+                  {pendingRequests.map((request) => (
+                    <div
+                      key={request.id}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-background rounded-lg border border-primary/20"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">요청 금액</span>
+                          <span className="font-semibold">{request.amount.toLocaleString()}원</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">VAT 포함 입금액</span>
+                          <span className="font-bold text-primary">{calculateWithVAT(request.amount).toLocaleString()}원</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                          승인 대기중
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(request.created_at).toLocaleDateString('ko-KR')}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-3">
+                  * 입금 확인 후 영업일 기준 1일 이내 포인트가 충전됩니다
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
       </div>
 
       <ChargeRequestDialog
         open={chargeDialogOpen}
-        onOpenChange={setChargeDialogOpen}
+        onOpenChange={handleDialogClose}
       />
     </>
   );

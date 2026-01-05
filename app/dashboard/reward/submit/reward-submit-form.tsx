@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, CheckCircle2, CalendarIcon } from 'lucide-react';
+import { Sparkles, CheckCircle2, CalendarIcon, AlertCircle } from 'lucide-react';
 import { ProductGuideSection } from '@/components/dashboard/ProductGuideSection';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -13,12 +13,16 @@ import { format, addDays } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useRewardSubmit } from '@/hooks/dashboard/useRewardSubmit';
 import type { RewardSubmitFormProps } from '@/components/dashboard/reward-submit';
+import { RewardMediaSelector } from '@/components/dashboard/reward-submit';
 
 export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProps) {
   const {
     formData,
     setFormData,
     isSubmitting,
+    pricing,
+    activeMediaConfigs,
+    noActiveProducts,
     loadingPrice,
     loadingBusinessName,
     operationDays,
@@ -29,6 +33,20 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
     handlePlaceUrlChange,
     handleSubmit,
   } = useRewardSubmit(initialPoints);
+
+  // 활성화된 리워드 상품이 없는 경우
+  if (noActiveProducts) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center p-8">
+          <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">현재 이용 가능한 서비스가 없습니다</h2>
+          <p className="text-gray-600">리워드 서비스가 일시적으로 중단되었습니다.</p>
+          <p className="text-gray-600">관리자에게 문의해주세요.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white px-3 sm:px-4 lg:px-6 pt-4 pb-6">
@@ -41,24 +59,13 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* 왼쪽 열 */}
             <div className="space-y-4">
-              {/* 리워드 매체 */}
-              <Card className="border-gray-200">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-gray-900 text-base">리워드 매체</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0 pb-3">
-                  <div className="flex items-center gap-3 p-2.5 rounded-lg bg-sky-50 border border-sky-200">
-                    <div className="text-3xl">📱</div>
-                    <div className="flex-1">
-                      <div className="font-bold text-base text-gray-900">투플 (Twoople)</div>
-                      <div className="text-xs text-gray-600 leading-relaxed mt-0.5">
-                        실사용자 방문 유도를 통한 네이버 플레이스 조회수 증대<br/>
-                        리워드 기반의 프리미엄 마케팅 플랫폼
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* 리워드 매체 선택 */}
+              <RewardMediaSelector
+                mediaConfigs={activeMediaConfigs}
+                selectedMedia={formData.mediaType}
+                onMediaChange={(media) => setFormData(prev => ({ ...prev, mediaType: media }))}
+                pricing={pricing}
+              />
 
               {/* 업체 정보 */}
               <Card className="border-gray-200">
@@ -77,10 +84,9 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
                         id="businessName"
                         type="text"
                         value={formData.businessName}
-                        onChange={(e) => setFormData(prev => ({ ...prev, businessName: e.target.value }))}
-                        placeholder={loadingBusinessName ? "업체명 가져오는 중..." : "업체명을 입력하세요"}
-                        className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
-                        disabled={loadingBusinessName}
+                        readOnly
+                        placeholder="플레이스 링크 입력 시 자동 입력됩니다"
+                        className="border-gray-200 bg-gray-50 h-9 text-sm cursor-not-allowed"
                       />
                       {loadingBusinessName && (
                         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -289,7 +295,7 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
               )}
               <Button
                 type="submit"
-                disabled={isSubmitting || !formData.twopleSelected || !isPriceConfigured || loadingPrice}
+                disabled={isSubmitting || !isPriceConfigured || loadingPrice}
                 className="w-full h-11 text-sm font-semibold bg-sky-500 hover:bg-sky-600 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (

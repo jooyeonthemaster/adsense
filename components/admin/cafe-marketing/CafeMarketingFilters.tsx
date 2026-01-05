@@ -59,6 +59,7 @@ export function CafeMarketingFilters({
             <SelectItem value="in_progress">구동중</SelectItem>
             <SelectItem value="completed">완료</SelectItem>
             <SelectItem value="cancelled">중단</SelectItem>
+            <SelectItem value="cancellation_requested">중단요청</SelectItem>
           </SelectContent>
         </Select>
         <Select value={scriptStatusFilter} onValueChange={onScriptStatusFilterChange}>

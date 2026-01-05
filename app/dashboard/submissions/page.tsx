@@ -97,7 +97,8 @@ export default function AllSubmissionsPage() {
               <SelectItem value="pending">확인중</SelectItem>
               <SelectItem value="in_progress">구동중</SelectItem>
               <SelectItem value="completed">완료</SelectItem>
-              <SelectItem value="cancelled">중단됨</SelectItem>
+              <SelectItem value="cancellation_requested">중단요청</SelectItem>
+              <SelectItem value="cancellation_approved">중단완료</SelectItem>
             </SelectContent>
           </Select>
 
@@ -121,6 +122,7 @@ export default function AllSubmissionsPage() {
                 <TableHead className="text-xs font-semibold">상품</TableHead>
                 <TableHead className="text-xs font-semibold">업체명</TableHead>
                 <TableHead className="text-xs font-semibold">상세 정보</TableHead>
+                <TableHead className="text-xs font-semibold">구동기간</TableHead>
                 <TableHead className="text-xs font-semibold">진행 상태</TableHead>
                 <TableHead className="text-xs font-semibold">접수일시</TableHead>
                 <TableHead className="text-xs font-semibold text-right">비용</TableHead>
@@ -130,7 +132,7 @@ export default function AllSubmissionsPage() {
             <TableBody>
               {submissions.length === 0 ? (
                 <TableRow>
-                  <TableHead colSpan={7} className="text-center py-12 text-sm text-gray-500">
+                  <TableHead colSpan={8} className="text-center py-12 text-sm text-gray-500">
                     접수 내역이 없습니다.
                   </TableHead>
                 </TableRow>

@@ -17,12 +17,10 @@ export type Client = {
   auth_provider: AuthProvider; // 인증 제공자
   client_type: ClientType | null; // 광고주/대행사
   onboarding_completed: boolean; // 온보딩 완료 여부
+  referrer_id: string | null; // 추천인 클라이언트 ID
   // 마이페이지 - 사업자 정보
   business_license_url: string | null; // 사업자등록증 파일 URL
   business_license_name: string | null; // 사업자등록증 파일명
-  business_number: string | null; // 사업자등록번호
-  representative_name: string | null; // 대표자명
-  business_address: string | null; // 사업장 주소
   tax_email: string | null; // 세금계산서 수령 이메일
   profile_updated_at: string | null; // 프로필 정보 최종 수정일
   created_at: string;
@@ -378,6 +376,31 @@ export type CafeMarketingDailyRecord = {
   record_date: string;
   completed_count: number;
   notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+// Default Product Prices (기본 가격 설정)
+export type DefaultProductPrice = {
+  id: string;
+  category_id: string;
+  price_per_unit: number;
+  created_at: string;
+  updated_at: string;
+};
+
+// Tax Invoice Requests (세금계산서 발행 요청)
+export type TaxInvoiceRequestStatus = 'pending' | 'completed' | 'rejected';
+
+export type TaxInvoiceRequest = {
+  id: string;
+  client_id: string;
+  transaction_id: string;
+  amount: number;
+  status: TaxInvoiceRequestStatus;
+  reject_reason: string | null;
+  completed_at: string | null;
+  completed_by: string | null;
   created_at: string;
   updated_at: string;
 };

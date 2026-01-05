@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/utils/supabase/client';
 import type {
@@ -45,6 +45,7 @@ export interface UseNotificationsReturn {
 
 export function useNotifications(): UseNotificationsReturn {
   const { toast } = useToast();
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   // Tab state
@@ -70,18 +71,19 @@ export function useNotifications(): UseNotificationsReturn {
     contact_person: '',
     phone: '',
     email: '',
-    business_number: '',
-    representative_name: '',
-    business_address: '',
     tax_email: '',
   });
 
-  // URL 파라미터 변경 시 탭 업데이트
+  // URL 파라미터 변경 시 탭 업데이트 (URL이 변경될 때만)
   useEffect(() => {
-    if (tabParam === 'mypage') {
+    if (tabParam === 'mypage' && activeTab !== 'mypage') {
       setActiveTab('mypage');
     }
-  }, [tabParam]);
+    // 주석 처리: URL에 tab 파라미터가 없을 때 강제로 notifications로 되돌리지 않음
+    // else if (tabParam !== 'mypage' && activeTab === 'mypage') {
+    //   setActiveTab('notifications');
+    // }
+  }, [tabParam, activeTab]);
 
   // 데이터 불러오기
   const fetchData = useCallback(async () => {
@@ -127,9 +129,6 @@ export function useNotifications(): UseNotificationsReturn {
           contact_person: data.contact_person || '',
           phone: data.phone || '',
           email: data.email || '',
-          business_number: data.business_number || '',
-          representative_name: data.representative_name || '',
-          business_address: data.business_address || '',
           tax_email: data.tax_email || '',
         });
       }
@@ -147,13 +146,19 @@ export function useNotifications(): UseNotificationsReturn {
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 프로필 한 번만 로드 (탭이 mypage로 변경될 때만)
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   useEffect(() => {
-    if (activeTab === 'mypage') {
+    if (activeTab === 'mypage' && !profileLoaded) {
       fetchProfile();
+      setProfileLoaded(true);
     }
-  }, [activeTab, fetchProfile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, profileLoaded]);
 
   // 알림 읽음 처리
   const markAsRead = async (notificationId: string) => {
@@ -220,7 +225,12 @@ export function useNotifications(): UseNotificationsReturn {
         description: '프로필이 저장되었습니다',
       });
 
-      fetchProfile();
+      // 프로필 재로드 및 페이지 새로고침 (검증 통과 확인)
+      setProfileLoaded(false);
+      await fetchProfile();
+
+      // 서버 컴포넌트 리렌더링 (layout.tsx의 profileCheck 재실행)
+      router.refresh();
     } catch (error) {
       console.error('프로필 저장 오류:', error);
       toast({
@@ -279,11 +289,12 @@ export function useNotifications(): UseNotificationsReturn {
         data: { publicUrl },
       } = supabase.storage.from('submissions').getPublicUrl(fileName);
 
-      // 프로필 업데이트
+      // 프로필 업데이트 - 현재 입력된 모든 formData와 파일 정보를 함께 저장
       const response = await fetch('/api/client/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ...formData, // 현재 입력된 모든 데이터 포함
           business_license_url: publicUrl,
           business_license_name: file.name,
         }),
@@ -296,7 +307,12 @@ export function useNotifications(): UseNotificationsReturn {
         description: '사업자등록증이 업로드되었습니다',
       });
 
-      fetchProfile();
+      // 프로필 재로드 및 페이지 새로고침 (검증 통과 확인)
+      setProfileLoaded(false);
+      await fetchProfile();
+
+      // 서버 컴포넌트 리렌더링 (layout.tsx의 profileCheck 재실행)
+      router.refresh();
     } catch (error) {
       console.error('파일 업로드 오류:', error);
       toast({

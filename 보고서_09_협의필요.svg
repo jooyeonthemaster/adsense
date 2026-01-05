@@ -1,0 +1,122 @@
+<svg width="794" height="1123" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="794" height="1123" fill="#FFFFFF"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="794" height="80" fill="#000000"/>
+  <text x="60" y="50" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#FFFFFF">
+    3. 추가금 필요 항목 - 협의 필요
+  </text>
+
+  <!-- Item 1 -->
+  <rect x="60" y="110" width="674" height="380" fill="#E8F5E9" stroke="#4CAF50" stroke-width="3"/>
+  <text x="75" y="145" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#000000">
+    1. 대량 업로드 엑셀 템플릿 - 협의 필요
+  </text>
+
+  <text x="90" y="180" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    ■ 클라이언트 요청:
+  </text>
+  <text x="100" y="202" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    클라이언트 제공 엑셀 양식을 템플릿으로 사용하여 대량 등록
+  </text>
+
+  <text x="90" y="235" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    ■ 요구 기능:
+  </text>
+  <text x="100" y="257" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 대행사가 템플릿 다운로드
+  </text>
+  <text x="100" y="277" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 엑셀 작성 후 대량 업로드
+  </text>
+  <text x="100" y="297" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 필수 항목 검증 (순번, 총수량, 일수량, 플레이스주소)
+  </text>
+  <text x="100" y="317" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 관리자도 동일 양식으로 다운로드 가능
+  </text>
+
+  <text x="90" y="350" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    ■ 현재 구현 상태:
+  </text>
+  <text x="100" y="372" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 카카오맵 콘텐츠 엑셀 업로드 기능 존재
+  </text>
+  <text x="100" y="392" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • ExcelUpload.tsx, excel-bulk-upload route 존재
+  </text>
+
+  <rect x="90" y="410" width="614" height="70" fill="#FFF3E0" stroke="#FF9800" stroke-width="2"/>
+  <text x="100" y="437" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#F57C00">
+    ■ 협의 필요 사항:
+  </text>
+  <text x="110" y="459" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    클라이언트 제공 엑셀 양식 확인 후 정확한 비용 산정 가능
+  </text>
+  <text x="110" y="477" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    양식 복잡도에 따라 20~50만원 예상
+  </text>
+
+  <!-- Item 2 -->
+  <rect x="60" y="510" width="674" height="420" fill="#E8F5E9" stroke="#4CAF50" stroke-width="3"/>
+  <text x="75" y="545" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#000000">
+    2. 블로그 배포 엑셀 접수 양식 - 협의 필요
+  </text>
+
+  <text x="90" y="580" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    ■ 클라이언트 전달:
+  </text>
+  <text x="100" y="602" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    "리뷰어 배포 접수 양식" 엑셀 파일 제공
+  </text>
+  <text x="100" y="622" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    (블로그 배포 전체 양식으로 사용)
+  </text>
+
+  <text x="90" y="655" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    ■ 추정 기능:
+  </text>
+  <text x="100" y="677" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 영상 배포 / 자동화 배포 / 리뷰어 배포 통합 양식
+  </text>
+  <text x="100" y="697" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 엑셀로 일괄 접수 처리
+  </text>
+  <text x="100" y="717" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 업체명, 플레이스 링크, 종류, 일 접수량, 구동일수 등
+  </text>
+
+  <text x="90" y="750" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">
+    ■ 예상 작업 범위:
+  </text>
+  <text x="100" y="772" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 엑셀 파일 파싱 및 검증
+  </text>
+  <text x="100" y="792" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 블로그 배포 대량 접수 API 생성
+  </text>
+  <text x="100" y="812" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 에러 처리 (필수 항목 누락, 형식 오류 등)
+  </text>
+  <text x="100" y="832" font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    • 업로드 UI 추가 (대행사 접수 페이지)
+  </text>
+
+  <rect x="90" y="850" width="614" height="70" fill="#FFF3E0" stroke="#FF9800" stroke-width="2"/>
+  <text x="100" y="877" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#F57C00">
+    ■ 협의 필요 사항:
+  </text>
+  <text x="110" y="899" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    제공된 엑셀 파일 분석 후 정확한 비용 산정
+  </text>
+  <text x="110" y="917" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    양식 복잡도 및 검증 로직에 따라 30~70만원 예상
+  </text>
+
+  <!-- Footer -->
+  <line x1="60" y1="1050" x2="734" y2="1050" stroke="#000000" stroke-width="1"/>
+  <text x="397" y="1085" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#666666">
+    Page 9
+  </text>
+</svg>

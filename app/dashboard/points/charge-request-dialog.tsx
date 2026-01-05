@@ -23,22 +23,14 @@ interface ChargeRequestDialogProps {
 }
 
 // 입금 계좌 정보
-const BANK_ACCOUNTS = {
-  withReceipt: {
-    label: '계산서 발행',
-    bank: '신한은행',
-    account: '110-613-141483',
-    holder: '센스애드(문주영)',
-    description: '세금계산서 발행이 필요한 경우',
-  },
-  withoutReceipt: {
-    label: '계산서 미발행',
-    bank: '카카오뱅크',
-    account: '79422509038',
-    holder: '소문섭',
-    description: '세금계산서 발행이 필요 없는 경우',
-  },
+const BANK_ACCOUNT = {
+  bank: '신한은행',
+  account: '110-613-141483',
+  holder: '센스애드(문주영)',
 };
+
+// VAT 계산 (10%)
+const calculateWithVAT = (amount: number) => Math.round(amount * 1.1);
 
 export function ChargeRequestDialog({
   open,
@@ -141,10 +133,14 @@ export function ChargeRequestDialog({
                 <p className="text-sky-100 text-sm">아래 계좌로 입금해주세요</p>
               </div>
             </div>
-            <div className="mt-4 p-3 bg-white/10 rounded-xl backdrop-blur-sm">
+            <div className="mt-4 p-3 bg-white/10 rounded-xl backdrop-blur-sm space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sky-100 text-sm">요청 금액</span>
-                <span className="text-2xl font-bold">{requestedAmount.toLocaleString()}원</span>
+                <span className="text-lg text-sky-100">{requestedAmount.toLocaleString()}원</span>
+              </div>
+              <div className="flex items-center justify-between border-t border-white/20 pt-2">
+                <span className="text-sky-100 text-sm">VAT 포함 입금액</span>
+                <span className="text-2xl font-bold">{calculateWithVAT(requestedAmount).toLocaleString()}원</span>
               </div>
             </div>
           </div>
@@ -152,37 +148,31 @@ export function ChargeRequestDialog({
           {/* 계좌 정보 영역 */}
           <div className="p-6 space-y-4">
             <p className="text-sm text-gray-600 text-center mb-4">
-              아래 계좌 중 하나를 선택하여 입금해주세요
+              아래 계좌로 입금해주세요
             </p>
 
-            {/* 계산서 발행 계좌 */}
-            <div className="group relative p-4 rounded-2xl border-2 border-gray-100 hover:border-sky-200 bg-gradient-to-br from-white to-gray-50 transition-all duration-300 hover:shadow-lg">
-              <div className="absolute top-3 right-3">
-                <span className="px-2.5 py-1 text-[10px] font-semibold rounded-full bg-sky-100 text-sky-700">
-                  {BANK_ACCOUNTS.withReceipt.label}
-                </span>
-              </div>
-
+            {/* 입금 계좌 */}
+            <div className="group relative p-4 rounded-2xl border-2 border-sky-200 bg-gradient-to-br from-white to-sky-50 transition-all duration-300 shadow-sm">
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-gray-500">
                   <Building2 className="h-4 w-4" />
-                  <span className="text-sm font-medium">{BANK_ACCOUNTS.withReceipt.bank}</span>
+                  <span className="text-sm font-medium">{BANK_ACCOUNT.bank}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-gray-400" />
                     <span className="text-lg font-bold text-gray-900 tracking-wide">
-                      {BANK_ACCOUNTS.withReceipt.account}
+                      {BANK_ACCOUNT.account}
                     </span>
                   </div>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => copyToClipboard(BANK_ACCOUNTS.withReceipt.account, 'withReceipt')}
+                    onClick={() => copyToClipboard(BANK_ACCOUNT.account, 'main')}
                     className="h-8 px-3 text-xs gap-1.5 hover:bg-sky-50 hover:text-sky-600 hover:border-sky-300"
                   >
-                    {copiedAccount === 'withReceipt' ? (
+                    {copiedAccount === 'main' ? (
                       <>
                         <Check className="h-3.5 w-3.5" />
                         복사됨
@@ -198,70 +188,16 @@ export function ChargeRequestDialog({
 
                 <div className="flex items-center gap-2 text-gray-600">
                   <User className="h-4 w-4" />
-                  <span className="text-sm">{BANK_ACCOUNTS.withReceipt.holder}</span>
+                  <span className="text-sm">{BANK_ACCOUNT.holder}</span>
                 </div>
-
-                <p className="text-xs text-gray-500 pt-2 border-t border-gray-100">
-                  {BANK_ACCOUNTS.withReceipt.description}
-                </p>
-              </div>
-            </div>
-
-            {/* 계산서 미발행 계좌 */}
-            <div className="group relative p-4 rounded-2xl border-2 border-gray-100 hover:border-amber-200 bg-gradient-to-br from-white to-gray-50 transition-all duration-300 hover:shadow-lg">
-              <div className="absolute top-3 right-3">
-                <span className="px-2.5 py-1 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-700">
-                  {BANK_ACCOUNTS.withoutReceipt.label}
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Building2 className="h-4 w-4" />
-                  <span className="text-sm font-medium">{BANK_ACCOUNTS.withoutReceipt.bank}</span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="h-4 w-4 text-gray-400" />
-                    <span className="text-lg font-bold text-gray-900 tracking-wide">
-                      {BANK_ACCOUNTS.withoutReceipt.account}
-                    </span>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => copyToClipboard(BANK_ACCOUNTS.withoutReceipt.account, 'withoutReceipt')}
-                    className="h-8 px-3 text-xs gap-1.5 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-300"
-                  >
-                    {copiedAccount === 'withoutReceipt' ? (
-                      <>
-                        <Check className="h-3.5 w-3.5" />
-                        복사됨
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3.5 w-3.5" />
-                        복사
-                      </>
-                    )}
-                  </Button>
-                </div>
-
-                <div className="flex items-center gap-2 text-gray-600">
-                  <User className="h-4 w-4" />
-                  <span className="text-sm">{BANK_ACCOUNTS.withoutReceipt.holder}</span>
-                </div>
-
-                <p className="text-xs text-gray-500 pt-2 border-t border-gray-100">
-                  {BANK_ACCOUNTS.withoutReceipt.description}
-                </p>
               </div>
             </div>
 
             {/* 안내 문구 */}
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+            <div className="p-3 bg-sky-50 rounded-xl border border-sky-100">
               <p className="text-xs text-gray-600 leading-relaxed text-center">
+                <span className="font-semibold text-sky-700">VAT 포함 금액</span>으로 입금해주세요.
+                <br />
                 입금 확인 후 <span className="font-semibold text-sky-600">영업일 기준 1일 이내</span>로 포인트가 충전됩니다.
                 <br />
                 입금자명은 <span className="font-semibold">회사명 또는 본인 성함</span>으로 해주세요.

@@ -159,21 +159,40 @@ function NavContent({
                 <span className="text-2xl font-bold text-gray-900">{user.points.toLocaleString()}</span>
                 <span className="text-base text-gray-500 font-medium">P</span>
               </div>
-              <Link href="/dashboard/points" onClick={() => onClose?.()} className="block">
+              {profileAlert ? (
                 <Button
-                  className="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium px-3 py-1.5 rounded-lg text-xs h-8"
+                  disabled
+                  className="w-full bg-gray-300 text-gray-500 font-medium px-3 py-1.5 rounded-lg text-xs h-8 cursor-not-allowed"
                 >
                   충전하기
                 </Button>
-              </Link>
-              <Link href="/dashboard/submissions" onClick={() => onClose?.()} className="block">
+              ) : (
+                <Link href="/dashboard/points" onClick={() => onClose?.()} className="block">
+                  <Button
+                    className="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium px-3 py-1.5 rounded-lg text-xs h-8"
+                  >
+                    충전하기
+                  </Button>
+                </Link>
+              )}
+              {profileAlert ? (
                 <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium px-3 py-1.5 rounded-lg text-xs h-8 flex items-center justify-center gap-1.5"
+                  disabled
+                  className="w-full bg-gray-300 text-gray-500 font-medium px-3 py-1.5 rounded-lg text-xs h-8 cursor-not-allowed flex items-center justify-center gap-1.5"
                 >
                   <ClipboardList className="h-3.5 w-3.5" />
                   통합 접수 현황
                 </Button>
-              </Link>
+              ) : (
+                <Link href="/dashboard/submissions" onClick={() => onClose?.()} className="block">
+                  <Button
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium px-3 py-1.5 rounded-lg text-xs h-8 flex items-center justify-center gap-1.5"
+                  >
+                    <ClipboardList className="h-3.5 w-3.5" />
+                    통합 접수 현황
+                  </Button>
+                </Link>
+              )}
               <Link href="/dashboard/notifications" onClick={() => onClose?.()} className="block">
                 <Button
                   variant="outline"
@@ -267,8 +286,21 @@ function NavContent({
           {navigationSections.map((section) => {
             const SectionIcon = section.icon;
             const isActive = pathname === section.href || pathname?.startsWith(section.href + '/');
+            const isDisabled = !!profileAlert; // 프로필 미완성 시 비활성화
 
-            const linkContent = (
+            const linkContent = isDisabled ? (
+              <div
+                key={section.id}
+                className={cn(
+                  'flex items-center gap-2 px-3 py-2.5 text-xs transition-colors cursor-not-allowed opacity-50',
+                  'text-gray-400',
+                  isCollapsed && 'justify-center'
+                )}
+              >
+                <SectionIcon className="h-4 w-4 flex-shrink-0" />
+                {!isCollapsed && <span className="font-medium">{section.title}</span>}
+              </div>
+            ) : (
               <Link
                 key={section.id}
                 href={section.href}
@@ -292,6 +324,9 @@ function NavContent({
                   <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
                   <TooltipContent side="right">
                     <p>{section.title}</p>
+                    {isDisabled && (
+                      <p className="text-xs text-amber-200 mt-1">프로필 완성 후 이용 가능</p>
+                    )}
                   </TooltipContent>
                 </Tooltip>
               );

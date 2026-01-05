@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/service';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, requireOnboardedClient } from '@/lib/auth';
 
 // GET - 현재 클라이언트 프로필 정보 조회
 export async function GET() {
@@ -21,9 +21,6 @@ export async function GET() {
         pending_charge_requests_count,
         business_license_url,
         business_license_name,
-        business_number,
-        representative_name,
-        business_address,
         tax_email,
         profile_updated_at,
         created_at,
@@ -54,7 +51,7 @@ export async function GET() {
 // PUT - 프로필 정보 수정
 export async function PUT(request: NextRequest) {
   try {
-    const user = await requireAuth(['client']);
+    const user = await requireOnboardedClient();
     const supabase = await createClient();
 
     const body = await request.json();
@@ -65,9 +62,6 @@ export async function PUT(request: NextRequest) {
       email,
       business_license_url,
       business_license_name,
-      business_number,
-      representative_name,
-      business_address,
       tax_email,
     } = body;
 
@@ -83,9 +77,6 @@ export async function PUT(request: NextRequest) {
     if (email !== undefined) updateData.email = email;
     if (business_license_url !== undefined) updateData.business_license_url = business_license_url;
     if (business_license_name !== undefined) updateData.business_license_name = business_license_name;
-    if (business_number !== undefined) updateData.business_number = business_number;
-    if (representative_name !== undefined) updateData.representative_name = representative_name;
-    if (business_address !== undefined) updateData.business_address = business_address;
     if (tax_email !== undefined) updateData.tax_email = tax_email;
 
     const { data: client, error } = await supabase
@@ -107,8 +98,19 @@ export async function PUT(request: NextRequest) {
       message: '프로필이 수정되었습니다',
       client
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in PUT /api/client/profile:', error);
+
+    if (error.message === 'OnboardingRequired') {
+      return NextResponse.json(
+        {
+          error: '온보딩을 완료해야 서비스를 이용할 수 있습니다.',
+          redirect: '/onboarding'
+        },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json(
       { error: '프로필 수정 중 오류가 발생했습니다.' },
       { status: 500 }

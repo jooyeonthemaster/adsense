@@ -279,3 +279,5 @@ SELECT COUNT(*) AS "생성된 가이드 수" FROM product_guides;
 
 
 
+
+

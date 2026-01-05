@@ -33,6 +33,15 @@ export const formatDate = (dateString: string): string => {
  * 상품 정보 가져오기
  */
 export const getProductInfo = (submission: UnifiedSubmission) => {
+  // 리워드(place)의 경우 media_type으로 투플/유레카 구분
+  if (submission.product_type === 'place' && submission.media_type) {
+    const key = `reward-${submission.media_type}` as keyof typeof productConfig;
+    if (productConfig[key]) {
+      return productConfig[key];
+    }
+    return productConfig.place;
+  }
+
   // 서브타입이 있는 경우 복합 키로 찾기
   if (submission.product_type === 'blog' && submission.distribution_type) {
     const key = `blog-${submission.distribution_type}` as keyof typeof productConfig;
@@ -169,19 +178,37 @@ export const getStatusDisplay = (submission: UnifiedSubmission) => {
     in_progress: { label: '구동중', variant: 'default' as const },
     completed: { label: '완료', variant: 'secondary' as const },
     cancelled: { label: '중단됨', variant: 'destructive' as const },
+    cancellation_requested: { label: '중단요청중', variant: 'outline' as const },
+    cancellation_approved: { label: '중단승인', variant: 'destructive' as const },
   };
 
   return statusMap[submission.status] || { label: submission.status, variant: 'outline' as const };
 };
 
 /**
- * 중단 가능 여부 확인
+ * 중단 요청 가능 여부 확인
+ * - 체험단: 중단 불가
+ * - 카페: pending, approved, script_writing, script_completed 상태에서만 가능
+ * - 기타: pending, in_progress 상태에서 가능
+ * - 이미 중단 요청 중이거나 완료된 경우 불가
  */
 export const canCancel = (submission: UnifiedSubmission): boolean => {
   // 체험단 마케팅은 중단 불가 (블로거 선정/일정 확인 등 복잡한 프로세스)
   if (submission.product_type === 'experience') {
     return false;
   }
+
+  // 이미 중단 요청 중이거나 처리된 경우
+  if (['cancellation_requested', 'cancellation_approved', 'cancelled'].includes(submission.status)) {
+    return false;
+  }
+
+  // 카페 마케팅: 백엔드 API와 일치하는 상태만 허용
+  if (submission.product_type === 'cafe') {
+    return ['pending', 'approved', 'script_writing', 'script_completed'].includes(submission.status);
+  }
+
+  // 기타 상품: pending, in_progress에서 가능
   return ['pending', 'in_progress'].includes(submission.status);
 };
 

@@ -13,6 +13,21 @@ import {
   canCancel,
 } from '@/lib/submission-utils';
 
+// 구동기간 포맷팅 (MM/DD ~ MM/DD)
+const formatOperationPeriod = (startDate?: string, endDate?: string | null): string => {
+  if (!startDate) return '-';
+
+  const formatShortDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
+  };
+
+  const start = formatShortDate(startDate);
+  if (!endDate) return `${start} ~`;
+
+  return `${start} ~ ${formatShortDate(endDate)}`;
+};
+
 interface SubmissionTableRowProps {
   submission: UnifiedSubmission;
   onCancel: (submission: UnifiedSubmission) => void;
@@ -78,6 +93,9 @@ export function SubmissionTableRow({
         )}
       </TableCell>
       <TableCell className="text-sm text-gray-600">{getDetailInfo(submission)}</TableCell>
+      <TableCell className="text-sm text-gray-600 whitespace-nowrap">
+        {formatOperationPeriod(submission.start_date, submission.end_date)}
+      </TableCell>
       <TableCell>
         <div className="space-y-1.5">
           <Badge variant={statusDisplay.variant} className="text-xs">

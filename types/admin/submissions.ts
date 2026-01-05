@@ -7,10 +7,12 @@ export interface UnifiedSubmission {
   client_id: string;
   submission_number?: string; // 접수번호 (예: KM-2025-0001)
   company_name: string;
+  place_url?: string; // 업체 링크 (네이버 플레이스, 카카오맵 등)
   total_points: number;
   status: string;
   created_at: string;
   start_date?: string; // 구동 시작일
+  end_date?: string; // 구동 마감일 (계산됨)
   type: 'place' | 'receipt' | 'kakaomap' | 'blog' | 'cafe' | 'experience';
   clients?: { company_name: string };
 
@@ -68,6 +70,7 @@ export const STATUS_LABELS: Record<string, string> = {
   script_writing: '원고 작성중',
   script_completed: '원고 완료',
   as_in_progress: 'AS 진행 중',
+  cancellation_requested: '중단요청',
 };
 
 export const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -82,6 +85,7 @@ export const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'destruct
   script_writing: 'default',
   script_completed: 'secondary',
   as_in_progress: 'default',
+  cancellation_requested: 'destructive',
 };
 
 export const TYPE_LABELS: Record<string, string> = {
@@ -92,6 +96,8 @@ export const TYPE_LABELS: Record<string, string> = {
   cafe: '침투 마케팅',
   experience: '체험단 마케팅',
 };
+
+
 
 
 

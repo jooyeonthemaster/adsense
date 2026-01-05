@@ -1,24 +1,9 @@
-export interface KakaomapSubmission {
-  id: string;
-  submission_number?: string;
-  company_name: string;
-  kakaomap_url: string;
-  daily_count: number;
-  total_count: number;
-  has_photo: boolean;
-  script_confirmed: boolean;
-  total_points: number;
-  status: 'pending' | 'waiting_content' | 'review' | 'revision_requested' | 'in_progress' | 'completed' | 'cancelled';
-  created_at: string;
-  start_date?: string;
-  content_items_count?: number;
-  completed_count?: number;  // 리포트에 등록된 콘텐츠 수 (review_registered_date가 있는 것)
-  unread_messages_count?: number;
-  actual_count_total?: number;
-  progress_percentage?: number;
-  uploaded_images?: UploadedImage[];
-  uploaded_script?: string;
-  messages?: Message[];
+// 카카오맵 리뷰 상태 관련 타입 정의
+
+export interface StatusStats {
+  total: number;
+  in_progress: number;
+  completed: number;
 }
 
 export interface UploadedImage {
@@ -31,18 +16,31 @@ export interface UploadedImage {
 
 export interface Message {
   id: string;
-  sender_type: 'admin' | 'client';
+  sender_type: 'client' | 'admin';
   sender_id: string;
   sender_name: string;
   content: string;
   created_at: string;
-  is_read?: boolean;
-  read_at?: string;
 }
 
-export interface StatusStats {
-  total: number;
-  in_progress: number;
-  completed: number;
-}
+export interface KakaomapSubmission {
+  id: string;
+  client_id: string;
+  company_name: string;
+  kakao_place_url: string;
+  total_count: number;
+  total_points: number;
+  script: string | null;
+  notes: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  type: 'kakaomap';
 
+  // 추가 필드
+  completed_count?: number;
+  has_photo?: boolean;
+  script_confirmed?: boolean;
+  uploaded_images?: UploadedImage[];
+  uploaded_script?: string;
+}

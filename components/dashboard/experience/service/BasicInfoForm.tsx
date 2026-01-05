@@ -29,10 +29,9 @@ export function BasicInfoForm({
           id="businessName"
           type="text"
           value={formData.businessName}
-          onChange={(e) => onFormChange({ businessName: e.target.value })}
-          placeholder="업체명을 입력하세요"
-          className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
-          disabled={loadingBusinessName}
+          readOnly
+          placeholder="플레이스 링크 입력 시 자동 입력됩니다"
+          className="border-gray-200 bg-gray-50 h-9 text-sm cursor-not-allowed"
         />
         {loadingBusinessName && (
           <p className="text-xs text-blue-600">업체명 자동 입력 중...</p>

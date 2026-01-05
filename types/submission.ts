@@ -1,6 +1,6 @@
 // Submission types for all product categories
 
-export type SubmissionStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'as_in_progress';
+export type SubmissionStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'as_in_progress' | 'cancellation_requested';
 
 export interface PlaceSubmission {
   id: string;
@@ -115,9 +115,14 @@ export interface UnifiedSubmission {
   current_day?: number;
   total_count?: number;
 
+  // Reward-specific
+  media_type?: 'twoople' | 'eureka';
+
   // Blog-specific
   distribution_type?: 'reviewer' | 'video' | 'automation';
   keywords?: string[];
+  account_id?: string; // 외부계정 충전용
+  charge_count?: number; // 외부계정 충전용
 
   // Cafe-specific
   cafe_list?: string[];
@@ -138,7 +143,8 @@ export interface UnifiedSubmission {
 
   // Common optional fields
   notes?: string;
-  start_date?: string;
+  start_date?: string; // 구동 시작일
+  end_date?: string; // 구동 마감일 (계산됨)
 }
 
 export interface AllSubmissionsStats {

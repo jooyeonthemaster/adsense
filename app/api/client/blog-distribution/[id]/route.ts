@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { requireAuth } from '@/lib/auth';
+import { requireOnboardedClient } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await requireAuth(['client']);
+    const user = await requireOnboardedClient();
     const { id } = await params;
     const supabase = await createClient();
 
@@ -34,8 +34,10 @@ export async function GET(
       );
     }
 
-    // Calculate total days
-    const total_days = Math.ceil(submission.total_count / submission.daily_count);
+    // Calculate total days (외부계정 충전 요청은 daily_count가 0이므로 방어 로직 필요)
+    const total_days = submission.daily_count > 0
+      ? Math.ceil(submission.total_count / submission.daily_count)
+      : 0;
 
     // Fetch daily records
     const { data: dailyRecords } = await supabase
@@ -63,8 +65,19 @@ export async function GET(
         completionRate,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in GET /api/client/blog-distribution/[id]:', error);
+
+    if (error.message === 'OnboardingRequired') {
+      return NextResponse.json(
+        {
+          error: '온보딩을 완료해야 서비스를 이용할 수 있습니다.',
+          redirect: '/onboarding'
+        },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

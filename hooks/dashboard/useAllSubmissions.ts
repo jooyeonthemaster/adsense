@@ -34,7 +34,7 @@ export function useAllSubmissions() {
   useEffect(() => {
     fetchSubmissions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productFilter, statusFilter, searchQuery, sortBy]);
+  }, [selectedCategory, productFilter, statusFilter, searchQuery, sortBy]);
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
@@ -92,7 +92,12 @@ export function useAllSubmissions() {
           for (const [key, config] of Object.entries(productConfig)) {
             if (config.productType === s.product_type) {
               const configAny = config as any;
-              if (configAny.subType) {
+              // place(리워드)의 경우 mediaType으로 투플/유레카 구분
+              if (config.productType === 'place' && configAny.mediaType) {
+                if (s.media_type === configAny.mediaType) {
+                  return activeProducts.includes(key);
+                }
+              } else if (configAny.subType) {
                 if (config.productType === 'blog' && s.distribution_type === configAny.subType) {
                   return activeProducts.includes(key);
                 } else if (config.productType === 'experience' && s.experience_type === configAny.subType) {
@@ -101,6 +106,8 @@ export function useAllSubmissions() {
                   return activeProducts.includes(key);
                 }
               } else {
+                // place는 항상 mediaType으로 구분하므로 generic 'place' config는 스킵
+                if (config.productType === 'place') continue;
                 return activeProducts.includes(key);
               }
             }
@@ -125,7 +132,12 @@ export function useAllSubmissions() {
           for (const [key, config] of Object.entries(productConfig)) {
             if (config.productType === s.product_type) {
               const configAny = config as any;
-              if (configAny.subType) {
+              // place(리워드)의 경우 mediaType으로 투플/유레카 구분
+              if (config.productType === 'place' && configAny.mediaType) {
+                if (s.media_type === configAny.mediaType) {
+                  return activeProducts.includes(key);
+                }
+              } else if (configAny.subType) {
                 if (config.productType === 'blog' && s.distribution_type === configAny.subType) {
                   return activeProducts.includes(key);
                 } else if (config.productType === 'experience' && s.experience_type === configAny.subType) {
@@ -134,6 +146,8 @@ export function useAllSubmissions() {
                   return activeProducts.includes(key);
                 }
               } else {
+                // place는 항상 mediaType으로 구분하므로 generic 'place' config는 스킵
+                if (config.productType === 'place') continue;
                 return activeProducts.includes(key);
               }
             }
@@ -177,49 +191,33 @@ export function useAllSubmissions() {
     setCancelDialogOpen(true);
   };
 
-  const handleConfirmCancel = async () => {
+  const handleConfirmCancel = async (reason?: string) => {
     if (!selectedSubmission) return;
 
     try {
-      // 상품 타입에 따라 적절한 API 엔드포인트 호출
-      const apiEndpoints: Record<string, string> = {
-        place: `/api/submissions/reward/${selectedSubmission.id}`,
-        receipt: `/api/submissions/receipt/${selectedSubmission.id}`,
-        kakaomap: `/api/submissions/kakaomap/${selectedSubmission.id}`,
-        blog: `/api/submissions/blog/${selectedSubmission.id}`,
-        cafe: `/api/submissions/cafe/${selectedSubmission.id}`,
-        // experience는 중단 불가 (canCancel에서 필터링됨)
-      };
-
-      const endpoint = apiEndpoints[selectedSubmission.product_type];
-      if (!endpoint) {
-        console.error('Unknown product type:', selectedSubmission.product_type, selectedSubmission);
-        throw new Error(`지원되지 않는 상품 유형입니다: ${selectedSubmission.product_type}`);
-      }
-
-      const response = await fetch(endpoint, {
-        method: 'PUT',
+      // 중단 요청 API 호출 (요청 기반 시스템)
+      const response = await fetch('/api/cancellation-requests', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'cancel' }),
+        body: JSON.stringify({
+          submission_type: selectedSubmission.product_type,
+          submission_id: selectedSubmission.id,
+          reason: reason || null,
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || '중단 처리 중 오류가 발생했습니다.');
+        throw new Error(data.error || '중단 요청 중 오류가 발생했습니다.');
       }
 
-      const refundMessage = data.refund_amount > 0
-        ? `환불 금액: ${data.refund_amount.toLocaleString()}P`
-        : '';
+      const refundPreview = data.refundDetails?.calculatedRefund || 0;
 
       toast({
-        title: '✅ 중단 신청 완료',
-        description: refundMessage || '중단 신청이 처리되었습니다.',
+        title: '중단 요청 접수 완료',
+        description: `관리자 검토 후 처리됩니다. 예상 환불액: ${refundPreview.toLocaleString()}P`,
       });
-
-      // Refresh the page to update points in header
-      router.refresh();
 
       setCancelDialogOpen(false);
       setSelectedSubmission(null);
@@ -229,8 +227,9 @@ export function useAllSubmissions() {
       toast({
         variant: 'destructive',
         title: '오류 발생',
-        description: error instanceof Error ? error.message : '중단 신청에 실패했습니다.',
+        description: error instanceof Error ? error.message : '중단 요청에 실패했습니다.',
       });
+      throw error; // 다이얼로그에서 처리하도록 에러 전파
     }
   };
 

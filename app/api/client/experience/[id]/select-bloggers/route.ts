@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { requireAuth } from '@/lib/auth';
+import { requireOnboardedClient } from '@/lib/auth';
 
 // POST /api/client/experience/[id]/select-bloggers
 // Client selects which bloggers they want for the campaign (Step 2)
@@ -9,7 +9,7 @@ export async function POST(
   props: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await requireAuth(['client']);
+    const user = await requireOnboardedClient();
     const { id } = await props.params;
     const body = await request.json();
     const { blogger_ids } = body;
@@ -88,6 +88,17 @@ export async function POST(
     });
   } catch (error: any) {
     console.error('Error in POST /api/client/experience/[id]/select-bloggers:', error);
+
+    if (error.message === 'OnboardingRequired') {
+      return NextResponse.json(
+        {
+          error: '온보딩을 완료해야 서비스를 이용할 수 있습니다.',
+          redirect: '/onboarding'
+        },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
       { status: error.message?.includes('Unauthorized') ? 401 : 500 }

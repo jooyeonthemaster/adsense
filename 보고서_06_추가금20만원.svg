@@ -1,0 +1,109 @@
+<svg width="794" height="1123" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="794" height="1123" fill="#FFFFFF"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="794" height="80" fill="#000000"/>
+  <text x="60" y="50" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#FFFFFF">
+    3. 추가금 필요 항목 - 20만원 (1/2)
+  </text>
+
+  <!-- Item 1 -->
+  <rect x="60" y="110" width="674" height="220" fill="#FFF3E0" stroke="#FF9800" stroke-width="2"/>
+  <text x="75" y="140" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000000">
+    1. 중단 요청 시 환불 승인 워크플로우 - 20만원
+  </text>
+
+  <text x="90" y="170" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#000000">
+    ■ 기존 안내된 규정:
+  </text>
+  <text x="100" y="192" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    "중단 동의 시 바로 환불 처리" (클라이언트 요구사항1.txt)
+  </text>
+
+  <text x="90" y="220" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#000000">
+    ■ 신규 요청:
+  </text>
+  <text x="100" y="242" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    관리자 승인 후에만 환불되도록 변경
+  </text>
+
+  <text x="90" y="270" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#FF6B00">
+    ■ 추가금 발생 이유:
+  </text>
+  <text x="100" y="292" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    • DB 환불 상태 추가 (refund_pending, refund_approved)
+  </text>
+  <text x="100" y="312" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    • 관리자 환불 승인 API 신규 생성
+  </text>
+
+  <!-- Item 2 -->
+  <rect x="60" y="350" width="674" height="210" fill="#FFF3E0" stroke="#FF9800" stroke-width="2"/>
+  <text x="75" y="380" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000000">
+    2. 전체 상품 블라인드 기능 - 20만원
+  </text>
+
+  <text x="90" y="410" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#000000">
+    ■ 현재 상태:
+  </text>
+  <text x="100" y="432" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    거래처별 상품 숨김 기능 존재 (가격 설정 페이지의 "거래처에 표시")
+  </text>
+
+  <text x="90" y="460" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#000000">
+    ■ 신규 요청:
+  </text>
+  <text x="100" y="482" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    모든 거래처에게 특정 상품 일괄 숨김 (예: 체험단 긴급 중단)
+  </text>
+
+  <text x="90" y="510" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#FF6B00">
+    ■ 추가금 발생 이유:
+  </text>
+  <text x="100" y="532" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    • product_categories 테이블에 is_active 컬럼 추가 (DB 변경)
+  </text>
+  <text x="100" y="552" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    • 관리자 전체 블라인드 토글 UI 신규 생성
+  </text>
+
+  <!-- Item 3 -->
+  <rect x="60" y="580" width="674" height="230" fill="#FFF3E0" stroke="#FF9800" stroke-width="2"/>
+  <text x="75" y="610" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000000">
+    3. 추천인 ID 입력 필드 - 20만원
+  </text>
+
+  <text x="90" y="640" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#000000">
+    ■ 포함 범위:
+  </text>
+  <text x="100" y="662" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    • 회원가입 시 추천인 ID 입력 필드 추가
+  </text>
+  <text x="100" y="682" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    • DB에 추천인 ID 저장 및 관리자 페이지 확인 가능
+  </text>
+
+  <text x="90" y="710" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#DC3545">
+    ■ 중요 안내:
+  </text>
+  <text x="100" y="732" font-family="Arial, sans-serif" font-size="12" fill="#DC3545">
+    이 비용은 입력 및 표시 기능만 포함됩니다.
+  </text>
+  <text x="100" y="752" font-family="Arial, sans-serif" font-size="12" fill="#DC3545">
+    추천인 혜택(포인트 지급 등) 기능은 별도 협의 필요
+  </text>
+
+  <text x="90" y="780" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#FF6B00">
+    ■ 추가금 발생 이유:
+  </text>
+  <text x="100" y="802" font-family="Arial, sans-serif" font-size="12" fill="#333333">
+    • clients 테이블에 referrer_id 컬럼 추가 (DB 변경)
+  </text>
+
+  <!-- Footer -->
+  <line x1="60" y1="1050" x2="734" y2="1050" stroke="#000000" stroke-width="1"/>
+  <text x="397" y="1085" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#666666">
+    Page 6
+  </text>
+</svg>
