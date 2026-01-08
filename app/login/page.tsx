@@ -489,7 +489,9 @@ function LoginContent() {
           transition={{ delay: 0.5 }}
           className="text-center text-sm text-muted-foreground mt-6"
         >
-          © 2025 마자무. All rights reserved.
+          © 2025 주식회사 마매. All rights reserved.
+          <br />
+          <span className="text-xs">인천광역시 연수구 인천타워대로 301, A동 18-19호(송도동, 센텀하이브)</span>
         </motion.p>
       </motion.div>
     </div>
