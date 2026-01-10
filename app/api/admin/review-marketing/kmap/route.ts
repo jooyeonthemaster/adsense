@@ -45,13 +45,24 @@ export async function GET() {
             .eq('submission_id', sub.id)
             .not('review_registered_date', 'is', null);
 
-          // Unread messages count (from client)
-          const { count: unreadCount } = await supabase
+          // Unread messages count (from client) - kakaomap_messages 테이블
+          const { count: unreadMsgCount } = await supabase
             .from('kakaomap_messages')
             .select('*', { count: 'exact', head: true })
             .eq('submission_id', sub.id)
             .eq('sender_type', 'client')
             .eq('is_read', false);
+
+          // Unread feedbacks count (from client) - kakaomap_content_item_feedbacks 테이블
+          const { count: unreadFeedbackCount } = await supabase
+            .from('kakaomap_content_item_feedbacks')
+            .select('*', { count: 'exact', head: true })
+            .eq('submission_id', sub.id)
+            .eq('sender_type', 'client')
+            .eq('is_read', false);
+
+          // 총 미읽 수 = 메시지 + 피드백
+          const unreadCount = (unreadMsgCount || 0) + (unreadFeedbackCount || 0);
 
           // Pending revision requests count
           const { count: revisionCount } = await supabase

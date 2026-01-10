@@ -50,103 +50,28 @@ async function getStats() {
   };
 }
 
-async function getRecentSubmissions() {
+async function getRecentNotifications() {
   const supabase = createClient();
 
-  // 최근 1일(24시간) 기준
-  const oneDayAgo = new Date();
-  oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-  const oneDayAgoISO = oneDayAgo.toISOString();
+  // 최근 7일 기준 관리자 알림 조회
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const sevenDaysAgoISO = sevenDaysAgo.toISOString();
 
-  const [placeResults, receiptResults, kakaomapResults, blogResults, cafeResults, experienceResults, dynamicResults] =
-    await Promise.all([
-      supabase
-        .from('place_submissions')
-        .select('*, clients(company_name)')
-        .gte('created_at', oneDayAgoISO)
-        .order('created_at', { ascending: false })
-        .limit(5),
-      supabase
-        .from('receipt_review_submissions')
-        .select('*, clients(company_name)')
-        .gte('created_at', oneDayAgoISO)
-        .order('created_at', { ascending: false })
-        .limit(5),
-      supabase
-        .from('kakaomap_review_submissions')
-        .select('*, clients(company_name)')
-        .gte('created_at', oneDayAgoISO)
-        .order('created_at', { ascending: false })
-        .limit(5),
-      supabase
-        .from('blog_distribution_submissions')
-        .select('*, clients(company_name)')
-        .gte('created_at', oneDayAgoISO)
-        .order('created_at', { ascending: false })
-        .limit(5),
-      supabase
-        .from('cafe_marketing_submissions')
-        .select('*, clients(company_name)')
-        .gte('created_at', oneDayAgoISO)
-        .order('created_at', { ascending: false })
-        .limit(5),
-      supabase
-        .from('experience_submissions')
-        .select('*, clients(company_name)')
-        .gte('created_at', oneDayAgoISO)
-        .order('created_at', { ascending: false })
-        .limit(5),
-      supabase
-        .from('dynamic_product_submissions')
-        .select('*, clients(company_name), product_categories(name)')
-        .gte('created_at', oneDayAgoISO)
-        .order('created_at', { ascending: false })
-        .limit(5),
-    ]);
+  const { data: notifications, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('recipient_role', 'admin')
+    .gte('created_at', sevenDaysAgoISO)
+    .order('created_at', { ascending: false })
+    .limit(10);
 
-  const allSubmissions = [
-    ...(placeResults.data || []).map((s) => ({
-      ...s,
-      type: 'place' as const,
-      client_name: s.clients?.company_name || '',
-    })),
-    ...(receiptResults.data || []).map((s) => ({
-      ...s,
-      type: 'receipt' as const,
-      client_name: s.clients?.company_name || '',
-    })),
-    ...(kakaomapResults.data || []).map((s) => ({
-      ...s,
-      type: 'kakaomap' as const,
-      client_name: s.clients?.company_name || '',
-    })),
-    ...(blogResults.data || []).map((s) => ({
-      ...s,
-      type: 'blog' as const,
-      client_name: s.clients?.company_name || '',
-    })),
-    ...(cafeResults.data || []).map((s) => ({
-      ...s,
-      type: 'cafe' as const,
-      client_name: s.clients?.company_name || '',
-    })),
-    ...(experienceResults.data || []).map((s) => ({
-      ...s,
-      type: 'experience' as const,
-      client_name: s.clients?.company_name || '',
-    })),
-    ...(dynamicResults.data || []).map((s) => ({
-      ...s,
-      type: 'dynamic' as const,
-      client_name: s.clients?.company_name || '',
-      category_name: s.product_categories?.name || '',
-    })),
-  ];
+  if (error) {
+    console.error('Error fetching admin notifications:', error);
+    return [];
+  }
 
-  // 최신순 정렬 후 최대 10개
-  return allSubmissions
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 10);
+  return notifications || [];
 }
 
 async function getRecentChargeRequests() {
@@ -213,9 +138,9 @@ async function getRecentTaxInvoiceRequests() {
 
 export default async function AdminDashboard() {
   await requireAuth(['admin']);
-  const [stats, recentSubmissions, recentChargeRequests, recentTaxInvoiceRequests] = await Promise.all([
+  const [stats, recentNotifications, recentChargeRequests, recentTaxInvoiceRequests] = await Promise.all([
     getStats(),
-    getRecentSubmissions(),
+    getRecentNotifications(),
     getRecentChargeRequests(),
     getRecentTaxInvoiceRequests(),
   ]);
@@ -226,12 +151,14 @@ export default async function AdminDashboard() {
       value: stats.totalClients,
       icon: 'Users' as const,
       description: '활성 거래처 수',
+      link: '/admin/clients',
     },
     {
       title: '대기 중인 접수',
       value: stats.pendingSubmissions,
       icon: 'FileText' as const,
       description: '처리 대기 중',
+      link: '/admin/review-marketing?tab=visitor',
     },
     {
       title: 'AS 신청',
@@ -263,5 +190,5 @@ export default async function AdminDashboard() {
     },
   ];
 
-  return <AdminDashboardContent stats={stats} cards={cards} recentSubmissions={recentSubmissions} recentChargeRequests={recentChargeRequests} recentTaxInvoiceRequests={recentTaxInvoiceRequests} />;
+  return <AdminDashboardContent stats={stats} cards={cards} recentNotifications={recentNotifications} recentChargeRequests={recentChargeRequests} recentTaxInvoiceRequests={recentTaxInvoiceRequests} />;
 }

@@ -32,7 +32,7 @@ export async function PATCH(
     // Verify submission belongs to client
     const { data: submission } = await supabase
       .from('kakaomap_review_submissions')
-      .select('id')
+      .select('id, company_name, total_count')
       .eq('id', submissionId)
       .eq('client_id', user.id)
       .single();
@@ -70,6 +70,10 @@ export async function PATCH(
       );
     }
 
+    // Use service role client for notifications
+    const { createClient: createServiceClient } = await import('@/utils/supabase/service');
+    const serviceSupabase = createServiceClient();
+
     // If revision_requested, create feedback
     if (review_status === 'revision_requested' && feedback_message) {
       const { data: userData } = await supabase
@@ -77,10 +81,6 @@ export async function PATCH(
         .select('name')
         .eq('id', user.id)
         .single();
-
-      // Use service role client to bypass RLS
-      const { createClient: createServiceClient } = await import('@/utils/supabase/service');
-      const serviceSupabase = createServiceClient();
 
       const { error: feedbackError } = await serviceSupabase
         .from('kakaomap_content_item_feedbacks')
@@ -103,6 +103,40 @@ export async function PATCH(
           sender_name: userData?.name || '고객',
           message: feedback_message.trim(),
         });
+        // Don't fail the whole request, just log the error
+      }
+    }
+
+    // If approved, notify admins
+    if (review_status === 'approved') {
+      // Count approved content items
+      const { count: approvedCount } = await supabase
+        .from('kakaomap_content_items')
+        .select('*', { count: 'exact', head: true })
+        .eq('submission_id', submissionId)
+        .eq('review_status', 'approved');
+
+      const totalCount = submission.total_count;
+
+      // Send notification to all admins
+      const { error: notificationError } = await serviceSupabase
+        .from('notifications')
+        .insert({
+          recipient_id: null,
+          recipient_role: 'admin',
+          type: 'kakaomap_content_approved_by_client',
+          title: '고객 검수 승인',
+          message: `${submission.company_name} 카카오맵 리뷰 콘텐츠가 고객 검수를 통과했습니다. (${approvedCount}/${totalCount})`,
+          data: {
+            submission_id: submissionId,
+            approved_count: approvedCount,
+            total_count: totalCount,
+            company_name: submission.company_name,
+          },
+        });
+
+      if (notificationError) {
+        console.error('Error creating approval notification:', notificationError);
         // Don't fail the whole request, just log the error
       }
     }

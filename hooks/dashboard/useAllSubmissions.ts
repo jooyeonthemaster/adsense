@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { UnifiedSubmission, AllSubmissionsStats, SubmissionStatus } from '@/types/submission';
 import { productConfig, categoryProducts } from '@/config/submission-products';
@@ -9,14 +9,19 @@ import * as XLSX from 'xlsx';
 
 export function useAllSubmissions() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [submissions, setSubmissions] = useState<UnifiedSubmission[]>([]);
   const [stats, setStats] = useState<AllSubmissionsStats | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // URL 쿼리 파라미터에서 초기값 읽기
+  const initialCategory = searchParams.get('category') || 'all';
+  const initialProduct = searchParams.get('product') || 'all';
+
   // Filters
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [productFilter, setProductFilter] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
+  const [productFilter, setProductFilter] = useState<string>(initialProduct);
   const [statusFilter, setStatusFilter] = useState<SubmissionStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'cost' | 'progress'>('date');
@@ -31,6 +36,19 @@ export function useAllSubmissions() {
   // AS condition dialog
   const [asConditionDialogOpen, setAsConditionDialogOpen] = useState(false);
 
+  // URL 쿼리 파라미터 변경 감지
+  useEffect(() => {
+    const category = searchParams.get('category') || 'all';
+    const product = searchParams.get('product') || 'all';
+
+    if (category !== selectedCategory) {
+      setSelectedCategory(category);
+    }
+    if (product !== productFilter) {
+      setProductFilter(product);
+    }
+  }, [searchParams, selectedCategory, productFilter]);
+
   useEffect(() => {
     fetchSubmissions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -39,20 +57,33 @@ export function useAllSubmissions() {
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
 
+    let newProduct = 'all';
     if (category === 'all') {
-      setProductFilter('all');
+      newProduct = 'all';
     } else {
       const products = categoryProducts[category];
       if (products.length === 1) {
-        setProductFilter(products[0]);
+        newProduct = products[0];
       } else {
-        setProductFilter('category-all');
+        newProduct = 'category-all';
       }
     }
+    setProductFilter(newProduct);
+
+    // URL 쿼리 파라미터 업데이트
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('category', category);
+    params.set('product', newProduct);
+    router.push(`/dashboard/submissions?${params.toString()}`, { scroll: false });
   };
 
   const handleProductSelect = (product: string) => {
     setProductFilter(product);
+
+    // URL 쿼리 파라미터 업데이트
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('product', product);
+    router.push(`/dashboard/submissions?${params.toString()}`, { scroll: false });
   };
 
   const getActiveProducts = (): string[] => {

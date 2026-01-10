@@ -19,15 +19,16 @@ const iconMap = {
 
 type IconName = keyof typeof iconMap;
 
-interface RecentSubmission {
+interface AdminNotification {
   id: string;
-  type: 'place' | 'receipt' | 'kakaomap' | 'blog' | 'cafe' | 'experience' | 'dynamic';
-  company_name: string;
-  total_points: number;
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  recipient_id: string | null;
+  recipient_role: string;
+  type: string;
+  title: string;
+  message: string;
+  data: any;
+  read: boolean;
   created_at: string;
-  client_name: string;
-  category_name?: string;
 }
 
 interface ChargeRequest {
@@ -83,7 +84,7 @@ interface AdminDashboardContentProps {
     description: string;
     link?: string;
   }>;
-  recentSubmissions: RecentSubmission[];
+  recentNotifications: AdminNotification[];
   recentChargeRequests: ChargeRequest[];
   recentTaxInvoiceRequests: TaxInvoiceRequest[];
 }
@@ -110,31 +111,19 @@ const gradients = [
   'from-emerald-500 to-teal-500',
 ];
 
-const TYPE_LABELS: Record<string, string> = {
-  place: '플레이스 유입',
-  receipt: '영수증 리뷰',
-  kakaomap: '카카오맵 리뷰',
-  blog: '블로그 배포',
-  cafe: '카페 침투',
-  experience: '체험단',
-  dynamic: '동적 상품',
-};
+// 알림 타입별 링크 생성
+const getNotificationLink = (notification: AdminNotification): string => {
+  const data = notification.data || {};
+  const submissionId = data.submission_id;
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: '확인중',
-  in_progress: '구동중',
-  completed: '완료',
-  cancelled: '취소',
-};
-
-const STATUS_VARIANTS: Record<
-  string,
-  'default' | 'secondary' | 'destructive' | 'outline'
-> = {
-  pending: 'outline',
-  in_progress: 'default',
-  completed: 'secondary',
-  cancelled: 'destructive',
+  switch (notification.type) {
+    case 'kakaomap_content_approved_by_client':
+    case 'kakaomap_feedback_added':
+    case 'kakaomap_content_uploaded':
+      return submissionId ? `/admin/kakaomap/${submissionId}` : '/admin/review-marketing';
+    default:
+      return '/admin';
+  }
 };
 
 const CHARGE_STATUS_LABELS: Record<string, string> = {
@@ -161,13 +150,13 @@ const TAX_INVOICE_STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'des
   rejected: 'destructive',
 };
 
-export function AdminDashboardContent({ stats, cards, recentSubmissions, recentChargeRequests, recentTaxInvoiceRequests }: AdminDashboardContentProps) {
-  const [showOnlyPending, setShowOnlyPending] = useState(false);
+export function AdminDashboardContent({ stats, cards, recentNotifications, recentChargeRequests, recentTaxInvoiceRequests }: AdminDashboardContentProps) {
+  const [showOnlyUnread, setShowOnlyUnread] = useState(false);
 
   // 필터 적용
-  const filteredSubmissions = showOnlyPending
-    ? recentSubmissions.filter((s) => s.status === 'pending')
-    : recentSubmissions;
+  const filteredNotifications = showOnlyUnread
+    ? recentNotifications.filter((n) => !n.read)
+    : recentNotifications;
   return (
     <div className="space-y-4 sm:space-y-6 lg:space-y-8 px-2 sm:px-0">
       {/* 헤더 */}
@@ -231,9 +220,9 @@ export function AdminDashboardContent({ stats, cards, recentSubmissions, recentC
         })}
       </motion.div>
 
-      {/* 최근 접수 내역 & 최근 충전 요청 (가로 배치) */}
+      {/* 관리자 알림 & 최근 충전 요청 (가로 배치) */}
       <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
-        {/* 최근 접수 내역 */}
+        {/* 관리자 알림 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -246,64 +235,59 @@ export function AdminDashboardContent({ stats, cards, recentSubmissions, recentC
                 <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-primary to-primary/80 p-2 sm:p-3 shadow-lg shadow-primary/30">
                   <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
-                <CardTitle className="text-base sm:text-lg lg:text-xl">최근 접수 내역</CardTitle>
+                <CardTitle className="text-base sm:text-lg lg:text-xl">관리자 알림</CardTitle>
               </div>
               <Button
-                variant={showOnlyPending ? 'default' : 'outline'}
+                variant={showOnlyUnread ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setShowOnlyPending(!showOnlyPending)}
+                onClick={() => setShowOnlyUnread(!showOnlyUnread)}
                 className="gap-1 sm:gap-2 text-xs sm:text-sm h-7 sm:h-8 px-2 sm:px-3"
               >
                 <Filter className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">{showOnlyPending ? '전체 보기' : '대기중만'}</span>
-                <span className="sm:hidden">{showOnlyPending ? '전체' : '대기중'}</span>
+                <span className="hidden sm:inline">{showOnlyUnread ? '전체 보기' : '읽지 않음'}</span>
+                <span className="sm:hidden">{showOnlyUnread ? '전체' : '미읽음'}</span>
               </Button>
             </div>
           </CardHeader>
           <CardContent className="p-3 sm:p-4 lg:p-6 pt-0">
-            {filteredSubmissions.length === 0 ? (
+            {filteredNotifications.length === 0 ? (
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed text-center py-3 sm:py-4">
-                {showOnlyPending ? '대기중인 접수 내역이 없습니다.' : '최근 접수 내역이 없습니다.'}
+                {showOnlyUnread ? '읽지 않은 알림이 없습니다.' : '최근 알림이 없습니다.'}
               </p>
             ) : (
-              <div className="space-y-2 sm:space-y-3">
-                {filteredSubmissions.map((submission) => (
-                  <div
-                    key={`${submission.type}-${submission.id}`}
-                    className="p-3 sm:p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors space-y-2"
+              <div className="space-y-2 sm:space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                {filteredNotifications.map((notification) => (
+                  <Link
+                    key={notification.id}
+                    href={getNotificationLink(notification)}
+                    className="block"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm sm:text-base font-semibold truncate">
-                          {submission.client_name}
-                        </p>
-                        <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                          {submission.company_name}
-                        </p>
+                    <div className={`p-3 sm:p-4 rounded-lg border bg-card hover:bg-accent/50 hover:border-primary/30 transition-colors space-y-2 cursor-pointer ${!notification.read ? 'border-primary/50 bg-primary/5' : ''}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm sm:text-base font-semibold truncate">
+                            {notification.title}
+                          </p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">
+                            {notification.message}
+                          </p>
+                        </div>
+                        {!notification.read && (
+                          <Badge variant="default" className="text-[10px] sm:text-xs px-2 py-0.5 whitespace-nowrap">
+                            NEW
+                          </Badge>
+                        )}
                       </div>
-                      <p className="text-sm sm:text-base font-bold text-primary whitespace-nowrap">
-                        {submission.total_points.toLocaleString()} P
+                      <p className="text-xs sm:text-sm text-muted-foreground">
+                        {new Date(notification.created_at).toLocaleDateString('ko-KR', {
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-[10px] sm:text-xs px-2 py-0.5">
-                        {submission.type === 'dynamic' && submission.category_name
-                          ? submission.category_name
-                          : TYPE_LABELS[submission.type]}
-                      </Badge>
-                      <Badge variant={STATUS_VARIANTS[submission.status]} className="text-[10px] sm:text-xs px-2 py-0.5">
-                        {STATUS_LABELS[submission.status]}
-                      </Badge>
-                    </div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">
-                      {new Date(submission.created_at).toLocaleDateString('ko-KR', {
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

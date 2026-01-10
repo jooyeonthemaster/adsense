@@ -95,7 +95,6 @@ export async function PATCH(
           as_request_id: id,
           submission_type: asRequest.submission_type,
           submission_id: asRequest.submission_id,
-          link: '/dashboard/as-request',
         },
         read: false,
       });
@@ -119,7 +118,6 @@ export async function PATCH(
           as_request_id: id,
           submission_type: asRequest.submission_type,
           submission_id: asRequest.submission_id,
-          link: '/dashboard/as-request',
         },
         read: false,
       });

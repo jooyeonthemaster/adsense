@@ -135,7 +135,7 @@ export function useRewardSubmit(initialPoints: number) {
   // 비용 계산 (선택된 매체의 가격 기준)
   const calculateTotalCost = () => {
     const totalCount = formData.dailyVolume * operationDays;
-    return Math.round((totalCount / 100) * currentPrice);
+    return Math.round(totalCount * currentPrice);
   };
 
   // 시작일 선택 가능 최소 날짜 계산

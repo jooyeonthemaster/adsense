@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate points (일 접수량 × 구동일수 × 단가)
     const totalCount = daily_count * total_days;
-    const calculatedPoints = Math.round((totalCount / 100) * pricePerUnit);
+    const calculatedPoints = Math.round(totalCount * pricePerUnit);
 
     if (Math.abs(calculatedPoints - total_points) > 1) {
       return NextResponse.json(

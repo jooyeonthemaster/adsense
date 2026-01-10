@@ -108,7 +108,6 @@ export async function POST(
           submission_type: 'kakaomap_review_submissions',
           approved_count: approvedCount,
           total_count: submission.total_count,
-          link: `/dashboard/review/kmap/status`,
         },
         read: false,
       });

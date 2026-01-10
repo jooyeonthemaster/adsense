@@ -283,6 +283,11 @@ export function DefaultPricingSettings({ categories, onUpdate }: DefaultPricingS
                         <span className={!category.is_active ? 'text-slate-500' : ''}>
                           {displayNameMap[category.name] || category.name}
                         </span>
+                        {(category.slug === 'twoople-reward' || category.slug === 'eureka-reward') && (
+                          <Badge variant="outline" className="ml-2 text-xs bg-blue-50 text-blue-700 border-blue-200">
+                            1타당
+                          </Badge>
+                        )}
                         {!category.is_active && (
                           <Badge variant="secondary" className="ml-2 text-xs">
                             숨김

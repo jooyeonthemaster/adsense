@@ -23,6 +23,7 @@ import { ko } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { getPriorityColor } from './constants';
 import type { Announcement, Notification, NotificationFilter } from './types';
+import { useRouter } from 'next/navigation';
 
 // 영어 상태값을 한글로 변환하는 매핑
 const STATUS_LABELS: Record<string, string> = {
@@ -58,6 +59,83 @@ const translateStatusInMessage = (message: string): string => {
   });
 
   return translated;
+};
+
+// submission_type을 product key로 변환하는 매핑
+const submissionTypeToProduct: Record<string, string> = {
+  kakaomap_review_submissions: 'kakaomap',
+  visitor_review_submissions: 'receipt',
+  reward_submissions: 'reward-twoople', // 기본값은 투플
+  cafe_submissions: 'infiltration-cafe',
+  blog_distribution_submissions: 'blog-video', // 기본값은 영상 배포
+  experience_submissions: 'experience-blog', // 기본값은 블로그 체험단
+};
+
+// product key를 category로 변환하는 매핑
+const productToCategory: Record<string, string> = {
+  kakaomap: 'review',
+  receipt: 'review',
+  'reward-twoople': 'reward',
+  'reward-eureka': 'reward',
+  'infiltration-cafe': 'infiltration',
+  'infiltration-community': 'infiltration',
+  'blog-video': 'blog',
+  'blog-automation': 'blog',
+  'blog-reviewer': 'blog',
+  'experience-blog': 'experience',
+  'experience-xiaohongshu': 'experience',
+  'experience-journalist': 'experience',
+  'experience-influencer': 'experience',
+};
+
+// 알림 타입별 이동 경로를 결정하는 함수
+const getNotificationLink = (notification: Notification): string | null => {
+  const data = notification.data as any;
+
+  // 타입별 기본 경로 (data.link는 더 이상 사용하지 않음)
+  switch (notification.type) {
+    // 카카오맵 리뷰 관련
+    case 'kakaomap_feedback_added':
+    case 'kakaomap_content_uploaded':
+    case 'kakaomap_revision_requested':
+    case 'kakaomap_content_approved':
+    case 'kakaomap_message_received':
+    case 'daily_record_updated':
+      return '/dashboard/submissions?category=review&product=kakaomap';
+
+    // 접수 상태 변경
+    case 'submission_status_changed':
+      if (data?.submission_type) {
+        const product = submissionTypeToProduct[data.submission_type];
+        const category = product ? productToCategory[product] : null;
+        if (category && product) {
+          return `/dashboard/submissions?category=${category}&product=${product}`;
+        }
+      }
+      return '/dashboard/submissions';
+
+    // 포인트 관련
+    case 'points_charged':
+    case 'points_low':
+    case 'charge_request_status_changed':
+      return '/dashboard/points';
+
+    // AS 요청 관련
+    case 'as_request_resolved':
+    case 'as_approved':
+    case 'as_rejected':
+      if (data?.submission_type) {
+        const product = submissionTypeToProduct[data.submission_type];
+        const category = product ? productToCategory[product] : null;
+        if (category && product) {
+          return `/dashboard/submissions?category=${category}&product=${product}`;
+        }
+      }
+      return '/dashboard/submissions';
+
+    default:
+      return null;
+  }
 };
 
 interface NotificationsTabProps {
@@ -192,6 +270,21 @@ function PersonalNotificationsCard({
   setFilter: (filter: NotificationFilter) => void;
   markAsRead: (notificationId: string) => Promise<void>;
 }) {
+  const router = useRouter();
+
+  const handleNotificationClick = async (notification: Notification) => {
+    // 읽지 않은 알림이면 읽음 처리
+    if (!notification.read) {
+      await markAsRead(notification.id);
+    }
+
+    // 이동 경로 결정
+    const link = getNotificationLink(notification);
+    if (link) {
+      router.push(link);
+    }
+  };
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'submission_created':
@@ -263,7 +356,7 @@ function PersonalNotificationsCard({
                   'p-4 transition-all hover:shadow-md cursor-pointer',
                   !notification.read && 'bg-primary/5 border-primary/20'
                 )}
-                onClick={() => !notification.read && markAsRead(notification.id)}
+                onClick={() => handleNotificationClick(notification)}
               >
                 <div className="flex items-start gap-3">
                   <div

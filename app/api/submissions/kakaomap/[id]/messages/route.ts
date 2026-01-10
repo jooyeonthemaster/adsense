@@ -159,7 +159,6 @@ export async function POST(
             submission_id: id,
             submission_type: 'kakaomap_review_submissions',
             message_id: message.id,
-            link: `/dashboard/review/kmap/status`,
           },
           read: false,
         });
@@ -175,7 +174,6 @@ export async function POST(
             submission_id: id,
             submission_type: 'kakaomap_review_submissions',
             message_id: message.id,
-            link: `/admin/kakaomap/${id}`,
           },
           read: false,
         });

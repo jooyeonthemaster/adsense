@@ -129,7 +129,6 @@ export async function POST(
             submission_id: id,
             submission_type: 'kakaomap_review_submissions',
             total_count: submission.total_count,
-            link: `/dashboard/review/kmap/status`,
           },
           read: false,
         });
@@ -193,6 +192,14 @@ export async function GET(
       .select('total_count, status')
       .eq('id', id)
       .single();
+
+    // 관리자가 조회할 때 클라이언트가 보낸 피드백을 읽음 처리
+    await supabase
+      .from('kakaomap_content_item_feedbacks')
+      .update({ is_read: true, read_at: new Date().toISOString() })
+      .eq('submission_id', id)
+      .eq('sender_type', 'client')
+      .eq('is_read', false);
 
     return NextResponse.json({
       success: true,

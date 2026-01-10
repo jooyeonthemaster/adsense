@@ -223,7 +223,11 @@ export function PricingForm({
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="grid gap-2">
-                        <Label htmlFor={`price_${category.id}`}>단가 (포인트)</Label>
+                        <Label htmlFor={`price_${category.id}`}>
+                          {category.slug === 'twoople-reward' || category.slug === 'eureka-reward'
+                            ? '단가 (1타당 포인트)'
+                            : '단가 (포인트)'}
+                        </Label>
                         <Input
                           id={`price_${category.id}`}
                           name={`price_${category.id}`}
