@@ -104,6 +104,7 @@ export async function POST(request: NextRequest) {
       total_days,
       total_points,
       script,
+      guide_text,
       photo_urls,
       script_urls,
       text_review_count,
@@ -206,6 +207,9 @@ export async function POST(request: NextRequest) {
     // Determine has_photo based on photo_review_count
     const hasPhoto = photo_review_count > 0;
 
+    // guide_text 또는 script를 사용 (하위 호환성)
+    const finalGuideText = guide_text || script || null;
+
     console.log('[DEBUG] Creating kakaomap submission with data:', {
       client_id: user.id,
       submission_number: submissionNumberData,
@@ -217,6 +221,7 @@ export async function POST(request: NextRequest) {
       has_photo: hasPhoto,
       text_review_count: text_review_count || 0,
       photo_review_count: photo_review_count || 0,
+      guide_text: finalGuideText,
       photo_urls,
       script_urls,
       photo_ratio,
@@ -240,6 +245,7 @@ export async function POST(request: NextRequest) {
         has_photo: hasPhoto,
         text_review_count: text_review_count || 0,
         photo_review_count: photo_review_count || 0,
+        guide_text: finalGuideText,
         photo_urls,
         script_urls,
         photo_ratio,

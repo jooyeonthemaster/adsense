@@ -1,5 +1,33 @@
 # CHANGELOG - 애드센스 마케팅 상품 접수 시스템
 
+## 2026-01-10 - [FIX] 카카오맵 리뷰 가이드 텍스트 저장 기능 추가
+
+**Changed Files**:
+- supabase/migrations/20260110_add_guide_text_to_kakaomap.sql (신규 - DB 컬럼 추가)
+- app/api/submissions/kakaomap/route.ts (Before: 297 lines → After: 301 lines)
+
+**Changes**:
+- kakaomap_review_submissions 테이블에 guide_text 컬럼 추가
+- 카카오맵 리뷰 신청 API에서 guide_text 저장 로직 추가
+- 프론트엔드가 보내는 `script` 필드를 `guide_text`로 매핑하여 저장 (하위 호환성)
+- 신청 시 작성한 가이드가 관리자 페이지에서 확인 가능하도록 수정
+
+**Reason**:
+- 클라이언트가 신청 시 가이드를 작성해도 DB에 저장되지 않아 관리자 페이지에서 조회 불가능했던 버그 수정
+- blog_distribution_submissions에는 guide_text 컬럼이 있었으나 kakaomap_review_submissions에는 없었음
+- 프론트엔드는 `script` 필드로 보내지만 API는 `guide_text`만 사용하는 필드명 불일치 문제 해결
+
+**Tried But Failed Approaches**:
+- ❌ 처음에는 API에서 `guide_text`만 받도록 수정했으나, 프론트엔드가 `script`로 보내는 것을 발견
+- ✅ `guide_text || script` fallback 로직 추가로 하위 호환성 확보
+
+**Impact**:
+- 이제부터 신청하는 카카오맵 리뷰의 가이드가 정상적으로 저장되고 관리자 페이지에서 확인 가능
+- 기존 데이터는 guide_text가 NULL로 유지됨
+- 프론트엔드 코드 변경 없이 작동 (하위 호환성)
+
+---
+
 ## 2026-01-05 - [ADD] 세금계산서 발행 요청 기능 추가
 
 **Changed Files**:
