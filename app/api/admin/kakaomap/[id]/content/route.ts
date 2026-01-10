@@ -75,6 +75,7 @@ export async function POST(
         upload_order: nextOrder,
         status: 'pending',
         is_published: false, // 배포 전까지는 비공개
+        source_type: 'admin_upload', // 관리자 페이지 업로드 (리포트용 아님)
       })
       .select()
       .single();

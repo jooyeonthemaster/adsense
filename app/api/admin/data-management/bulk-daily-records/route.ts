@@ -58,7 +58,7 @@ function mapKakaomapStatus(koreanStatus?: string): 'pending' | 'approved' | 'rej
 }
 
 interface SheetInput {
-  productType: 'kakaomap' | 'receipt' | 'blog' | 'blog_reviewer' | 'blog_video' | 'blog_automation' | 'cafe';
+  productType: 'kakaomap' | 'receipt' | 'blog' | 'blog_reviewer' | 'blog_video' | 'blog_automation' | 'cafe' | 'community';
   records: RecordInput[];
 }
 
@@ -204,6 +204,7 @@ export async function POST(request: NextRequest) {
               // 방문자: review_status 필드 사용
               if (sheet.productType === 'kakaomap') {
                 updateData.status = 'approved';  // 리포트 = 검수 완료된 리뷰
+                updateData.source_type = 'data_management'; // 데이터 관리 엑셀 업로드
               } else {
                 updateData.review_status = mapReviewStatus(record.reviewStatus);
               }
@@ -248,6 +249,7 @@ export async function POST(request: NextRequest) {
               // 방문자: review_status 필드 사용
               if (sheet.productType === 'kakaomap') {
                 insertData.status = 'approved';  // 리포트 = 검수 완료된 리뷰
+                insertData.source_type = 'data_management'; // 데이터 관리 엑셀 업로드
               } else {
                 insertData.review_status = mapReviewStatus(record.reviewStatus);
               }
@@ -387,9 +389,9 @@ export async function POST(request: NextRequest) {
         continue; // 블로그 배포는 여기서 처리 완료, 다음 시트로
       }
 
-      // 카페 침투: 콘텐츠 아이템 관리 (블로그 배포와 유사)
-      if (sheet.productType === 'cafe') {
-        const productLabel = '카페침투';
+      // 카페 침투 / 커뮤니티 마케팅: 콘텐츠 아이템 관리 (블로그 배포와 유사)
+      if (sheet.productType === 'cafe' || sheet.productType === 'community') {
+        const productLabel = sheet.productType === 'cafe' ? '카페침투' : '커뮤니티마케팅';
 
         for (const record of sheet.records) {
           try {

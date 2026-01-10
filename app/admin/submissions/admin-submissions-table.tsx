@@ -110,6 +110,7 @@ export function AdminSubmissionsTable() {
       업체링크: submission.place_url || '-',
       시작일: formatDateForExcel(submission.start_date),
       마감일: formatDateForExcel(submission.end_date),
+      일건수: submission.daily_count !== undefined ? submission.daily_count : '-',
       상세내용: getSubmissionDetails(submission),
       진행률: submission.progress_percentage !== undefined ? `${submission.progress_percentage}%` : '-',
       사용포인트: submission.total_points.toLocaleString(),
@@ -222,7 +223,7 @@ export function AdminSubmissionsTable() {
                       <TableHead className="w-[80px] whitespace-nowrap">진행률</TableHead>
                       <TableHead className="w-[100px] text-right whitespace-nowrap">사용 포인트</TableHead>
                       <TableHead className="w-[100px] whitespace-nowrap">상태</TableHead>
-                      <TableHead className="w-[100px] whitespace-nowrap">관리</TableHead>
+                      <TableHead className="w-[100px] whitespace-nowrap sticky right-0 bg-white shadow-[-2px_0_4px_rgba(0,0,0,0.05)] z-10">관리</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

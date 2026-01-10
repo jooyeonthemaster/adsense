@@ -345,6 +345,7 @@ export function useAllSubmissions() {
             '순번': index + 1,
             '접수번호': submission.submission_number || '',
             '업체명': submission.company_name || '',
+            '리뷰원고': item.script_text || '',
             '리뷰등록일': item.review_registered_date || '',
             '영수증일자': item.receipt_date || '',
             '상태': statusLabels[item.review_status] || item.review_status || '대기',

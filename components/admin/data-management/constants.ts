@@ -2,10 +2,10 @@ import type { CategoryType, ProductType, ProductConfig } from './types';
 
 // 카테고리별 포함 상품 매핑
 export const CATEGORY_PRODUCTS: Record<CategoryType, ProductType[]> = {
-  all: ['kakaomap', 'receipt', 'blog_reviewer', 'blog_video', 'blog_automation', 'cafe'],
+  all: ['kakaomap', 'receipt', 'blog_reviewer', 'blog_video', 'blog_automation', 'cafe', 'community'],
   review: ['kakaomap', 'receipt'],
   blog: ['blog_reviewer', 'blog_video', 'blog_automation'],
-  cafe: ['cafe'],
+  cafe: ['cafe', 'community'],
 };
 
 // 카테고리별 템플릿 파일명
@@ -38,7 +38,18 @@ export const PRODUCT_CONFIG: Record<ProductType, ProductConfig> = {
     tableName: 'blog_content_items',
     distributionType: 'automation',
   },
-  cafe: { name: '카페 침투', prefix: 'CM', tableName: 'cafe_content_items' },
+  cafe: {
+    name: '카페 침투',
+    prefix: 'CM',
+    tableName: 'cafe_content_items',
+    distributionType: 'cafe',
+  },
+  community: {
+    name: '커뮤니티 마케팅',
+    prefix: 'CM',
+    tableName: 'cafe_content_items',
+    distributionType: 'community',
+  },
 };
 
 // 시트 이름으로 상품 타입 매핑 - 블로그 배포는 3개 서브타입
@@ -65,6 +76,9 @@ export const SHEET_NAME_MAP: Record<string, ProductType> = {
   '카페침투': 'cafe',
   '카페 침투': 'cafe',
   cafe: 'cafe',
+  '커뮤니티마케팅': 'community',
+  '커뮤니티 마케팅': 'community',
+  community: 'community',
 };
 
 // 리뷰 타입 (K맵, 방문자 리뷰)

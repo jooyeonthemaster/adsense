@@ -75,7 +75,8 @@
       "Bash(git stash:*)",
       "Bash(du -sh:*)",
       "Bash(ls:*)",
-      "Bash(setx:*)"
+      "Bash(setx:*)",
+      "Bash(del nul)"
     ],
     "deny": [],
     "ask": []

@@ -139,7 +139,7 @@ export function SubmissionTableRow({
           {STATUS_LABELS[submission.status] || submission.status}
         </Badge>
       </TableCell>
-      <TableCell className="whitespace-nowrap">
+      <TableCell className="whitespace-nowrap sticky right-0 bg-white shadow-[-2px_0_4px_rgba(0,0,0,0.05)] z-10">
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"

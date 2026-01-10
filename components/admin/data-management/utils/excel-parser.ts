@@ -37,6 +37,7 @@ export function validateSubmissionNumber(submissionNumber: string, productType: 
     blog_video: 'BD',
     blog_automation: 'BD',
     cafe: 'CM',
+    community: 'CM',
   };
 
   const expectedPrefix = prefixMap[productType];
@@ -151,8 +152,8 @@ function parseBlogRecord(
   };
 }
 
-// 카페 침투 레코드 파싱
-function parseCafeRecord(row: unknown[], rowIndex: number): ParsedRecord {
+// 카페 침투 / 커뮤니티 마케팅 레코드 파싱 (동일 구조)
+function parseCafeRecord(row: unknown[], rowIndex: number, productType: 'cafe' | 'community'): ParsedRecord {
   const submissionNumber = String(row[0] || '').trim();
   const companyName = String(row[1] || '').trim();
   const cafePostTitle = String(row[2] || '').trim();
@@ -166,7 +167,7 @@ function parseCafeRecord(row: unknown[], rowIndex: number): ParsedRecord {
   let isValid = true;
   let errorMessage = '';
 
-  const submissionValidation = validateSubmissionNumber(submissionNumber, 'cafe');
+  const submissionValidation = validateSubmissionNumber(submissionNumber, productType);
   if (!submissionValidation.isValid) {
     isValid = false;
     errorMessage = submissionValidation.errorMessage || '';
@@ -210,8 +211,8 @@ function parseRecord(
     return parseBlogRecord(row, rowIndex, productType);
   }
 
-  if (productType === 'cafe') {
-    return parseCafeRecord(row, rowIndex);
+  if (productType === 'cafe' || productType === 'community') {
+    return parseCafeRecord(row, rowIndex, productType);
   }
 
   return null;

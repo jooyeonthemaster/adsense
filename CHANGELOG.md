@@ -1,5 +1,57 @@
 # CHANGELOG - 애드센스 마케팅 상품 접수 시스템
 
+## 2026-01-11 00:11 - [FIX] 관리자 접수 내역 엑셀 다운로드에 일건수 컬럼 추가
+
+**Changed Files**:
+- app/admin/submissions/admin-submissions-table.tsx (Before: 381 lines → After: 383 lines)
+
+**Changes**:
+- exportToExcel 함수에 "일건수" 컬럼 추가
+- daily_count 필드를 엑셀에서 별도 컬럼으로 분리하여 데이터 분석 가능하도록 개선
+- 상품별로 daily_count가 있을 경우 숫자 표시, 없을 경우 '-' 표시
+
+**Reason**:
+- 클라이언트 요청: 엑셀 다운로드 시 일건수가 포함되지 않아 데이터 분석 불편
+- 기존에는 "상세내용" 컬럼 안에만 포함되어 있어 별도 집계가 어려움
+- 일건수는 중요한 지표이므로 독립 컬럼으로 분리 필요
+
+**Impact**:
+- 엑셀 다운로드 시 "일건수" 컬럼이 추가되어 데이터 분석 용이
+- place, receipt, kakaomap, blog, cafe 상품의 daily_count 값 확인 가능
+- experience 상품은 daily_count가 없으므로 '-'로 표시
+
+---
+
+## 2026-01-10 HH:mm - [ADD] 데이터 관리에 커뮤니티 마케팅 상품 추가
+
+**Changed Files**:
+- components/admin/data-management/types.ts (Before: 100 lines → After: 101 lines)
+- components/admin/data-management/constants.ts (Before: 78 lines → After: 88 lines)
+- components/admin/data-management/utils/template-generator.ts (Before: 382 lines → After: 435 lines)
+- components/admin/data-management/utils/excel-parser.ts (Before: 348 lines → After: 349 lines)
+- app/api/admin/data-management/bulk-daily-records/route.ts (Before: 500 lines → After: 502 lines)
+
+**Changes**:
+- ProductType에 'community' 추가
+- CATEGORY_PRODUCTS의 cafe와 all 카테고리에 'community' 포함
+- PRODUCT_CONFIG에 커뮤니티 마케팅 설정 추가 (cafe_content_items 테이블, distributionType: 'community')
+- cafe 상품에도 distributionType: 'cafe' 추가 (community와 구분)
+- SHEET_NAME_MAP에 커뮤니티 관련 시트명 매핑 추가 ('커뮤니티마케팅', '커뮤니티 마케팅', 'community')
+- 템플릿 생성: createCommunitySheet() 함수 추가, 사용법 시트에 커뮤니티 마케팅 가이드 추가
+- 엑셀 파서: validateSubmissionNumber에 community 접두사 추가 (CM), parseCafeRecord 함수가 cafe/community 모두 처리
+- API: SheetInput에 community 추가, cafe/community 모두 cafe_content_items 테이블에 저장
+
+**Reason**:
+- 전체 상품 관리 페이지에는 'cafe-marketing'과 'community-marketing' 두 개의 별도 상품이 존재
+- 데이터 관리 페이지는 'cafe'만 처리하여 커뮤니티 마케팅 데이터 업로드 불가능
+- 블로그 배포와 동일한 패턴(같은 테이블, distributionType으로 구분)으로 통일
+
+**Impact**:
+- 침투 마케팅 탭에서 카페 침투와 커뮤니티 마케팅 데이터를 각각 업로드 가능
+- cafe_content_items 테이블의 service_type 컬럼으로 구분되어 저장
+
+---
+
 ## 2026-01-10 - [FIX] 카카오맵 리뷰 가이드 텍스트 저장 기능 추가
 
 **Changed Files**:

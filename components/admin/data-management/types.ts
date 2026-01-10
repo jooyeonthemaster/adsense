@@ -8,7 +8,8 @@ export type ProductType =
   | 'blog_reviewer'
   | 'blog_video'
   | 'blog_automation'
-  | 'cafe';
+  | 'cafe'
+  | 'community';
 
 // 파싱된 레코드 인터페이스
 export interface ParsedRecord {

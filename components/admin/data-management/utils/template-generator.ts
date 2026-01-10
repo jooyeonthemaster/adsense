@@ -235,6 +235,37 @@ export function createCafeSheet(): XLSX.WorkSheet {
   return ws;
 }
 
+// 커뮤니티 마케팅 시트 생성
+export function createCommunitySheet(): XLSX.WorkSheet {
+  const data = [
+    ['접수번호', '업체명', '작성제목', '발행일', '상태', '리뷰링크', '작성아이디', '카페명'],
+    [
+      'CM-2025-0003',
+      '뷰티샵',
+      '커뮤니티 홍보 게시글',
+      '2025-12-05',
+      '승인됨',
+      'https://www.clien.net/service/board/park/12345678',
+      'beauty_pro',
+      '클리앙 공원',
+    ],
+    [
+      'CM-2025-0003',
+      '뷰티샵',
+      '추천 맛집 정보 공유',
+      '2025-12-06',
+      '승인됨',
+      'https://www.ppomppu.co.kr/zboard/view.php?id=12345',
+      'foodie_lover',
+      '뽐뿌 자유게시판',
+    ],
+    ['CM-2025-0004', '헤어샵', '헤어샵 후기 공유', '2025-12-07', '대기', '', '', '82쿡'],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  setColumnWidths(ws, [18, 20, 40, 14, 10, 45, 18, 15]);
+  return ws;
+}
+
 // 사용법 시트 생성
 export function createGuideSheet(allowedProducts: ProductType[]): XLSX.WorkSheet {
   const guideData: (string | number)[][] = [
@@ -258,6 +289,9 @@ export function createGuideSheet(allowedProducts: ProductType[]): XLSX.WorkSheet
   }
   if (allowedProducts.includes('cafe')) {
     guideData.push(['  - 카페 침투: CM-2025-0001']);
+  }
+  if (allowedProducts.includes('community')) {
+    guideData.push(['  - 커뮤니티 마케팅: CM-2025-0001']);
   }
 
   guideData.push([''], ['■ 날짜 형식'], ['  - YYYY-MM-DD (예: 2025-12-01)'], ['']);
@@ -329,6 +363,22 @@ export function createGuideSheet(allowedProducts: ProductType[]): XLSX.WorkSheet
     );
   }
 
+  // 커뮤니티 마케팅 전용 안내
+  if (allowedProducts.includes('community')) {
+    guideData.push(
+      ['■ 커뮤니티 마케팅 시트 (커뮤니티 콘텐츠 관리)'],
+      ['  - 접수번호: 해당 접수의 접수번호 (CM-YYYY-XXXX)'],
+      ['  - 업체명: 업체명 (참고용, DB 기준 자동 매칭)'],
+      ['  - 작성제목: 커뮤니티 게시글 제목'],
+      ['  - 발행일: 커뮤니티에 실제 발행된 날짜 (YYYY-MM-DD)'],
+      ['  - 상태: 대기, 승인됨, 수정요청 중 선택'],
+      ['  - 리뷰링크: 커뮤니티 게시글 URL (선택)'],
+      ['  - 작성아이디: 커뮤니티 작성자 ID (선택)'],
+      ['  - 카페명: 게시된 커뮤니티 이름 (선택)'],
+      ['']
+    );
+  }
+
   guideData.push(
     ['■ 중복 처리'],
     ['  - 동일 접수번호 + 동일 날짜 = 기존 데이터 업데이트'],
@@ -371,6 +421,10 @@ export function downloadTemplate(category: CategoryType, allowedProducts: Produc
 
   if (allowedProducts.includes('cafe')) {
     XLSX.utils.book_append_sheet(wb, createCafeSheet(), '카페침투');
+  }
+
+  if (allowedProducts.includes('community')) {
+    XLSX.utils.book_append_sheet(wb, createCommunitySheet(), '커뮤니티마케팅');
   }
 
   // 사용법 시트 추가

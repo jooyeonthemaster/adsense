@@ -206,7 +206,7 @@ export async function GET() {
       return {
         ...sub,
         type: 'receipt' as const,
-        place_url: sub.naver_place_url, // 업체 링크 (네이버 플레이스)
+        place_url: sub.place_url, // 업체 링크 (네이버 플레이스)
         end_date: calculateEndDate(sub.start_date, totalDays), // 마감일
         content_items_count: receiptContentCountMap.get(sub.id) || 0,
         unread_messages_count: receiptUnreadCountMap.get(sub.id) || 0,
@@ -241,7 +241,7 @@ export async function GET() {
       return {
         ...sub,
         type: 'blog' as const,
-        place_url: sub.blog_url, // 업체 링크 (블로그/홈페이지)
+        place_url: sub.place_url, // 업체 링크 (블로그/홈페이스)
         end_date: calculateEndDate(sub.start_date, sub.total_days), // 마감일
         completed_count: completedCount,
         progress_percentage: progressPercentage,
@@ -257,7 +257,7 @@ export async function GET() {
       return {
         ...sub,
         type: 'cafe' as const,
-        place_url: sub.reference_url || null, // 참고 URL
+        place_url: sub.place_url || null, // 업체 링크
         end_date: calculateEndDate(sub.start_date, totalDays), // 마감일
         completed_count: completedCount,
         progress_percentage: progressPercentage,

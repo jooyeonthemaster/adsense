@@ -26,11 +26,12 @@ export async function GET(
       );
     }
 
-    // Get content items - 클라이언트용: 모든 콘텐츠 조회 (관리자가 업로드한 데이터)
+    // Get content items - 클라이언트용: 데이터 관리 엑셀로 업로드된 리포트만 조회
     const { data: contentItems, error: itemsError } = await supabase
       .from('kakaomap_content_items')
       .select('*')
       .eq('submission_id', submissionId)
+      .eq('source_type', 'data_management') // 리포트용 데이터만 조회
       .order('upload_order', { ascending: true });
 
     if (itemsError) {
