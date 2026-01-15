@@ -13,24 +13,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Download, Package, Image as ImageIcon, Loader2, Send, Sparkles, FileSpreadsheet, ExternalLink } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { ArrowLeft, Loader2, Send, Sparkles } from 'lucide-react';
 import { ReviewContentBasedCalendar } from '@/components/admin/review-marketing/ReviewContentBasedCalendar';
 import { DirectUpload } from '@/components/admin/kakaomap/DirectUpload';
 import { ExcelUpload } from '@/components/admin/kakaomap/ExcelUpload';
 import { ContentItemsList } from '@/components/admin/kakaomap/ContentItemsList';
-import { FeedbackManagement } from '@/components/admin/kakaomap/FeedbackManagement';
 import { GeneralFeedbackView } from '@/components/admin/kakaomap/GeneralFeedbackView';
 import { AIReviewGenerator } from '@/components/admin/kakaomap/AIReviewGenerator';
+import { ApprovalStatusList } from '@/components/admin/kakaomap/ApprovalStatusList';
+import { PendingReviewList } from '@/components/admin/kakaomap/PendingReviewList';
 import { useKakaomapDetail } from '@/hooks/admin/useKakaomapDetail';
-import { statusConfig, starRatingConfig, contentStatusConfig } from '@/components/admin/kakaomap-detail';
+import { statusConfig, starRatingConfig } from '@/components/admin/kakaomap-detail';
 
 export default function KakaomapReviewDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
@@ -38,22 +31,31 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
 
   const {
     loading,
-    downloadLoading,
     submission,
     dailyRecords,
     contentItems,
     activeTab,
     totalActualCount,
     completionRate,
+    unreadFeedbackCount,
     setActiveTab,
     fetchSubmissionDetail,
-    fetchDailyRecords,
     fetchContentItems,
     handleStatusChange,
-    downloadAllFiles,
     handlePublish,
-    downloadContentItemsAsExcel,
+    markFeedbacksAsRead,
   } = useKakaomapDetail(unwrappedParams.id);
+
+  // 탭 변경 핸들러 - 피드백 관련 탭 선택 시 피드백 읽음 처리
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    if (value === 'approval-status' || value === 'pending-review') {
+      markFeedbacksAsRead();
+    }
+  };
+
+  // 검수 대기 원고 수 (검수 요청된 원고 중 대행사가 아직 처리 안한 것)
+  const pendingReviewCount = contentItems.filter(item => item.is_published && item.review_status === 'pending').length;
 
   if (loading) {
     return (
@@ -159,16 +161,23 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full max-w-4xl grid-cols-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList className="grid w-full max-w-5xl grid-cols-6">
             <TabsTrigger value="overview">개요</TabsTrigger>
             <TabsTrigger value="ai-generate" className="gap-1">
               <Sparkles className="h-3.5 w-3.5" />
               AI 생성
             </TabsTrigger>
-            <TabsTrigger value="content">콘텐츠 관리</TabsTrigger>
-            <TabsTrigger value="contents-list">콘텐츠 목록</TabsTrigger>
-            <TabsTrigger value="feedback">피드백 관리</TabsTrigger>
+            <TabsTrigger value="content">원고 관리</TabsTrigger>
+            <TabsTrigger value="pending-review" className="relative">
+              검수 요청
+              {(unreadFeedbackCount > 0 || pendingReviewCount > 0) && (
+                <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center rounded-full bg-amber-500 text-white text-xs font-bold">
+                  {pendingReviewCount > 9 ? '9+' : pendingReviewCount}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="approval-status">승인 현황</TabsTrigger>
             <TabsTrigger value="daily">일별 기록</TabsTrigger>
           </TabsList>
 
@@ -255,7 +264,7 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
           </TabsContent>
 
           <TabsContent value="content" className="space-y-6">
-            {/* 배포 버튼 */}
+            {/* 검수 요청 버튼 */}
             {contentItems.length > 0 && (() => {
               const publishedCount = contentItems.filter(item => item.is_published).length;
               const unpublishedCount = contentItems.length - publishedCount;
@@ -264,40 +273,50 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
               return (
                 <Card>
                   <CardHeader>
-                    <CardTitle>콘텐츠 배포</CardTitle>
+                    <CardTitle>검수 요청</CardTitle>
                     <CardDescription>
-                      업로드된 콘텐츠를 유저에게 배포합니다. 배포 후에는 유저가 콘텐츠를 확인할 수 있습니다.
+                      업로드된 원고를 대행사에 검수 요청합니다. 요청 후 대행사가 원고를 검토하고 승인/수정요청할 수 있습니다.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* 배포 상태 표시 */}
+                    {/* 검수 상태 표시 */}
                     <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="font-medium">전체 콘텐츠:</span>
+                        <span className="font-medium">전체 원고:</span>
                         <span className="font-bold">{contentItems.length}개</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="font-medium text-green-600">배포 완료:</span>
+                        <span className="font-medium text-green-600">검수 요청됨:</span>
                         <span className="font-bold text-green-600">{publishedCount}개</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="font-medium text-orange-600">미배포:</span>
+                        <span className="font-medium text-orange-600">미요청:</span>
                         <span className="font-bold text-orange-600">{unpublishedCount}개</span>
                       </div>
                     </div>
 
-                    {/* 배포 버튼 */}
+                    {/* 검수 요청 버튼 */}
                     {allPublished ? (
                       <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                        <p className="text-green-700 font-medium">✓ 모든 콘텐츠가 배포되었습니다</p>
-                        <p className="text-sm text-green-600 mt-1">유저가 모든 콘텐츠를 확인할 수 있습니다</p>
+                        <p className="text-green-700 font-medium">✓ 모든 원고가 검수 요청되었습니다</p>
+                        <p className="text-sm text-green-600 mt-1">대행사가 원고를 검토 중입니다</p>
                       </div>
                     ) : (
                       <Button onClick={handlePublish} className="w-full" size="lg">
                         <Send className="h-5 w-5 mr-2" />
-                        배포하기 ({unpublishedCount}개 콘텐츠)
+                        검수 요청 ({unpublishedCount}개 원고)
                       </Button>
                     )}
+
+                    {/* 엑셀 업로드 */}
+                    <ExcelUpload
+                      submissionId={unwrappedParams.id}
+                      currentCount={contentItems.length}
+                      totalCount={submission.total_count}
+                      hasPhoto={submission.has_photo}
+                      photoRatio={submission.photo_ratio}
+                      onUploadComplete={fetchContentItems}
+                    />
                   </CardContent>
                 </Card>
               );
@@ -311,126 +330,30 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
               onItemDeleted={fetchContentItems}
             />
 
-            {/* 업로드 UI */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* 직접 업로드 */}
-              <DirectUpload
-                submissionId={unwrappedParams.id}
-                currentCount={contentItems.length}
-                totalCount={submission.total_count}
-                hasPhoto={submission.has_photo}
-                photoRatio={submission.photo_ratio}
-                onUploadComplete={fetchContentItems}
-              />
-
-              {/* 엑셀 업로드 */}
-              <ExcelUpload
-                submissionId={unwrappedParams.id}
-                currentCount={contentItems.length}
-                totalCount={submission.total_count}
-                hasPhoto={submission.has_photo}
-                photoRatio={submission.photo_ratio}
-                onUploadComplete={fetchContentItems}
-              />
-            </div>
+            {/* 직접 업로드 */}
+            <DirectUpload
+              submissionId={unwrappedParams.id}
+              currentCount={contentItems.length}
+              totalCount={submission.total_count}
+              hasPhoto={submission.has_photo}
+              photoRatio={submission.photo_ratio}
+              onUploadComplete={fetchContentItems}
+            />
           </TabsContent>
 
-          <TabsContent value="contents-list" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>리뷰 콘텐츠 목록</CardTitle>
-                    <CardDescription>
-                      업로드된 리뷰 콘텐츠 ({contentItems.length}건)
-                    </CardDescription>
-                  </div>
-                  {contentItems.length > 0 && (
-                    <Button onClick={downloadContentItemsAsExcel}>
-                      <FileSpreadsheet className="h-4 w-4 mr-2" />
-                      엑셀 다운로드
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {contentItems.length > 0 ? (
-                  <div className="border rounded-lg overflow-hidden">
-                    <div className="max-h-[500px] overflow-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-12 text-center">순번</TableHead>
-                            <TableHead className="min-w-[300px]">리뷰원고</TableHead>
-                            <TableHead className="w-28">리뷰등록날짜</TableHead>
-                            <TableHead className="w-28">영수증날짜</TableHead>
-                            <TableHead className="w-24 text-center">상태</TableHead>
-                            <TableHead className="w-32">리뷰링크</TableHead>
-                            <TableHead className="w-28">리뷰아이디</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {contentItems.map((item, index) => (
-                            <TableRow key={item.id}>
-                              <TableCell className="text-center text-muted-foreground">
-                                {index + 1}
-                              </TableCell>
-                              <TableCell>
-                                <p className="text-sm line-clamp-2" title={item.script_text || ''}>
-                                  {item.script_text || '-'}
-                                </p>
-                              </TableCell>
-                              <TableCell className="text-sm">
-                                {item.review_registered_date || '-'}
-                              </TableCell>
-                              <TableCell className="text-sm">
-                                {item.receipt_date || '-'}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <Badge
-                                  variant={contentStatusConfig[item.status]?.variant || 'outline'}
-                                  className="whitespace-nowrap"
-                                >
-                                  {contentStatusConfig[item.status]?.label || item.status}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                {item.review_link ? (
-                                  <a
-                                    href={item.review_link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-                                  >
-                                    <ExternalLink className="h-3 w-3" />
-                                    링크
-                                  </a>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">-</span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-sm">
-                                {item.review_id || '-'}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">
-                    업로드된 콘텐츠가 없습니다.<br />
-                    <span className="text-xs">콘텐츠 관리 탭에서 콘텐츠를 업로드하세요.</span>
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+          <TabsContent value="pending-review" className="space-y-4">
+            <PendingReviewList
+              submissionId={unwrappedParams.id}
+              contentItems={contentItems}
+              onUpdate={fetchContentItems}
+            />
           </TabsContent>
 
-          <TabsContent value="feedback" className="space-y-4">
-            <GeneralFeedbackView submissionId={unwrappedParams.id} />
-            <FeedbackManagement submissionId={unwrappedParams.id} />
+          <TabsContent value="approval-status" className="space-y-4">
+            <ApprovalStatusList
+              submissionId={unwrappedParams.id}
+              contentItems={contentItems}
+            />
           </TabsContent>
 
           <TabsContent value="daily" className="space-y-4">

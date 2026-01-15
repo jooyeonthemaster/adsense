@@ -9,11 +9,13 @@ import { formatDate } from '@/utils/review/kmap-helpers';
 interface GeneralFeedbackSectionProps {
   feedbacks: Feedback[];
   onSendFeedback: (message: string) => Promise<void>;
+  pendingCount?: number;
 }
 
 export function GeneralFeedbackSection({
   feedbacks,
   onSendFeedback,
+  pendingCount,
 }: GeneralFeedbackSectionProps) {
   const [newFeedback, setNewFeedback] = useState('');
   const [sending, setSending] = useState(false);
@@ -32,13 +34,16 @@ export function GeneralFeedbackSection({
 
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm">
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-2">
         <MessageCircleMore className="h-5 w-5 text-blue-600" />
-        <h2 className="text-lg font-semibold">전체 공통 피드백</h2>
+        <h2 className="text-lg font-semibold">미승인 원고 공통 피드백</h2>
         <Badge variant="outline" className="ml-auto">
           {feedbacks.length}개
         </Badge>
       </div>
+      <p className="text-sm text-muted-foreground mb-4">
+        아래 미승인 {pendingCount !== undefined ? `${pendingCount}건의 ` : ''}원고에 대한 수정 요청사항을 전달해주세요.
+      </p>
 
       {/* 피드백 히스토리 */}
       <div className="space-y-3 mb-4 max-h-[300px] overflow-y-auto">

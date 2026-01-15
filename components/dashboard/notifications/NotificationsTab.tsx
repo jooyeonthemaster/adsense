@@ -88,13 +88,45 @@ const productToCategory: Record<string, string> = {
   'experience-influencer': 'experience',
 };
 
+// submission_type을 상세 페이지 경로로 변환하는 매핑
+const submissionTypeToDetailPath: Record<string, string> = {
+  kakaomap_review_submissions: '/dashboard/review/kmap/status',
+  visitor_review_submissions: '/dashboard/review/visitor/status',
+  place_submissions: '/dashboard/reward/status',
+  blog_distribution_submissions: '/dashboard/blog-distribution/status/detail',
+  experience_submissions: '/dashboard/experience/detail',
+  cafe_marketing_submissions: '/dashboard/cafe/status/detail',
+};
+
 // 알림 타입별 이동 경로를 결정하는 함수
 const getNotificationLink = (notification: Notification): string | null => {
   const data = notification.data as any;
+  const submissionId = data?.submission_id;
+  const submissionType = data?.submission_type;
 
-  // 타입별 기본 경로 (data.link는 더 이상 사용하지 않음)
+  // 1. submission_id + submission_type이 있으면 상세 페이지로 직접 이동
+  if (submissionId && submissionType) {
+    const detailPath = submissionTypeToDetailPath[submissionType];
+    if (detailPath) {
+      return `${detailPath}/${submissionId}`;
+    }
+  }
+
+  // 2. submission_id만 있고 카카오맵 관련 알림이면 카카오맵 상세로 이동
+  if (submissionId) {
+    switch (notification.type) {
+      case 'kakaomap_feedback_added':
+      case 'kakaomap_content_uploaded':
+      case 'kakaomap_revision_requested':
+      case 'kakaomap_content_approved':
+      case 'kakaomap_message_received':
+        return `/dashboard/review/kmap/status/${submissionId}`;
+    }
+  }
+
+  // 3. Fallback: 타입별 기본 경로 (목록 페이지)
   switch (notification.type) {
-    // 카카오맵 리뷰 관련
+    // 카카오맵 리뷰 관련 (submission_id 없는 경우)
     case 'kakaomap_feedback_added':
     case 'kakaomap_content_uploaded':
     case 'kakaomap_revision_requested':
@@ -105,8 +137,8 @@ const getNotificationLink = (notification: Notification): string | null => {
 
     // 접수 상태 변경
     case 'submission_status_changed':
-      if (data?.submission_type) {
-        const product = submissionTypeToProduct[data.submission_type];
+      if (submissionType) {
+        const product = submissionTypeToProduct[submissionType];
         const category = product ? productToCategory[product] : null;
         if (category && product) {
           return `/dashboard/submissions?category=${category}&product=${product}`;
@@ -124,8 +156,8 @@ const getNotificationLink = (notification: Notification): string | null => {
     case 'as_request_resolved':
     case 'as_approved':
     case 'as_rejected':
-      if (data?.submission_type) {
-        const product = submissionTypeToProduct[data.submission_type];
+      if (submissionType) {
+        const product = submissionTypeToProduct[submissionType];
         const category = product ? productToCategory[product] : null;
         if (category && product) {
           return `/dashboard/submissions?category=${category}&product=${product}`;

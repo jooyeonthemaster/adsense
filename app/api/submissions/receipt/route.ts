@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
       total_days,
       total_count,
       total_points,
+      start_date,
       business_license_url,
       photo_urls,
       notes,
@@ -188,6 +189,7 @@ export async function POST(request: NextRequest) {
         place_url,
         daily_count,
         total_count,
+        start_date: start_date || null,
         has_photo: !!(photo_urls && photo_urls.length > 0),
         has_script: false, // 기본값
         total_points,

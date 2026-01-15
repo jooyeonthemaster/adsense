@@ -76,7 +76,8 @@
       "Bash(du -sh:*)",
       "Bash(ls:*)",
       "Bash(setx:*)",
-      "Bash(del nul)"
+      "Bash(del nul)",
+      "Bash(git diff:*)"
     ],
     "deny": [],
     "ask": []

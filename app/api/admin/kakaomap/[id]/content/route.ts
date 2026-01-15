@@ -237,6 +237,29 @@ export async function DELETE(
 
     const supabase = await createClient();
 
+    // 삭제 전 아이템 상태 확인
+    const { data: item, error: fetchError } = await supabase
+      .from('kakaomap_content_items')
+      .select('review_status')
+      .eq('id', contentItemId)
+      .eq('submission_id', id)
+      .single();
+
+    if (fetchError || !item) {
+      return NextResponse.json(
+        { error: '콘텐츠를 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+
+    // 승인된 콘텐츠는 삭제 불가
+    if (item.review_status === 'approved') {
+      return NextResponse.json(
+        { error: '승인된 콘텐츠는 삭제할 수 없습니다.' },
+        { status: 400 }
+      );
+    }
+
     // Delete content item
     const { error: deleteError } = await supabase
       .from('kakaomap_content_items')

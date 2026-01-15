@@ -17,11 +17,13 @@ export function useKakaomapDetail(submissionId: string) {
   const [dailyRecords, setDailyRecords] = useState<DailyRecord[]>([]);
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
+  const [unreadFeedbackCount, setUnreadFeedbackCount] = useState(0);
 
   useEffect(() => {
     fetchSubmissionDetail();
     fetchDailyRecords();
     fetchContentItems();
+    fetchUnreadFeedbackCount();
   }, [submissionId]);
 
   const fetchSubmissionDetail = async () => {
@@ -64,6 +66,31 @@ export function useKakaomapDetail(submissionId: string) {
       }
     } catch (error) {
       console.error('Error fetching content items:', error);
+    }
+  };
+
+  const fetchUnreadFeedbackCount = async () => {
+    try {
+      const response = await fetch(`/api/submissions/kakaomap/${submissionId}/feedback/unread-count`);
+      if (response.ok) {
+        const data = await response.json();
+        setUnreadFeedbackCount(data.count || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching unread feedback count:', error);
+    }
+  };
+
+  const markFeedbacksAsRead = async () => {
+    try {
+      const response = await fetch(`/api/submissions/kakaomap/${submissionId}/feedback/mark-read`, {
+        method: 'POST',
+      });
+      if (response.ok) {
+        setUnreadFeedbackCount(0);
+      }
+    } catch (error) {
+      console.error('Error marking feedbacks as read:', error);
     }
   };
 
@@ -158,7 +185,7 @@ export function useKakaomapDetail(submissionId: string) {
     if (!submission) return;
 
     try {
-      // 사진 비율 체크 없이 바로 배포
+      // 사진 비율 체크 없이 바로 검수 요청
       const response = await fetch(`/api/admin/kakaomap/${submissionId}/publish?force=true`, {
         method: 'POST',
       });
@@ -166,12 +193,12 @@ export function useKakaomapDetail(submissionId: string) {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || '배포에 실패했습니다.');
+        throw new Error(result.error || '검수 요청에 실패했습니다.');
       }
 
       toast({
-        title: '✓ 배포 완료',
-        description: `${result.published_count}개의 콘텐츠가 유저에게 배포되었습니다.`,
+        title: '✓ 검수 요청 완료',
+        description: `${result.published_count}개의 원고가 대행사에 검수 요청되었습니다.`,
       });
 
       // 새로고침
@@ -181,7 +208,7 @@ export function useKakaomapDetail(submissionId: string) {
       console.error('Publish error:', error);
       toast({
         title: '오류',
-        description: error instanceof Error ? error.message : '배포 중 오류가 발생했습니다.',
+        description: error instanceof Error ? error.message : '검수 요청 중 오류가 발생했습니다.',
         variant: 'destructive',
       });
     }
@@ -248,6 +275,7 @@ export function useKakaomapDetail(submissionId: string) {
     activeTab,
     totalActualCount,
     completionRate,
+    unreadFeedbackCount,
 
     setActiveTab,
 
@@ -258,5 +286,6 @@ export function useKakaomapDetail(submissionId: string) {
     downloadAllFiles,
     handlePublish,
     downloadContentItemsAsExcel,
+    markFeedbacksAsRead,
   };
 }

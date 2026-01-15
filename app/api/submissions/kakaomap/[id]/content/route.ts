@@ -26,12 +26,28 @@ export async function GET(
       );
     }
 
-    // Get content items - 클라이언트용: 데이터 관리 엑셀로 업로드된 리포트만 조회
-    const { data: contentItems, error: itemsError } = await supabase
+    // 쿼리 파라미터로 콘텐츠 타입 구분
+    // - type=review: 검수용 (admin_upload + data_management)
+    // - type=report (기본값): 리포트용 (data_management만)
+    const { searchParams } = new URL(request.url);
+    const contentType = searchParams.get('type') || 'report';
+
+    let query = supabase
       .from('kakaomap_content_items')
       .select('*')
-      .eq('submission_id', submissionId)
-      .eq('source_type', 'data_management') // 리포트용 데이터만 조회
+      .eq('submission_id', submissionId);
+
+    if (contentType === 'review') {
+      // 검수용: 관리자가 "배포하기"한 원고만 조회 (is_published: true)
+      query = query
+        .eq('source_type', 'admin_upload')
+        .eq('is_published', true);
+    } else {
+      // 리포트용: 데이터 관리 엑셀로 업로드된 리포트만 조회
+      query = query.eq('source_type', 'data_management');
+    }
+
+    const { data: contentItems, error: itemsError } = await query
       .order('upload_order', { ascending: true });
 
     if (itemsError) {

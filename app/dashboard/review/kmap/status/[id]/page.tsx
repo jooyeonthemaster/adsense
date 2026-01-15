@@ -3,18 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { ContentItem, Feedback, KmapSubmission, ContentFilter } from '@/types/review/kmap-content';
-import { ReviewHeader } from '@/components/dashboard/review/kmap/ReviewHeader';
-import { GeneralFeedbackSection } from '@/components/dashboard/review/kmap/GeneralFeedbackSection';
-import { ContentFilterTabs } from '@/components/dashboard/review/kmap/ContentFilterTabs';
+import { ContentItem, Feedback, KmapSubmission } from '@/types/review/kmap-content';
+import { CompactHeader } from '@/components/dashboard/review/kmap/CompactHeader';
 import { ContentGrid } from '@/components/dashboard/review/kmap/ContentGrid';
 import { BulkApproveDialog } from '@/components/dashboard/review/kmap/BulkApproveDialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Download, ExternalLink } from 'lucide-react';
+import { Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 // 콘텐츠 아이템 타입 확장 (엑셀 업로드 데이터용)
@@ -44,8 +39,6 @@ export default function KakaomapContentReviewPage({
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingReview, setProcessingReview] = useState(false);
-  const [contentFilter, setContentFilter] = useState<ContentFilter>('all');
-  const [activeTab, setActiveTab] = useState('content-list');
 
   // 일괄 승인 상태
   const [bulkApproveDialogOpen, setBulkApproveDialogOpen] = useState(false);
@@ -75,13 +68,17 @@ export default function KakaomapContentReviewPage({
       const submissionData = await submissionRes.json();
       setSubmission(submissionData.submission || submissionData);
 
-      // Fetch content items
-      const contentRes = await fetch(`/api/submissions/kakaomap/${id}/content`);
-      if (!contentRes.ok) throw new Error('Failed to fetch content');
-      const contentData = await contentRes.json();
-      setContentItems(contentData.items || []);
-      // 확장된 콘텐츠 아이템 저장 (엑셀 다운로드용)
-      setExtendedContentItems(contentData.items || []);
+      // Fetch content items - 검수하기 탭용 (관리자 업로드 원고 포함)
+      const reviewContentRes = await fetch(`/api/submissions/kakaomap/${id}/content?type=review`);
+      if (!reviewContentRes.ok) throw new Error('Failed to fetch review content');
+      const reviewContentData = await reviewContentRes.json();
+      setContentItems(reviewContentData.items || []);
+
+      // Fetch content items - 콘텐츠 목록 탭용 (리포트 데이터만)
+      const reportContentRes = await fetch(`/api/submissions/kakaomap/${id}/content?type=report`);
+      if (!reportContentRes.ok) throw new Error('Failed to fetch report content');
+      const reportContentData = await reportContentRes.json();
+      setExtendedContentItems(reportContentData.items || []);
 
       // Fetch general feedbacks
       const feedbackRes = await fetch(`/api/submissions/kakaomap/${id}/feedback`);
@@ -105,7 +102,8 @@ export default function KakaomapContentReviewPage({
     if (!submissionId) return;
 
     try {
-      const response = await fetch(`/api/submissions/kakaomap/${submissionId}/content`);
+      // 검수하기 탭용 콘텐츠 새로고침 (관리자 업로드 원고 포함)
+      const response = await fetch(`/api/submissions/kakaomap/${submissionId}/content?type=review`);
       if (!response.ok) throw new Error('Failed to refresh content');
 
       const data = await response.json();
@@ -213,32 +211,12 @@ export default function KakaomapContentReviewPage({
   // 통계 계산
   const pendingCount = contentItems.filter((item) => item.review_status === 'pending').length;
   const approvedCount = contentItems.filter((item) => item.review_status === 'approved').length;
-  const revisedCount = contentItems.filter((item) => item.review_status === 'approved' && item.has_been_revised).length;
-
-  // 필터링된 콘텐츠
-  const filteredContentItems = contentFilter === 'all'
-    ? contentItems
-    : contentFilter === 'revised'
-    ? contentItems.filter((item) => item.review_status === 'approved' && item.has_been_revised)
-    : contentItems.filter((item) => item.review_status === contentFilter);
 
   // 진행률 계산 (리포트에 등록된 콘텐츠만 = review_registered_date가 있는 것)
   const completedItems = extendedContentItems.filter(item => item.review_registered_date != null);
   const progressPercentage = submission?.total_count
     ? Math.min(Math.round((completedItems.length / submission.total_count) * 100), 100)
     : 0;
-
-  // 상태 배지 표시
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <Badge className="bg-green-100 text-green-700">승인됨</Badge>;
-      case 'rejected':
-        return <Badge className="bg-red-100 text-red-700">반려</Badge>;
-      default:
-        return <Badge variant="outline">대기</Badge>;
-    }
-  };
 
   // 엑셀 다운로드 (업로드 템플릿과 동일한 형식)
   const handleExcelDownload = () => {
@@ -298,172 +276,51 @@ export default function KakaomapContentReviewPage({
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto p-3 sm:p-4 lg:p-6 max-w-7xl">
-        <div className="space-y-6">
-          {/* 헤더 */}
-          <ReviewHeader
+        <div className="space-y-4">
+          {/* 컴팩트 헤더 */}
+          <CompactHeader
             submission={submission}
-            contentCount={contentItems.length}
             pendingCount={pendingCount}
             approvedCount={approvedCount}
             onBack={() => router.push('/dashboard/submissions?category=review&product=kakaomap')}
+          />
+
+          {/* 진행 현황 (항상 표시) */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <Card className="p-3">
+              <p className="text-xs text-muted-foreground">총 접수</p>
+              <p className="text-xl font-bold">{submission?.total_count || 0}건</p>
+            </Card>
+            <Card className="p-3">
+              <p className="text-xs text-muted-foreground">리포트 등록</p>
+              <p className="text-xl font-bold text-amber-600">{completedItems.length}건</p>
+            </Card>
+            <Card className="p-3">
+              <p className="text-xs text-muted-foreground">진행률</p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                  <div
+                    className="h-2 rounded-full bg-amber-500 transition-all"
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+                </div>
+                <span className="text-sm font-medium">{progressPercentage}%</span>
+              </div>
+            </Card>
+            <Button onClick={handleExcelDownload} variant="outline" className="h-auto py-3">
+              <Download className="h-4 w-4 mr-2" />
+              리포트 다운로드
+            </Button>
+          </div>
+
+          {/* 콘텐츠 그리드 (필터 + 피드백 + 테이블) */}
+          <ContentGrid
+            items={contentItems}
+            feedbacks={generalFeedbacks}
+            onSendFeedback={handleSendGeneralFeedback}
             onBulkApprove={handleBulkApprove}
             isProcessing={processingReview}
           />
-
-          {/* 진행률 카드 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>총 접수 수량</CardDescription>
-                <CardTitle className="text-3xl">{submission?.total_count || 0}건</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>리포트 등록</CardDescription>
-                <CardTitle className="text-3xl text-amber-600">{completedItems.length}건</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-muted-foreground">진행률 {progressPercentage}%</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>진행 상태</CardDescription>
-                <div className="space-y-2">
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div
-                      className="h-3 rounded-full bg-amber-500 transition-all"
-                      style={{ width: `${progressPercentage}%` }}
-                    />
-                  </div>
-                  <p className="text-sm font-medium">{progressPercentage}% 완료</p>
-                </div>
-              </CardHeader>
-            </Card>
-          </div>
-
-          {/* 탭 */}
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full max-w-md grid-cols-2">
-              <TabsTrigger value="content-list">콘텐츠 목록</TabsTrigger>
-              <TabsTrigger value="review">검수하기</TabsTrigger>
-            </TabsList>
-
-            {/* 콘텐츠 목록 탭 */}
-            <TabsContent value="content-list" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>콘텐츠 목록</CardTitle>
-                      <CardDescription>
-                        등록된 리뷰 콘텐츠 {extendedContentItems.length}건
-                      </CardDescription>
-                    </div>
-                    <Button onClick={handleExcelDownload} variant="outline">
-                      <Download className="h-4 w-4 mr-2" />
-                      엑셀 다운로드
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {extendedContentItems.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      아직 등록된 콘텐츠가 없습니다.
-                    </div>
-                  ) : (
-                    <div className="rounded-md border overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-12 text-center">순번</TableHead>
-                            <TableHead className="min-w-[300px]">리뷰원고</TableHead>
-                            <TableHead className="w-28">리뷰등록날짜</TableHead>
-                            <TableHead className="w-28">영수증날짜</TableHead>
-                            <TableHead className="w-24 text-center">상태</TableHead>
-                            <TableHead className="w-32">리뷰링크</TableHead>
-                            <TableHead className="w-28">리뷰아이디</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {extendedContentItems.map((item, idx) => (
-                            <TableRow key={item.id}>
-                              <TableCell className="text-center font-medium">{idx + 1}</TableCell>
-                              <TableCell>
-                                <p className="whitespace-pre-wrap line-clamp-3 text-sm">
-                                  {item.script_text || '-'}
-                                </p>
-                              </TableCell>
-                              <TableCell className="text-sm">
-                                {item.review_registered_date || '-'}
-                              </TableCell>
-                              <TableCell className="text-sm">
-                                {item.receipt_date || '-'}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                {getStatusBadge(item.status)}
-                              </TableCell>
-                              <TableCell>
-                                {item.review_link ? (
-                                  <a
-                                    href={item.review_link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:underline flex items-center gap-1 text-sm"
-                                  >
-                                    <ExternalLink className="h-3 w-3" />
-                                    보기
-                                  </a>
-                                ) : (
-                                  '-'
-                                )}
-                              </TableCell>
-                              <TableCell className="text-sm">
-                                {item.review_id || '-'}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* 검수하기 탭 */}
-            <TabsContent value="review" className="space-y-4">
-              {/* 공통 피드백 섹션 */}
-              <GeneralFeedbackSection
-                feedbacks={generalFeedbacks}
-                onSendFeedback={handleSendGeneralFeedback}
-              />
-
-              {/* 콘텐츠 필터 */}
-              {contentItems.length > 0 && (
-                <ContentFilterTabs
-                  filter={contentFilter}
-                  onFilterChange={setContentFilter}
-                  counts={{
-                    total: contentItems.length,
-                    pending: pendingCount,
-                    approved: approvedCount,
-                    revised: revisedCount,
-                  }}
-                />
-              )}
-
-              {/* 콘텐츠 그리드 */}
-              {contentItems.length === 0 ? (
-                <div className="bg-white rounded-lg p-12 text-center text-gray-500 shadow-sm">
-                  아직 업로드된 콘텐츠가 없습니다.
-                </div>
-              ) : (
-                <ContentGrid items={filteredContentItems} />
-              )}
-            </TabsContent>
-          </Tabs>
         </div>
       </div>
 

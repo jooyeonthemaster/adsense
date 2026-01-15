@@ -115,12 +115,40 @@ const gradients = [
 const getNotificationLink = (notification: AdminNotification): string => {
   const data = notification.data || {};
   const submissionId = data.submission_id;
+  const submissionType = data.submission_type;
 
+  // submission_type별 관리자 상세 페이지 매핑
+  const adminDetailPaths: Record<string, string> = {
+    kakaomap_review_submissions: '/admin/kakaomap',
+    visitor_review_submissions: '/admin/visitor-review',
+    place_submissions: '/admin/reward',
+    blog_distribution_submissions: '/admin/blog-distribution',
+    experience_submissions: '/admin/experience',
+    cafe_marketing_submissions: '/admin/cafe',
+  };
+
+  // 1. submission_id + submission_type이 있으면 상세 페이지로 이동
+  if (submissionId && submissionType && adminDetailPaths[submissionType]) {
+    return `${adminDetailPaths[submissionType]}/${submissionId}`;
+  }
+
+  // 2. 카카오맵 관련 알림은 submission_id만으로 상세 이동
   switch (notification.type) {
     case 'kakaomap_content_approved_by_client':
     case 'kakaomap_feedback_added':
     case 'kakaomap_content_uploaded':
+    case 'kakaomap_revision_requested':
+    case 'kakaomap_message_received':
       return submissionId ? `/admin/kakaomap/${submissionId}` : '/admin/review-marketing';
+
+    // AS 요청 관련
+    case 'as_request_created':
+      return '/admin/as-requests';
+
+    // 새 접수 알림
+    case 'submission_created':
+      return '/admin/submissions';
+
     default:
       return '/admin';
   }
