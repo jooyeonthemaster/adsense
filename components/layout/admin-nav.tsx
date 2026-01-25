@@ -24,6 +24,8 @@ import {
   Megaphone,
   Database,
   Receipt,
+  Bot,
+  MapPin,
 } from 'lucide-react';
 
 const navigation = [
@@ -35,6 +37,8 @@ const navigation = [
   { name: '블로그 배포', href: '/admin/blog-distribution', icon: Newspaper },
   { name: '카페 침투', href: '/admin/cafe-marketing', icon: Coffee },
   { name: '리뷰 마케팅', href: '/admin/review-marketing', icon: Star },
+  { name: 'K맵 관리', href: '/admin/kakaomap', icon: MapPin },
+  { name: 'K맵 AI 일괄생성', href: '/admin/kakaomap/ai-bulk-manager', icon: Bot },
   { name: '리워드 관리', href: '/admin/reward', icon: Gift },
   { name: '체험단 관리', href: '/admin/experience', icon: Sparkles },
   { name: '포인트 관리', href: '/admin/points', icon: DollarSign },
