@@ -5,6 +5,7 @@ export { SubmissionInfoCard } from './SubmissionInfoCard';
 export { VisitorOptionsCard } from './VisitorOptionsCard';
 export { KmapOptionsCard } from './KmapOptionsCard';
 export { EmailConfirmDialog } from './EmailConfirmDialog';
+export { KmapImageConfirmDialog } from './KmapImageConfirmDialog';
 
 // Constants
 export { createServices, INITIAL_VISITOR_FORM, INITIAL_KMAP_FORM, SUPPORT_EMAIL } from './constants';

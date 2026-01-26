@@ -90,7 +90,12 @@ export function useAnnouncements() {
         { method: 'DELETE' }
       );
 
-      if (!response.ok) throw new Error('공지사항 삭제에 실패했습니다');
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Delete failed:', data);
+        throw new Error(data.error || '공지사항 삭제에 실패했습니다');
+      }
 
       toast({
         title: '성공',
@@ -101,9 +106,10 @@ export function useAnnouncements() {
       setSelectedAnnouncement(null);
       fetchAnnouncements();
     } catch (error) {
+      console.error('Delete error:', error);
       toast({
         title: '오류',
-        description: '공지사항 삭제에 실패했습니다',
+        description: error instanceof Error ? error.message : '공지사항 삭제에 실패했습니다',
         variant: 'destructive',
       });
     }

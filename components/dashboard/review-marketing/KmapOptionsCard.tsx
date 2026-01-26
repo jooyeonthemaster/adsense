@@ -62,23 +62,34 @@ export function KmapOptionsCard({ formData, onChange }: KmapOptionsCardProps) {
 
         {/* 사진 비율 (사진 포함 시에만) */}
         {formData.hasPhoto && (
-          <div className="space-y-1.5 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <Label className="text-xs font-medium text-amber-700">
-              사진 비율: <span className="text-base font-bold">{formData.photoRatio}%</span>
-            </Label>
-            <input
-              type="range"
-              min="10"
-              max="100"
-              step="10"
-              value={formData.photoRatio}
-              onChange={(e) => onChange((prev) => ({ ...prev, photoRatio: Number(e.target.value) }))}
-              className="w-full h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
-            />
-            <div className="flex justify-between text-xs text-amber-600">
-              <span>10%</span>
-              <span>50%</span>
-              <span>100%</span>
+          <div className="space-y-3">
+            <div className="space-y-1.5 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <Label className="text-xs font-medium text-amber-700">
+                사진 비율: <span className="text-base font-bold">{formData.photoRatio}%</span>
+              </Label>
+              <input
+                type="range"
+                min="10"
+                max="100"
+                step="10"
+                value={formData.photoRatio}
+                onChange={(e) => onChange((prev) => ({ ...prev, photoRatio: Number(e.target.value) }))}
+                className="w-full h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+              />
+              <div className="flex justify-between text-xs text-amber-600">
+                <span>10%</span>
+                <span>50%</span>
+                <span>100%</span>
+              </div>
+            </div>
+
+            {/* 이미지 전송 안내 */}
+            <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg">
+              <p className="text-xs font-medium text-sky-700 mb-1">이미지 전송 안내</p>
+              <p className="text-sm font-bold text-sky-800">sense-ad@naver.com</p>
+              <p className="text-xs text-sky-600 mt-1">
+                이메일 제목에 업체명 또는 대행사명을 기재해 주세요
+              </p>
             </div>
           </div>
         )}

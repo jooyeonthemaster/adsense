@@ -63,10 +63,10 @@ export const productConfig = {
     category: 'reward',
   },
   'reward-eureka': {
-    label: '유레카',
+    label: '블루',
     icon: Gift,
-    bgColor: 'bg-emerald-100',
-    textColor: 'text-emerald-600',
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-600',
     detailPath: '/dashboard/reward/status',
     productType: 'place' as const,
     mediaType: 'eureka' as const,
@@ -91,7 +91,7 @@ export const productConfig = {
     category: 'review',
   },
   'blog-video': {
-    label: '영상 배포',
+    label: '247 배포',
     icon: FileText,
     bgColor: 'bg-emerald-100',
     textColor: 'text-emerald-600',

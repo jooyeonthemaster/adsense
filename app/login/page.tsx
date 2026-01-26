@@ -2,13 +2,14 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2 } from 'lucide-react';
+import { Loader2, UserPlus } from 'lucide-react';
 import Image from 'next/image';
 
 function LoginContent() {
@@ -476,6 +477,17 @@ function LoginContent() {
                   )}
                   카카오로 시작하기
                 </Button>
+
+                {/* 회원가입 링크 */}
+                <div className="mt-4 text-center">
+                  <Link
+                    href="/register"
+                    className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <UserPlus className="mr-1 h-4 w-4" />
+                    계정이 없으신가요? 회원가입
+                  </Link>
+                </div>
               </div>
             )}
 

@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { extractNaverPlaceMID, fetchBusinessInfoByMID } from '@/utils/naver-place';
-import { format, addDays, differenceInDays } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import type { RewardFormData } from '@/components/dashboard/reward-submit/types';
-import { INITIAL_FORM_DATA, MIN_DAILY_VOLUME, MIN_OPERATION_DAYS, REWARD_MEDIA_CONFIG } from '@/components/dashboard/reward-submit/constants';
+import { INITIAL_FORM_DATA, MIN_DAILY_VOLUME, MIN_OPERATION_DAYS, MAX_OPERATION_DAYS, REWARD_MEDIA_CONFIG } from '@/components/dashboard/reward-submit/constants';
 
 export function useRewardSubmit(initialPoints: number) {
   const router = useRouter();
@@ -16,10 +16,8 @@ export function useRewardSubmit(initialPoints: number) {
   const [loadingPrice, setLoadingPrice] = useState(true);
   const [loadingBusinessName, setLoadingBusinessName] = useState(false);
 
-  // 구동일수 자동 계산
-  const operationDays = formData.startDate && formData.endDate
-    ? differenceInDays(formData.endDate, formData.startDate) + 1
-    : 0;
+  // 구동일수는 폼에서 직접 입력
+  const operationDays = formData.operationDays;
 
   // 현재 선택된 매체의 pricingSlug 가져오기
   const selectedMediaConfig = REWARD_MEDIA_CONFIG.find(m => m.id === formData.mediaType);
@@ -224,20 +222,20 @@ export function useRewardSubmit(initialPoints: number) {
       return;
     }
 
-    if (!formData.startDate || !formData.endDate) {
+    if (!formData.startDate) {
       toast({
         variant: 'destructive',
         title: '⚠️ 날짜 선택 필요',
-        description: '구동 시작일과 마감일을 선택해주세요.',
+        description: '구동 시작일을 선택해주세요.',
       });
       return;
     }
 
-    if (operationDays < MIN_OPERATION_DAYS) {
+    if (operationDays < MIN_OPERATION_DAYS || operationDays > MAX_OPERATION_DAYS) {
       toast({
         variant: 'destructive',
-        title: '구동일수 부족',
-        description: `구동일수는 ${MIN_OPERATION_DAYS}일 이상부터 접수가 가능합니다.`,
+        title: '구동일수 오류',
+        description: `구동일수는 ${MIN_OPERATION_DAYS}일 ~ ${MAX_OPERATION_DAYS}일 사이로 입력해주세요.`,
       });
       return;
     }

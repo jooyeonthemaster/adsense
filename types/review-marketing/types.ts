@@ -64,7 +64,7 @@ export interface VisitorFormData {
   placeMid: string;
   dailyCount: number;
   startDate: Date | null;
-  endDate: Date | null;
+  operationDays: number;
   photoOption: 'with' | 'without';
   scriptOption: 'custom' | 'ai';
   guideline: string;
@@ -77,7 +77,7 @@ export interface KmapFormData {
   kmapUrl: string;
   dailyCount: number;
   startDate: Date | null;
-  endDate: Date | null;
+  operationDays: number;
   hasPhoto: boolean;
   emailImageConfirmed: boolean;
   scriptOption: 'custom' | 'ai';

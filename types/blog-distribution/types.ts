@@ -9,6 +9,7 @@ export interface BlogDistributionFormData {
   dailyCount: number;
   startDate: Date | null;
   endDate: Date | null;
+  operationDays: number; // 구동일수 (시작일 + 구동일수 = 종료일)
   keywords: string;
   guideline: string;
   externalAccountId: string;

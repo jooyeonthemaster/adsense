@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Video, Zap, UserCheck } from 'lucide-react';
+import { Video, Zap, UserCheck, FileSpreadsheet } from 'lucide-react';
 
 const tabs = [
   {
-    name: '영상 배포',
+    name: '247 배포',
     href: '/dashboard/blog-distribution/video',
     icon: Video,
   },
@@ -19,6 +19,11 @@ const tabs = [
     name: '리뷰어 배포',
     href: '/dashboard/blog-distribution/reviewer',
     icon: UserCheck,
+  },
+  {
+    name: '대량 접수',
+    href: '/dashboard/blog-distribution/bulk',
+    icon: FileSpreadsheet,
   },
 ];
 

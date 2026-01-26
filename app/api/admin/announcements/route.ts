@@ -143,25 +143,29 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
+    console.log('Deleting announcement:', id, 'by user:', user.id);
+
     if (!id) {
       return NextResponse.json({ error: '공지사항 ID가 필요합니다' }, { status: 400 });
     }
 
     // 공지사항 삭제
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from('announcements')
       .delete()
       .eq('id', id);
 
     if (error) {
       console.error('공지사항 삭제 오류:', error);
-      return NextResponse.json({ error: '공지사항 삭제에 실패했습니다' }, { status: 500 });
+      return NextResponse.json({ error: `공지사항 삭제에 실패했습니다: ${error.message}` }, { status: 500 });
     }
 
+    console.log('Announcement deleted successfully. Count:', count);
     return NextResponse.json({ message: '공지사항이 삭제되었습니다' });
   } catch (error) {
     console.error('서버 오류:', error);
-    return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+    return NextResponse.json({ error: `서버 오류가 발생했습니다: ${errorMessage}` }, { status: 500 });
   }
 }
 

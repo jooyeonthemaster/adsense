@@ -95,7 +95,7 @@ export function useBlogDistributionStatus() {
   const getSheetName = (distributionType: string) => {
     switch (distributionType) {
       case 'reviewer': return '리뷰어배포';
-      case 'video': return '영상배포';
+      case 'video': return '247배포';
       case 'automation': return '자동화배포';
       default: return '블로그배포';
     }

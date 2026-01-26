@@ -74,7 +74,7 @@ export default function RewardManagementPage() {
   // 매체 타입 표시 설정
   const mediaTypeConfig = {
     twoople: { label: '투플', icon: '📱', color: 'bg-sky-100 text-sky-700 border-sky-200' },
-    eureka: { label: '유레카', icon: '💡', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+    eureka: { label: '블루', icon: '💙', color: 'bg-blue-100 text-blue-700 border-blue-200' },
   };
 
   if (loading) {
@@ -159,7 +159,7 @@ export default function RewardManagementPage() {
             <SelectContent>
               <SelectItem value="all">전체 매체</SelectItem>
               <SelectItem value="twoople">📱 투플</SelectItem>
-              <SelectItem value="eureka">💡 유레카</SelectItem>
+              <SelectItem value="eureka">💙 블루</SelectItem>
             </SelectContent>
           </Select>
 

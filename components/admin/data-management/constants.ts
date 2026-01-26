@@ -27,7 +27,7 @@ export const PRODUCT_CONFIG: Record<ProductType, ProductConfig> = {
     distributionType: 'reviewer',
   },
   blog_video: {
-    name: '영상 배포',
+    name: '247 배포',
     prefix: 'BD',
     tableName: 'blog_content_items',
     distributionType: 'video',
@@ -69,6 +69,8 @@ export const SHEET_NAME_MAP: Record<string, ProductType> = {
   blog_reviewer: 'blog_reviewer',
   '영상배포': 'blog_video',
   '영상 배포': 'blog_video',
+  '247배포': 'blog_video',
+  '247 배포': 'blog_video',
   blog_video: 'blog_video',
   '자동화배포': 'blog_automation',
   '자동화 배포': 'blog_automation',

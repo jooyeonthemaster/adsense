@@ -19,10 +19,10 @@ interface BlogDistributionFormProps {
   onPlaceUrlChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onDailyCountChange: (value: number) => void;
   onStartDateChange: (date: Date | null) => void;
-  onEndDateChange: (date: Date | null) => void;
+  onOperationDaysChange: (days: number) => void;
   minStartDate: Date;
   isWeekendSubmission: boolean;
-  operationDays: number;
+  calculatedEndDate: Date | null;
   totalCount: number;
 }
 
@@ -35,10 +35,10 @@ export function BlogDistributionForm({
   onPlaceUrlChange,
   onDailyCountChange,
   onStartDateChange,
-  onEndDateChange,
+  onOperationDaysChange,
   minStartDate,
   isWeekendSubmission,
-  operationDays,
+  calculatedEndDate,
   totalCount,
 }: BlogDistributionFormProps) {
   return (
@@ -282,44 +282,27 @@ export function BlogDistributionForm({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs font-medium text-gray-700">
-                구동 종료일 <span className="text-rose-500">*</span>
+              <Label htmlFor="operationDays" className="text-xs font-medium text-gray-700">
+                구동일수 <span className="text-rose-500">*</span>
               </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={!formData.startDate}
-                    className={`w-full justify-start text-left font-normal h-9 text-sm ${
-                      !formData.endDate ? 'text-gray-400' : 'text-gray-900'
-                    }`}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.endDate
-                      ? format(formData.endDate, 'M/d (EEE)', { locale: ko })
-                      : '종료일'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.endDate || undefined}
-                    onSelect={(date) => onEndDateChange(date || null)}
-                    disabled={(date) => {
-                      if (!formData.startDate) return true;
-                      // 시작일 이전 불가
-                      if (date < formData.startDate) return true;
-                      // 시작일로부터 최대 30일까지만 선택 가능 (시작일 포함 30일)
-                      const maxDate = addDays(formData.startDate, 29);
-                      if (date > maxDate) return true;
-                      return false;
-                    }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <span className="text-xs text-gray-500">시작일 이후 최대 30일까지 선택 가능</span>
+              <Input
+                id="operationDays"
+                type="number"
+                min="10"
+                max="30"
+                value={formData.operationDays || ''}
+                onChange={(e) => onOperationDaysChange(Number(e.target.value))}
+                placeholder="10~30"
+                disabled={!formData.startDate}
+                className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+              />
+              {calculatedEndDate && formData.operationDays >= 10 && (
+                <div className="flex items-center gap-1.5 text-xs text-emerald-600">
+                  <CalendarIcon className="h-3 w-3" />
+                  <span>종료일: {format(calculatedEndDate, 'M/d (EEE)', { locale: ko })}</span>
+                </div>
+              )}
+              <span className="text-xs text-gray-500">최소 10일, 최대 30일</span>
             </div>
           </div>
 
@@ -336,7 +319,7 @@ export function BlogDistributionForm({
               {totalCount}건
             </span>
             <span className={`text-xs ml-1 ${totalCount < 30 ? 'text-rose-600' : 'text-sky-600'}`}>
-              (일 {formData.dailyCount}건 × {operationDays}일)
+              (일 {formData.dailyCount}건 × {formData.operationDays || 0}일)
             </span>
             {totalCount < 30 && (
               <p className="text-xs text-rose-600 mt-1">

@@ -14,6 +14,7 @@ import {
   VisitorOptionsCard,
   KmapOptionsCard,
   EmailConfirmDialog,
+  KmapImageConfirmDialog,
 } from '@/components/dashboard/review-marketing';
 
 export default function ReviewMarketingPage() {
@@ -21,8 +22,10 @@ export default function ReviewMarketingPage() {
   const router = useRouter();
   const typeParam = params?.type as string;
 
-  // 이메일 확인 다이얼로그 상태
+  // 이메일 확인 다이얼로그 상태 (네이버 영수증)
   const [showEmailConfirmDialog, setShowEmailConfirmDialog] = useState(false);
+  // 이미지 전송 확인 다이얼로그 상태 (카카오맵)
+  const [showKmapImageDialog, setShowKmapImageDialog] = useState(false);
 
   // 커스텀 훅에서 모든 상태와 핸들러 가져오기
   const {
@@ -91,13 +94,25 @@ export default function ReviewMarketingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     const shouldShowDialog = await validateAndSubmit(e);
     if (shouldShowDialog) {
-      setShowEmailConfirmDialog(true);
+      // 타입에 따라 다른 다이얼로그 표시
+      if (selectedType === 'visitor') {
+        setShowEmailConfirmDialog(true);
+      } else {
+        // kmap with hasPhoto
+        setShowKmapImageDialog(true);
+      }
     }
   };
 
-  // 다이얼로그에서 확인 후 실제 제출
+  // 다이얼로그에서 확인 후 실제 제출 (네이버 영수증)
   const handleConfirmSubmit = () => {
     setShowEmailConfirmDialog(false);
+    executeSubmit();
+  };
+
+  // 다이얼로그에서 확인 후 실제 제출 (카카오맵)
+  const handleKmapConfirmSubmit = () => {
+    setShowKmapImageDialog(false);
     executeSubmit();
   };
 
@@ -141,7 +156,6 @@ export default function ReviewMarketingPage() {
               loadingBusinessName={loadingBusinessName}
               minStartDate={minStartDate}
               isWeekendSubmission={isWeekendSubmission}
-              totalDays={totalDays}
               onVisitorChange={setVisitorFormData}
               onKmapChange={setKmapFormData}
               onNaverPlaceUrlChange={handleNaverPlaceUrlChange}
@@ -205,6 +219,14 @@ export default function ReviewMarketingPage() {
         open={showEmailConfirmDialog}
         onOpenChange={setShowEmailConfirmDialog}
         onConfirm={handleConfirmSubmit}
+        isSubmitting={isSubmitting}
+      />
+
+      {/* 이미지 전송 확인 다이얼로그 (카카오맵용) */}
+      <KmapImageConfirmDialog
+        open={showKmapImageDialog}
+        onOpenChange={setShowKmapImageDialog}
+        onConfirm={handleKmapConfirmSubmit}
         isSubmitting={isSubmitting}
       />
     </div>

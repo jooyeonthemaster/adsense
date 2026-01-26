@@ -156,7 +156,7 @@ export function createBlogReviewerSheet(): XLSX.WorkSheet {
   return ws;
 }
 
-// 영상 배포 시트 생성
+// 247 배포 시트 생성
 export function createBlogVideoSheet(): XLSX.WorkSheet {
   const data = [
     ['접수번호', '업체명', '작성제목', '발행일', '상태', '블로그링크', '블로그아이디'],
@@ -412,7 +412,7 @@ export function downloadTemplate(category: CategoryType, allowedProducts: Produc
   }
 
   if (allowedProducts.includes('blog_video')) {
-    XLSX.utils.book_append_sheet(wb, createBlogVideoSheet(), '영상배포');
+    XLSX.utils.book_append_sheet(wb, createBlogVideoSheet(), '247배포');
   }
 
   if (allowedProducts.includes('blog_automation')) {

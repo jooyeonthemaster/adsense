@@ -11,7 +11,7 @@ import {
   Check,
 } from 'lucide-react';
 import { KAKAOMAP_STATUS_LABELS } from '@/config/kakaomap-status';
-import { starRatingConfig } from './constants';
+import { starRatingConfig, scriptTypeConfig } from './constants';
 import type { KakaomapSubmission } from './types';
 
 interface SubmissionRowProps {
@@ -119,6 +119,11 @@ export function SubmissionRow({
       {/* 옵션 */}
       <TableCell className="text-center">
         <div className="flex flex-col items-center gap-1">
+          {sub.script_type && scriptTypeConfig[sub.script_type] && (
+            <Badge variant="outline" className={`text-xs ${scriptTypeConfig[sub.script_type].color}`}>
+              {scriptTypeConfig[sub.script_type].label}
+            </Badge>
+          )}
           {sub.has_photo && (
             <Badge variant="outline" className="text-xs">
               사진 {sub.photo_ratio}%

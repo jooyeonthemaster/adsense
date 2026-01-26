@@ -56,6 +56,19 @@ interface ChargeRequest {
   } | null;
 }
 
+interface Stats {
+  totalApproved: number;
+  totalPending: number;
+  totalRejected: number;
+  totalAll: number;
+}
+
+interface ClientOption {
+  id: string;
+  username: string;
+  company_name: string;
+}
+
 const STATUS_LABELS: Record<string, string> = {
   pending: '대기중',
   approved: '승인됨',
@@ -80,7 +93,10 @@ export function ChargeRequestsTable() {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('pending');
+  const [clientFilter, setClientFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('date-desc');
+  const [stats, setStats] = useState<Stats>({ totalApproved: 0, totalPending: 0, totalRejected: 0, totalAll: 0 });
+  const [clients, setClients] = useState<ClientOption[]>([]);
 
   // 거부 다이얼로그
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -107,6 +123,11 @@ export function ChargeRequestsTable() {
       filtered = filtered.filter((r) => r.status === statusFilter);
     }
 
+    // 거래처 필터
+    if (clientFilter !== 'all') {
+      filtered = filtered.filter((r) => r.client_id === clientFilter);
+    }
+
     // 정렬
     filtered.sort((a, b) => {
       switch (sortBy) {
@@ -124,7 +145,7 @@ export function ChargeRequestsTable() {
     });
 
     setFilteredRequests(filtered);
-  }, [searchTerm, statusFilter, sortBy, chargeRequests]);
+  }, [searchTerm, statusFilter, clientFilter, sortBy, chargeRequests]);
 
   const fetchChargeRequests = async () => {
     try {
@@ -136,6 +157,12 @@ export function ChargeRequestsTable() {
       const data = await response.json();
       setChargeRequests(data.chargeRequests);
       setFilteredRequests(data.chargeRequests);
+      if (data.stats) {
+        setStats(data.stats);
+      }
+      if (data.clients) {
+        setClients(data.clients);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '오류가 발생했습니다.');
     } finally {
@@ -235,13 +262,49 @@ export function ChargeRequestsTable() {
 
   return (
     <>
+      {/* 통계 카드 */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4 mb-4 sm:mb-6">
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <CardContent className="p-3 sm:p-4">
+            <p className="text-xs sm:text-sm text-green-700 font-medium">승인된 충전</p>
+            <p className="text-lg sm:text-2xl font-bold text-green-800">
+              {formatPrice(stats.totalApproved)}원
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+          <CardContent className="p-3 sm:p-4">
+            <p className="text-xs sm:text-sm text-amber-700 font-medium">대기중 충전</p>
+            <p className="text-lg sm:text-2xl font-bold text-amber-800">
+              {formatPrice(stats.totalPending)}원
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+          <CardContent className="p-3 sm:p-4">
+            <p className="text-xs sm:text-sm text-red-700 font-medium">거부된 충전</p>
+            <p className="text-lg sm:text-2xl font-bold text-red-800">
+              {formatPrice(stats.totalRejected)}원
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-sky-50 to-sky-100 border-sky-200">
+          <CardContent className="p-3 sm:p-4">
+            <p className="text-xs sm:text-sm text-sky-700 font-medium">총 충전 요청</p>
+            <p className="text-lg sm:text-2xl font-bold text-sky-800">
+              {formatPrice(stats.totalAll)}원
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className="text-base sm:text-lg lg:text-xl">
             충전 요청 목록 ({filteredRequests.length} / {chargeRequests.length}건)
           </CardTitle>
           {/* 필터 영역 */}
-          <div className="mt-3 sm:mt-4 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-3 sm:mt-4 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <div className="grid gap-1.5 sm:gap-2">
               <Label htmlFor="search" className="text-xs sm:text-sm">
                 거래처 검색
@@ -299,6 +362,26 @@ export function ChargeRequestsTable() {
                   <SelectItem value="amount-asc" className="text-xs sm:text-sm">
                     금액 낮은순
                   </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5 sm:gap-2">
+              <Label htmlFor="client-filter" className="text-xs sm:text-sm">
+                거래처
+              </Label>
+              <Select value={clientFilter} onValueChange={setClientFilter}>
+                <SelectTrigger id="client-filter" className="h-8 sm:h-9 text-xs sm:text-sm">
+                  <SelectValue placeholder="전체" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-xs sm:text-sm">
+                    전체 거래처
+                  </SelectItem>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id} className="text-xs sm:text-sm">
+                      {client.company_name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

@@ -123,9 +123,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get price based on media type (투플: twoople-reward, 유레카: eureka-reward)
+    // Get price based on media type (투플: twoople-reward, 블루: eureka-reward)
     const pricingSlug = media_type === 'eureka' ? 'eureka-reward' : 'twoople-reward';
-    const mediaName = media_type === 'eureka' ? '유레카' : '투플';
+    const mediaName = media_type === 'eureka' ? '블루' : '투플';
     let pricePerUnit = await getProductPrice(user.id, pricingSlug);
 
     if (!pricePerUnit) {

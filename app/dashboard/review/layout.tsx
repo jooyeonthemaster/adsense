@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { MessageSquare, MapPin } from 'lucide-react';
+import { MessageSquare, MapPin, FileSpreadsheet } from 'lucide-react';
 
 const tabs = [
   {
@@ -14,6 +14,11 @@ const tabs = [
     name: '카카오맵',
     href: '/dashboard/review/kmap',
     icon: MapPin,
+  },
+  {
+    name: '대량 접수',
+    href: '/dashboard/review/bulk',
+    icon: FileSpreadsheet,
   },
 ];
 

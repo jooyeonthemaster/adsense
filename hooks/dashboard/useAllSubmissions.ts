@@ -313,7 +313,7 @@ export function useAllSubmissions() {
       switch (submission.product_type) {
         case 'blog':
           sheetName = submission.distribution_type === 'reviewer' ? '리뷰어배포' :
-                     submission.distribution_type === 'video' ? '영상배포' : '자동화배포';
+                     submission.distribution_type === 'video' ? '247배포' : '자동화배포';
           excelData = contentItems.map((item: any) => ({
             '접수번호': submission.submission_number || '',
             '업체명': submission.company_name || '',

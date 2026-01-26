@@ -23,5 +23,5 @@ export interface RewardFormData {
   placeMid: string;
   dailyVolume: number;
   startDate: Date | null;
-  endDate: Date | null;
+  operationDays: number;
 }

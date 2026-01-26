@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
+    const clientId = searchParams.get('client_id');
 
     let query = supabase
       .from('point_charge_requests')
@@ -35,6 +36,11 @@ export async function GET(request: NextRequest) {
       query = query.eq('status', status);
     }
 
+    // 거래처 필터
+    if (clientId) {
+      query = query.eq('client_id', clientId);
+    }
+
     const { data: chargeRequests, error } = await query;
 
     if (error) {
@@ -45,7 +51,42 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ chargeRequests: chargeRequests || [] });
+    // 통계 계산 (전체 데이터 기준 - 필터와 무관하게)
+    const { data: allRequests } = await supabase
+      .from('point_charge_requests')
+      .select('status, amount');
+
+    const stats = {
+      totalApproved: 0,
+      totalPending: 0,
+      totalRejected: 0,
+      totalAll: 0,
+    };
+
+    if (allRequests) {
+      allRequests.forEach((req) => {
+        stats.totalAll += req.amount || 0;
+        if (req.status === 'approved') {
+          stats.totalApproved += req.amount || 0;
+        } else if (req.status === 'pending') {
+          stats.totalPending += req.amount || 0;
+        } else if (req.status === 'rejected') {
+          stats.totalRejected += req.amount || 0;
+        }
+      });
+    }
+
+    // 거래처 목록 (필터용)
+    const { data: clients } = await supabase
+      .from('clients')
+      .select('id, username, company_name')
+      .order('company_name');
+
+    return NextResponse.json({
+      chargeRequests: chargeRequests || [],
+      stats,
+      clients: clients || [],
+    });
   } catch (error) {
     console.error('Error in GET /api/admin/charge-requests:', error);
     return NextResponse.json(

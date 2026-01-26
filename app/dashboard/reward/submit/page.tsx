@@ -1,6 +1,7 @@
 import { requireAuth } from '@/lib/auth';
 import { createClient } from '@/utils/supabase/server';
 import RewardSubmitForm from './reward-submit-form';
+import { SubmissionPageWrapper } from '@/components/dashboard/bulk-submission';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -19,5 +20,9 @@ export default async function RewardSubmitPage() {
 
   const currentPoints = client?.points || 0;
 
-  return <RewardSubmitForm initialPoints={currentPoints} />;
+  return (
+    <SubmissionPageWrapper productType="place">
+      <RewardSubmitForm initialPoints={currentPoints} />
+    </SubmissionPageWrapper>
+  );
 }

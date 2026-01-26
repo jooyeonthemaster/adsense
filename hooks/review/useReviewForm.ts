@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { addDays, differenceInDays, format } from 'date-fns';
+import { addDays, format } from 'date-fns';
 import { extractNaverPlaceMID, fetchBusinessInfoByMID } from '@/utils/naver-place';
 import { extractKakaoPlaceMID, fetchKakaoBusinessInfoByMID } from '@/utils/kakao-place';
 import type {
@@ -39,6 +39,7 @@ interface UseReviewFormReturn {
   totalCost: number;
   minStartDate: Date;
   isWeekendSubmission: boolean;
+  calculatedEndDate: Date | null;
 
   // Handlers
   setSelectedType: (type: ReviewType) => void;
@@ -98,10 +99,16 @@ export function useReviewForm(initialType: ReviewType): UseReviewFormReturn {
 
   // 현재 폼 데이터에 따른 계산
   const startDate = selectedType === 'visitor' ? visitorFormData.startDate : kmapFormData.startDate;
-  const endDate = selectedType === 'visitor' ? visitorFormData.endDate : kmapFormData.endDate;
+  const operationDays = selectedType === 'visitor' ? visitorFormData.operationDays : kmapFormData.operationDays;
   const dailyCount = selectedType === 'visitor' ? visitorFormData.dailyCount : kmapFormData.dailyCount;
 
-  const totalDays = startDate && endDate ? differenceInDays(endDate, startDate) + 1 : 0;
+  // 구동일수 직접 사용 (operationDays >= 3 이면 유효)
+  const totalDays = operationDays >= 3 ? operationDays : 0;
+
+  // 마감일 자동 계산
+  const calculatedEndDate = startDate && operationDays >= 3
+    ? addDays(startDate, operationDays - 1)
+    : null;
   const totalCount = dailyCount * totalDays;
   const totalCost = totalCount * (currentService?.pricePerUnit || 0);
 
@@ -203,11 +210,11 @@ export function useReviewForm(initialType: ReviewType): UseReviewFormReturn {
           toast({ variant: 'destructive', title: '입력 오류', description: '필수 항목을 모두 입력해주세요.' });
           return false;
         }
-        if (!visitorFormData.startDate || !visitorFormData.endDate) {
-          toast({ variant: 'destructive', title: '입력 오류', description: '시작일과 종료일을 선택해주세요.' });
+        if (!visitorFormData.startDate) {
+          toast({ variant: 'destructive', title: '입력 오류', description: '시작일을 선택해주세요.' });
           return false;
         }
-        if (totalDays < 3) {
+        if (visitorFormData.operationDays < 3) {
           toast({ variant: 'destructive', title: '⚠️ 구동일수 부족', description: '구동일수는 3일 이상부터 접수가 가능합니다.' });
           return false;
         }
@@ -231,8 +238,12 @@ export function useReviewForm(initialType: ReviewType): UseReviewFormReturn {
           toast({ variant: 'destructive', title: '입력 오류', description: '필수 항목을 모두 입력해주세요.' });
           return false;
         }
-        if (!kmapFormData.startDate || !kmapFormData.endDate) {
-          toast({ variant: 'destructive', title: '입력 오류', description: '시작일과 종료일을 선택해주세요.' });
+        if (!kmapFormData.startDate) {
+          toast({ variant: 'destructive', title: '입력 오류', description: '시작일을 선택해주세요.' });
+          return false;
+        }
+        if (kmapFormData.operationDays < 3) {
+          toast({ variant: 'destructive', title: '⚠️ 구동일수 부족', description: '구동일수는 3일 이상부터 접수가 가능합니다.' });
           return false;
         }
         if (kmapFormData.dailyCount < 1) {
@@ -243,7 +254,11 @@ export function useReviewForm(initialType: ReviewType): UseReviewFormReturn {
           toast({ variant: 'destructive', title: '최소 주문건수 미달', description: 'K맵 리뷰는 최소 10건 이상 주문하셔야 합니다.' });
           return false;
         }
-        // 바로 제출
+        // 사진 옵션이 있으면 이미지 전송 확인 다이얼로그 표시
+        if (kmapFormData.hasPhoto) {
+          return true; // 다이얼로그 필요
+        }
+        // 사진 없으면 바로 제출
         await executeSubmit();
         return false; // 다이얼로그 필요 없음
       }
@@ -351,6 +366,7 @@ export function useReviewForm(initialType: ReviewType): UseReviewFormReturn {
     totalCost,
     minStartDate,
     isWeekendSubmission,
+    calculatedEndDate,
     setSelectedType,
     setVisitorFormData,
     setKmapFormData,

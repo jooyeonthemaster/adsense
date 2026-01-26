@@ -280,7 +280,7 @@ export async function POST(request: NextRequest) {
       if (sheet.productType === 'blog_reviewer' || sheet.productType === 'blog_video' || sheet.productType === 'blog_automation') {
         const distributionType = getDistributionType(sheet.productType);
         const productLabel = sheet.productType === 'blog_reviewer' ? '리뷰어배포' :
-                            sheet.productType === 'blog_video' ? '영상배포' : '자동화배포';
+                            sheet.productType === 'blog_video' ? '247배포' : '자동화배포';
 
         for (const record of sheet.records) {
           try {

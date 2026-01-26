@@ -225,7 +225,9 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
                 <div>
                   <p className="text-sm text-muted-foreground">원고 타입</p>
                   <p className="font-medium">
-                    {submission.script_type === 'provided' ? '원고 제공' : '자율 작성'}
+                    {submission.script_type === 'custom' ? '지정원고' :
+                     submission.script_type === 'ai' ? 'AI 제작 원고' :
+                     submission.script_type === 'provided' ? '관리자 제공' : '자율 작성'}
                   </p>
                 </div>
                 <div>
@@ -264,7 +266,17 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
           </TabsContent>
 
           <TabsContent value="content" className="space-y-6">
-            {/* 검수 요청 버튼 */}
+            {/* 엑셀 업로드 - 항상 표시 */}
+            <ExcelUpload
+              submissionId={unwrappedParams.id}
+              currentCount={contentItems.length}
+              totalCount={submission.total_count}
+              hasPhoto={submission.has_photo}
+              photoRatio={submission.photo_ratio}
+              onUploadComplete={fetchContentItems}
+            />
+
+            {/* 검수 요청 버튼 - 원고가 있을 때만 표시 */}
             {contentItems.length > 0 && (() => {
               const publishedCount = contentItems.filter(item => item.is_published).length;
               const unpublishedCount = contentItems.length - publishedCount;
@@ -307,16 +319,6 @@ export default function KakaomapReviewDetailPage({ params }: { params: Promise<{
                         검수 요청 ({unpublishedCount}개 원고)
                       </Button>
                     )}
-
-                    {/* 엑셀 업로드 */}
-                    <ExcelUpload
-                      submissionId={unwrappedParams.id}
-                      currentCount={contentItems.length}
-                      totalCount={submission.total_count}
-                      hasPhoto={submission.has_photo}
-                      photoRatio={submission.photo_ratio}
-                      onUploadComplete={fetchContentItems}
-                    />
                   </CardContent>
                 </Card>
               );

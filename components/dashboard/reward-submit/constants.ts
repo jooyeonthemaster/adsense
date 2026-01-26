@@ -13,10 +13,10 @@ export const REWARD_MEDIA_CONFIG: RewardMediaConfig[] = [
   },
   {
     id: 'eureka',
-    name: '유레카 (Eureka)',
-    icon: '💡',
-    color: 'bg-amber-500',
-    description: '유레카 기반의 네이버 플레이스 조회수 증대',
+    name: '블루 (Blue)',
+    icon: '💙',
+    color: 'bg-blue-500',
+    description: '블루 기반의 네이버 플레이스 조회수 증대',
     subDescription: '고효율 리워드 마케팅 플랫폼',
     pricingSlug: 'eureka-reward',
   },
@@ -29,7 +29,7 @@ export const INITIAL_FORM_DATA: RewardFormData = {
   placeMid: '',
   dailyVolume: 100,
   startDate: null,
-  endDate: null,
+  operationDays: 3,
 };
 
 export const MIN_DAILY_VOLUME = 100;

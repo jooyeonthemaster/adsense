@@ -176,7 +176,6 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
                           setFormData(prev => ({
                             ...prev,
                             startDate: date || null,
-                            endDate: null, // 시작일 변경 시 마감일 초기화
                           }));
                         }}
                         disabled={(date) => {
@@ -194,49 +193,29 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
                   </span>
                 </div>
 
-                {/* 구동 마감일 */}
+                {/* 구동일수 */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-gray-700">
-                    구동 마감일 <span className="text-rose-500">*</span>
+                  <Label htmlFor="operationDays" className="text-xs font-medium text-gray-700">
+                    구동일수 <span className="text-rose-500">*</span>
                   </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        disabled={!formData.startDate}
-                        className={`w-full h-9 justify-start text-left font-normal border-gray-200 ${
-                          !formData.endDate && 'text-muted-foreground'
-                        }`}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.endDate ? (
-                          format(formData.endDate, 'yyyy년 M월 d일 (EEE)', { locale: ko })
-                        ) : (
-                          <span>{formData.startDate ? '마감일을 선택하세요' : '시작일을 먼저 선택하세요'}</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={formData.endDate || undefined}
-                        onSelect={(date) => setFormData(prev => ({ ...prev, endDate: date || null }))}
-                        disabled={(date) => {
-                          if (!formData.startDate) return true;
-                          // 시작일+2일(최소 3일) ~ 시작일+6일(최대 7일)까지만 선택 가능
-                          const minDate = addDays(formData.startDate, 2);
-                          const maxDate = addDays(formData.startDate, 6);
-                          return date < minDate || date > maxDate;
-                        }}
-                        locale={ko}
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <Input
+                    id="operationDays"
+                    type="number"
+                    min="3"
+                    max="7"
+                    value={formData.operationDays}
+                    onChange={(e) => setFormData(prev => ({ ...prev, operationDays: Number(e.target.value) }))}
+                    className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+                  />
                   <span className="text-xs text-gray-500">
-                    {formData.startDate
-                      ? `시작일로부터 최소 3일 ~ 최대 7일까지 선택 가능`
-                      : '시작일을 먼저 선택해주세요'}
+                    최소 3일 ~ 최대 7일 입력 가능
                   </span>
+                  {formData.startDate && formData.operationDays >= 3 && formData.operationDays <= 7 && (
+                    <div className="flex items-center gap-1.5 text-xs text-emerald-600 mt-1">
+                      <CalendarIcon className="h-3 w-3" />
+                      <span>마감일: {format(addDays(formData.startDate, formData.operationDays - 1), 'M월 d일 (EEE)', { locale: ko })}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* 구동일수 표시 */}
@@ -277,9 +256,9 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
                     </div>
                     <div className="text-xs text-white/80">
                       일 {formData.dailyVolume.toLocaleString()}타 × {operationDays}일
-                      {formData.startDate && formData.endDate && (
+                      {formData.startDate && operationDays >= 3 && (
                         <span className="ml-2">
-                          ({format(formData.startDate, 'M/d', { locale: ko })} ~ {format(formData.endDate, 'M/d', { locale: ko })})
+                          ({format(formData.startDate, 'M/d', { locale: ko })} ~ {format(addDays(formData.startDate, operationDays - 1), 'M/d', { locale: ko })})
                         </span>
                       )}
                     </div>

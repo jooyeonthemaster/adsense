@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, CheckCircle2, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import type { ReviewType, VisitorFormData, KmapFormData } from '@/types/review-marketing/types';
 
@@ -18,7 +18,6 @@ interface SubmissionInfoCardProps {
   loadingBusinessName: boolean;
   minStartDate: Date;
   isWeekendSubmission: boolean;
-  totalDays: number;
   onVisitorChange: React.Dispatch<React.SetStateAction<VisitorFormData>>;
   onKmapChange: React.Dispatch<React.SetStateAction<KmapFormData>>;
   onNaverPlaceUrlChange: (url: string) => void;
@@ -32,7 +31,6 @@ export function SubmissionInfoCard({
   loadingBusinessName,
   minStartDate,
   isWeekendSubmission,
-  totalDays,
   onVisitorChange,
   onKmapChange,
   onNaverPlaceUrlChange,
@@ -42,7 +40,12 @@ export function SubmissionInfoCard({
   const placeUrl = selectedType === 'visitor' ? visitorFormData.placeUrl : kmapFormData.kmapUrl;
   const dailyCount = selectedType === 'visitor' ? visitorFormData.dailyCount : kmapFormData.dailyCount;
   const startDate = selectedType === 'visitor' ? visitorFormData.startDate : kmapFormData.startDate;
-  const endDate = selectedType === 'visitor' ? visitorFormData.endDate : kmapFormData.endDate;
+  const operationDays = selectedType === 'visitor' ? visitorFormData.operationDays : kmapFormData.operationDays;
+
+  // 마감일 자동 계산
+  const calculatedEndDate = startDate && operationDays >= 3
+    ? addDays(startDate, operationDays - 1)
+    : null;
 
   const handleBusinessNameChange = (value: string) => {
     if (selectedType === 'visitor') {
@@ -65,22 +68,20 @@ export function SubmissionInfoCard({
       onVisitorChange((prev) => ({
         ...prev,
         startDate: date || null,
-        endDate: date && prev.endDate && date > prev.endDate ? null : prev.endDate,
       }));
     } else {
       onKmapChange((prev) => ({
         ...prev,
         startDate: date || null,
-        endDate: date && prev.endDate && date > prev.endDate ? null : prev.endDate,
       }));
     }
   };
 
-  const handleEndDateChange = (date: Date | undefined) => {
+  const handleOperationDaysChange = (days: number) => {
     if (selectedType === 'visitor') {
-      onVisitorChange((prev) => ({ ...prev, endDate: date || null }));
+      onVisitorChange((prev) => ({ ...prev, operationDays: days }));
     } else {
-      onKmapChange((prev) => ({ ...prev, endDate: date || null }));
+      onKmapChange((prev) => ({ ...prev, operationDays: days }));
     }
   };
 
@@ -202,51 +203,36 @@ export function SubmissionInfoCard({
           </span>
         </div>
 
-        {/* 구동 종료일 */}
+        {/* 구동일수 */}
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-gray-700">
-            구동 종료일 <span className="text-rose-500">*</span>
+          <Label htmlFor="operationDays" className="text-xs font-medium text-gray-700">
+            구동일수 <span className="text-rose-500">*</span>
           </Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={!startDate}
-                className={`w-full justify-start text-left font-normal h-9 text-sm ${
-                  !endDate ? 'text-gray-400' : 'text-gray-900'
-                }`}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {endDate ? format(endDate, 'yyyy년 M월 d일 (EEE)', { locale: ko }) : '종료일 선택'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={endDate || undefined}
-                onSelect={handleEndDateChange}
-                disabled={(date) => !startDate || date < startDate}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-          <span className="text-xs text-gray-500">
-            {selectedType === 'visitor' ? '시작일 이후 날짜 선택 (최소 3일)' : '시작일 이후 날짜 선택'}
-          </span>
+          <Input
+            id="operationDays"
+            type="number"
+            min="3"
+            value={operationDays}
+            onChange={(e) => handleOperationDaysChange(Number(e.target.value))}
+            className="border-gray-200 focus:border-purple-500 focus:ring-purple-500/20 h-9 text-sm"
+          />
+          <span className="text-xs text-gray-500">최소 3일 이상</span>
+          {calculatedEndDate && operationDays >= 3 && (
+            <div className="flex items-center gap-1.5 text-xs text-emerald-600 mt-1">
+              <CalendarIcon className="h-3 w-3" />
+              <span>마감일: {format(calculatedEndDate, 'M월 d일 (EEE)', { locale: ko })}</span>
+            </div>
+          )}
         </div>
 
-        {/* 총 작업일 표시 */}
-        {startDate && endDate && (
+        {/* 구동 기간 요약 */}
+        {startDate && operationDays >= 3 && calculatedEndDate && (
           <div className="p-2.5 bg-purple-50 rounded-lg border border-purple-200">
-            <span className="text-xs text-purple-700">총 작업일: </span>
-            <span className="text-base font-bold text-purple-900">{totalDays}일</span>
+            <span className="text-xs text-purple-700">구동 기간: </span>
+            <span className="text-base font-bold text-purple-900">{operationDays}일</span>
             <span className="text-xs text-purple-600 ml-1">
-              ({format(startDate, 'M/d', { locale: ko })} ~ {format(endDate, 'M/d', { locale: ko })})
+              ({format(startDate, 'M/d', { locale: ko })} ~ {format(calculatedEndDate, 'M/d', { locale: ko })})
             </span>
-            {selectedType === 'visitor' && totalDays < 3 && (
-              <p className="text-xs text-rose-600 mt-1">⚠️ 최소 3일 이상 필요</p>
-            )}
           </div>
         )}
       </CardContent>

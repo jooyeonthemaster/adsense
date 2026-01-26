@@ -93,7 +93,7 @@ export default function AnalyticsPage() {
       case 'twoople-reward':
         return '투플';
       case 'eureka-reward':
-        return '유레카';
+        return '블루';
       case 'receipt':
       case 'receipt-review':
         return '영수증 리뷰';

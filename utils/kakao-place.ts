@@ -22,10 +22,11 @@ export function extractKakaoPlaceMID(url: string): string | null {
   // URL 트리밍
   const trimmedUrl = url.trim();
 
-  // 정규식: place.map.kakao.com/ 뒤의 숫자를 추출
+  // 다양한 카카오맵 URL 형식 지원
   const patterns = [
     /place\.map\.kakao\.com\/(\d+)/,  // place.map.kakao.com/123456
-    /map\.kakao\.com\/link\/map\/[^,]+,[\d.]+,[\d.]+,(\d+)/, // map.kakao.com/link/map/...
+    /map\.kakao\.com\/.*[?&]itemId=(\d+)/, // map.kakao.com/?itemId=123456
+    /map\.kakao\.com\/link\/(?:to|map|roadview)\/(\d+)/, // map.kakao.com/link/to/123456
   ];
 
   for (const pattern of patterns) {
@@ -93,6 +94,7 @@ export function isValidKakaoPlaceUrl(url: string): boolean {
   const validDomains = [
     'place.map.kakao.com',
     'map.kakao.com',
+    'kko.to', // 단축 URL
   ];
 
   const hasValidDomain = validDomains.some(domain => trimmedUrl.includes(domain));

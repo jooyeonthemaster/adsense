@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ProductGuideSection } from '@/components/dashboard/ProductGuideSection';
 import { extractNaverPlaceMID, fetchBusinessInfoByMID } from '@/utils/naver-place';
 import { Video, Zap, Users } from 'lucide-react';
-import { format, addDays, differenceInDays } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import {
   DistributionType,
@@ -57,6 +57,7 @@ export default function BlogDistributionPage() {
     dailyCount: 3,
     startDate: null as Date | null,
     endDate: null as Date | null,
+    operationDays: 10, // 기본값 10일
     keywords: '',
     guideline: '',
     externalAccountId: '',
@@ -101,15 +102,15 @@ export default function BlogDistributionPage() {
   const isWeekendSubmission =
     dayOfWeek === 6 || dayOfWeek === 0 || (dayOfWeek === 5 && hour >= 18);
 
-  // 총 작업일 계산 (캘린더 기반)
-  const operationDays = formData.startDate && formData.endDate
-    ? differenceInDays(formData.endDate, formData.startDate) + 1
-    : 0;
+  // 구동일수에서 종료일 자동 계산
+  const calculatedEndDate = formData.startDate && formData.operationDays >= 10
+    ? addDays(formData.startDate, formData.operationDays - 1)
+    : null;
 
   // 총 건수 계산
   const totalCount = selectedType === 'auto' && formData.useExternalAccount
     ? formData.chargeCount  // 외부계정 충전: 충전 건수
-    : formData.dailyCount * operationDays;  // 일반 접수: 일 접수량 × 작업일
+    : formData.dailyCount * (formData.operationDays || 0);  // 일반 접수: 일 접수량 × 구동일수
 
   // URL 파라미터가 변경되면 selectedType 업데이트
   useEffect(() => {
@@ -176,13 +177,13 @@ export default function BlogDistributionPage() {
   const allServices: (ServiceConfig & { slug: string })[] = [
     {
       id: 'video',
-      name: '영상 배포',
+      name: '247 배포',
       icon: Video,
       color: 'bg-blue-500',
       slug: 'video-distribution',
       available: !!pricing['video-distribution'],
       pricePerPost: pricing['video-distribution'] || 0,
-      description: '영상 블로그 배포 서비스'
+      description: '247 블로그 배포 서비스'
     },
     {
       id: 'auto',
@@ -226,12 +227,13 @@ export default function BlogDistributionPage() {
     setFormData(prev => ({
       ...prev,
       startDate: date,
-      endDate: date && prev.endDate && date > prev.endDate ? null : prev.endDate,
     }));
   };
 
-  const handleEndDateChange = (date: Date | null) => {
-    setFormData(prev => ({ ...prev, endDate: date }));
+  const handleOperationDaysChange = (days: number) => {
+    // 10~30일 범위로 제한
+    const clampedDays = Math.min(30, Math.max(0, days));
+    setFormData(prev => ({ ...prev, operationDays: clampedDays }));
   };
 
   const handlePlaceUrlChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -314,11 +316,11 @@ export default function BlogDistributionPage() {
         return;
       }
 
-      if (!formData.startDate || !formData.endDate) {
+      if (!formData.startDate || formData.operationDays < 10) {
         toast({
           variant: 'destructive',
           title: '입력 오류',
-          description: '시작일과 종료일을 선택해주세요.',
+          description: '시작일을 선택하고 구동일수를 10일 이상 입력해주세요.',
         });
         return;
       }
@@ -371,7 +373,7 @@ export default function BlogDistributionPage() {
             place_url: formData.placeUrl || '',
             daily_count: formData.dailyCount,
             total_count: totalCount,
-            total_days: operationDays,
+            total_days: formData.operationDays,
             total_points: totalCost,
             start_date: formData.startDate ? format(formData.startDate, 'yyyy-MM-dd') : null,
             keywords: formData.keywords ? formData.keywords.split(',').map(k => k.trim()).filter(k => k) : [],
@@ -463,7 +465,7 @@ export default function BlogDistributionPage() {
                 totalCost={calculateTotalCost()}
                 selectedService={selectedService}
                 dailyCount={formData.dailyCount}
-                operationDays={operationDays}
+                operationDays={formData.operationDays}
                 pricingLoading={pricingLoading}
                 isExternalAccountCharge={selectedType === 'auto' && formData.useExternalAccount}
               />
@@ -481,10 +483,10 @@ export default function BlogDistributionPage() {
                   onPlaceUrlChange={handlePlaceUrlChange}
                   onDailyCountChange={handleDailyCountChange}
                   onStartDateChange={handleStartDateChange}
-                  onEndDateChange={handleEndDateChange}
+                  onOperationDaysChange={handleOperationDaysChange}
                   minStartDate={minStartDate}
                   isWeekendSubmission={isWeekendSubmission}
-                  operationDays={operationDays}
+                  calculatedEndDate={calculatedEndDate}
                   totalCount={totalCount}
                 />
               </CardContent>

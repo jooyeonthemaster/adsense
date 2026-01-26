@@ -386,7 +386,7 @@ export async function POST(request: NextRequest) {
     // Create point transaction record
     const distributionTypeLabels: Record<string, string> = {
       'reviewer': '리뷰어 배포',
-      'video': '영상 배포',
+      'video': '247 배포',
       'automation': '자동화 배포',
     };
 
