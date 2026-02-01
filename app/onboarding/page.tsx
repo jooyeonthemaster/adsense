@@ -17,9 +17,16 @@ import {
   User,
   Sparkles,
   Upload,
-  UserPlus
+  UserPlus,
+  MessageCircle,
+  CheckCircle2,
+  ExternalLink
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// 카카오 채널 ID
+const KAKAO_CHANNEL_ID = '_TdxoYn';
+const KAKAO_CHANNEL_URL = `https://pf.kakao.com/${KAKAO_CHANNEL_ID}/friend`;
 
 interface OnboardingData {
   contact_person: string;
@@ -33,6 +40,7 @@ interface OnboardingData {
 
 const STEPS = [
   { id: 'welcome', title: '환영합니다' },
+  { id: 'channel', title: '카카오 채널' },
   { id: 'info', title: '기본 정보' },
   { id: 'complete', title: '완료' },
 ];
@@ -43,6 +51,11 @@ const CHARACTER_MESSAGES = {
     '안녕하세요 👋',
     '마케팅자율무역협회',
     '마자무에 오신 걸 환영합니다.',
+  ],
+  channel: [
+    '잠깐! 🔔',
+    '서비스 이용을 위해',
+    '카카오톡 채널 추가가 필요해요.',
   ],
   info: [
     '세금계산서 발행 및 원활한 서비스 이용을 위해 정보를 입력해 주세요.',
@@ -61,6 +74,7 @@ export default function OnboardingPage() {
   const [displayedMessages, setDisplayedMessages] = useState<string[]>([]);
   const [messageIndex, setMessageIndex] = useState(0);
   const [showContent, setShowContent] = useState(false);
+  const [channelAdded, setChannelAdded] = useState(false);
 
   const [formData, setFormData] = useState<OnboardingData>({
     contact_person: '',
@@ -90,6 +104,11 @@ export default function OnboardingPage() {
         if (profile.onboarding_completed) {
           router.push('/dashboard/notifications');
           return;
+        }
+
+        // 이미 채널 추가한 경우 체크
+        if (profile.kakao_channel_added) {
+          setChannelAdded(true);
         }
 
         // 기존 데이터로 폼 초기화 (관리자가 입력한 데이터 pre-fill)
@@ -171,6 +190,35 @@ export default function OnboardingPage() {
     }
   };
 
+  // 카카오 채널 추가 버튼 클릭
+  const handleAddChannel = () => {
+    window.open(KAKAO_CHANNEL_URL, '_blank', 'noopener,noreferrer');
+  };
+
+  // 채널 추가 완료 확인
+  const handleChannelAddedConfirm = async () => {
+    setSubmitting(true);
+    try {
+      // 서버에 채널 추가 완료 저장
+      const response = await fetch('/api/client/channel-added', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        throw new Error('채널 추가 상태 저장 실패');
+      }
+
+      setChannelAdded(true);
+      setCurrentStep(2); // 다음 단계로
+    } catch (error) {
+      console.error('채널 추가 저장 에러:', error);
+      alert('잠시 후 다시 시도해주세요.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSubmit = async () => {
     // 유효성 검사
     if (!formData.contact_person.trim()) {
@@ -231,7 +279,7 @@ export default function OnboardingPage() {
         throw new Error(errorData.error || '온보딩 저장 실패');
       }
 
-      setCurrentStep(2); // Changed from 3 to 2 since we removed one step
+      setCurrentStep(3); // 완료 단계로
     } catch (error) {
       console.error('온보딩 에러:', error);
       alert(error instanceof Error ? error.message : '온보딩 처리 중 오류가 발생했습니다.');
@@ -353,8 +401,74 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {/* Step 1: Basic Info */}
+              {/* Step 1: Kakao Channel Add */}
               {currentStep === 1 && (
+                <Card className="shadow-xl">
+                  <CardContent className="p-6 space-y-6">
+                    <div className="text-center space-y-4">
+                      {/* 카카오 아이콘 */}
+                      <div className="flex justify-center">
+                        <div className="w-20 h-20 bg-[#FEE500] rounded-full flex items-center justify-center">
+                          <MessageCircle className="h-10 w-10 text-[#3C1E1E]" />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          카카오톡 채널 친구 추가
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          서비스 이용 안내 및 주문 알림을<br />
+                          카카오톡으로 받아보실 수 있습니다
+                        </p>
+                      </div>
+
+                      {/* 채널 추가 버튼 */}
+                      <Button
+                        onClick={handleAddChannel}
+                        className="w-full h-12 bg-[#FEE500] hover:bg-[#FDD835] text-[#191919] font-medium transition-all duration-300 hover:shadow-lg text-base"
+                      >
+                        <svg
+                          className="mr-2 h-6 w-6"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path d="M12 3C6.48 3 2 6.48 2 10.8c0 2.76 1.8 5.16 4.5 6.54-.2.72-.72 2.64-.84 3.06-.12.54.2.54.42.42.18-.06 2.82-1.92 3.96-2.7.6.06 1.26.12 1.92.12 5.52 0 10-3.48 10-7.8S17.52 3 12 3z" />
+                        </svg>
+                        채널 추가하기
+                        <ExternalLink className="ml-2 h-4 w-4" />
+                      </Button>
+
+                      <div className="pt-4 border-t">
+                        <p className="text-xs text-gray-500 mb-3">
+                          채널을 추가하셨나요?
+                        </p>
+                        <Button
+                          onClick={handleChannelAddedConfirm}
+                          disabled={submitting}
+                          variant="outline"
+                          className="w-full h-11 border-primary text-primary hover:bg-primary hover:text-white transition-all"
+                        >
+                          {submitting ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              확인 중...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="mr-2 h-4 w-4" />
+                              채널 추가 완료했습니다
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Step 2: Basic Info */}
+              {currentStep === 2 && (
                 <Card className="shadow-xl">
                   <CardContent className="p-6 space-y-4">
                     <div className="grid gap-2">
@@ -484,8 +598,8 @@ export default function OnboardingPage() {
                 </Card>
               )}
 
-              {/* Step 2: Complete */}
-              {currentStep === 2 && (
+              {/* Step 3: Complete */}
+              {currentStep === 3 && (
                 <div className="text-center space-y-6">
                   <Button
                     size="lg"

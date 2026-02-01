@@ -1,148 +1,40 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [countdown, setCountdown] = useState(5);
 
-  const [formData, setFormData] = useState({
-    username: '',
-    password: '',
-    passwordConfirm: '',
-    company_name: '',
-    contact_person: '',
-    phone: '',
-    email: '',
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    setError('');
+  // 카카오 로그인으로 이동
+  const handleKakaoLogin = () => {
+    window.location.href = '/api/auth/kakao';
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    // 비밀번호 확인
-    if (formData.password !== formData.passwordConfirm) {
-      setError('비밀번호가 일치하지 않습니다.');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password,
-          company_name: formData.company_name,
-          contact_person: formData.contact_person,
-          phone: formData.phone,
-          email: formData.email || null,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || '회원가입에 실패했습니다.');
-        return;
-      }
-
-      setSuccess(true);
-
-      // 3초 후 로그인 페이지로 이동
-      setTimeout(() => {
-        router.push('/login');
-      }, 3000);
-    } catch (err) {
-      setError('회원가입 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Track mouse position
+  // 카운트다운 후 자동 리다이렉트
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          router.push('/login');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center gradient-bg p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-md"
-        >
-          <Card className="shadow-2xl shadow-primary/5 border-primary/10">
-            <CardContent className="pt-8 pb-8 text-center space-y-4">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: 'spring' }}
-              >
-                <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto" />
-              </motion.div>
-              <h2 className="text-2xl font-bold text-gray-900">회원가입 완료!</h2>
-              <p className="text-gray-600">
-                회원가입이 완료되었습니다.<br />
-                잠시 후 로그인 페이지로 이동합니다.
-              </p>
-              <Button
-                onClick={() => router.push('/login')}
-                className="w-full gradient-primary"
-              >
-                로그인하러 가기
-              </Button>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-    );
-  }
+    return () => clearInterval(timer);
+  }, [router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center gradient-bg p-4 relative overflow-hidden">
-      {/* 커서 트레일 효과 */}
-      <motion.div
-        className="fixed w-6 h-6 rounded-full bg-primary/20 pointer-events-none z-50"
-        style={{
-          left: mousePosition.x,
-          top: mousePosition.y,
-          transform: 'translate(-50%, -50%)',
-        }}
-        transition={{
-          type: 'spring',
-          damping: 25,
-          stiffness: 150,
-          mass: 0.8,
-        }}
-      />
-
       {/* 배경 장식 요소 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
@@ -190,14 +82,14 @@ export default function RegisterPage() {
                 <Image
                   src="/logo.png"
                   alt="마자무 로고"
-                  width={80}
-                  height={80}
+                  width={100}
+                  height={100}
                   className="object-contain"
                   priority
                 />
               </div>
               <CardTitle className="text-2xl font-bold tracking-tight text-gradient">
-                회원가입
+                회원가입 안내
               </CardTitle>
               <CardDescription className="text-sm">
                 마자무에 오신 것을 환영합니다
@@ -205,170 +97,55 @@ export default function RegisterPage() {
             </motion.div>
           </CardHeader>
 
-          <CardContent className="pb-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* 아이디 */}
-              <div className="space-y-2">
-                <Label htmlFor="username" className="text-sm font-medium">
-                  아이디 <span className="text-rose-500">*</span>
-                </Label>
-                <Input
-                  id="username"
-                  name="username"
-                  type="text"
-                  value={formData.username}
-                  onChange={handleChange}
-                  placeholder="영문, 숫자, 밑줄 4-20자"
-                  required
-                  disabled={loading}
-                  className="h-10 transition-all focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-
-              {/* 비밀번호 */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-medium">
-                    비밀번호 <span className="text-rose-500">*</span>
-                  </Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="최소 6자"
-                    required
-                    disabled={loading}
-                    className="h-10 transition-all focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="passwordConfirm" className="text-sm font-medium">
-                    비밀번호 확인 <span className="text-rose-500">*</span>
-                  </Label>
-                  <Input
-                    id="passwordConfirm"
-                    name="passwordConfirm"
-                    type="password"
-                    value={formData.passwordConfirm}
-                    onChange={handleChange}
-                    placeholder="비밀번호 확인"
-                    required
-                    disabled={loading}
-                    className="h-10 transition-all focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-              </div>
-
-              {/* 회사명 */}
-              <div className="space-y-2">
-                <Label htmlFor="company_name" className="text-sm font-medium">
-                  회사명 / 상호 <span className="text-rose-500">*</span>
-                </Label>
-                <Input
-                  id="company_name"
-                  name="company_name"
-                  type="text"
-                  value={formData.company_name}
-                  onChange={handleChange}
-                  placeholder="회사명 또는 상호명"
-                  required
-                  disabled={loading}
-                  className="h-10 transition-all focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-
-              {/* 담당자명 */}
-              <div className="space-y-2">
-                <Label htmlFor="contact_person" className="text-sm font-medium">
-                  담당자명 <span className="text-rose-500">*</span>
-                </Label>
-                <Input
-                  id="contact_person"
-                  name="contact_person"
-                  type="text"
-                  value={formData.contact_person}
-                  onChange={handleChange}
-                  placeholder="담당자 이름"
-                  required
-                  disabled={loading}
-                  className="h-10 transition-all focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-
-              {/* 연락처 & 이메일 */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-sm font-medium">
-                    연락처 <span className="text-rose-500">*</span>
-                  </Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="010-1234-5678"
-                    required
-                    disabled={loading}
-                    className="h-10 transition-all focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium">
-                    이메일
-                  </Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="선택 사항"
-                    disabled={loading}
-                    className="h-10 transition-all focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-              </div>
-
-              {/* 에러 메시지 */}
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20"
+          <CardContent className="pb-8 space-y-6">
+            {/* 안내 메시지 */}
+            <div className="text-center space-y-3 py-4">
+              <div className="bg-[#FEE500]/10 border border-[#FEE500]/30 rounded-lg p-4">
+                <svg
+                  className="mx-auto h-12 w-12 text-[#3C1E1E] mb-3"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
                 >
-                  {error}
-                </motion.div>
-              )}
+                  <path d="M12 3C6.48 3 2 6.48 2 10.8c0 2.76 1.8 5.16 4.5 6.54-.2.72-.72 2.64-.84 3.06-.12.54.2.54.42.42.18-.06 2.82-1.92 3.96-2.7.6.06 1.26.12 1.92.12 5.52 0 10-3.48 10-7.8S17.52 3 12 3z" />
+                </svg>
+                <p className="text-gray-900 font-medium">
+                  카카오톡으로 간편하게 가입하세요
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  별도의 회원가입 없이 카카오 계정으로<br />
+                  바로 시작할 수 있습니다
+                </p>
+              </div>
+            </div>
 
-              {/* 제출 버튼 */}
+            {/* 카카오 로그인 버튼 */}
+            <Button
+              type="button"
+              onClick={handleKakaoLogin}
+              className="w-full h-12 bg-[#FEE500] hover:bg-[#FDD835] text-[#191919] font-medium transition-all duration-300 hover:shadow-lg text-base"
+            >
+              <svg
+                className="mr-2 h-6 w-6"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M12 3C6.48 3 2 6.48 2 10.8c0 2.76 1.8 5.16 4.5 6.54-.2.72-.72 2.64-.84 3.06-.12.54.2.54.42.42.18-.06 2.82-1.92 3.96-2.7.6.06 1.26.12 1.92.12 5.52 0 10-3.48 10-7.8S17.52 3 12 3z" />
+              </svg>
+              카카오로 시작하기
+            </Button>
+
+            {/* 로그인 페이지 링크 */}
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                {countdown}초 후 로그인 페이지로 이동합니다
+              </p>
               <Button
-                type="submit"
-                className="w-full h-11 gradient-primary hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 hover:scale-[1.02]"
-                disabled={loading}
+                variant="link"
+                onClick={() => router.push('/login')}
+                className="text-primary"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    가입 중...
-                  </>
-                ) : (
-                  '회원가입'
-                )}
+                지금 이동하기
               </Button>
-            </form>
-
-            {/* 로그인 링크 */}
-            <div className="mt-6 text-center">
-              <Link
-                href="/login"
-                className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                <ArrowLeft className="mr-1 h-4 w-4" />
-                이미 계정이 있으신가요? 로그인
-              </Link>
             </div>
           </CardContent>
         </Card>

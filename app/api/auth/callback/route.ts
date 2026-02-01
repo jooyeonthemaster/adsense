@@ -30,6 +30,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    console.log('=== 카카오 콜백 처리 시작 ===');
+    console.log('인가 코드:', code?.substring(0, 20) + '...');
+
     // 1. 인가 코드로 토큰 교환
     const tokenResponse = await fetch('https://kauth.kakao.com/oauth/token', {
       method: 'POST',
@@ -44,6 +47,8 @@ export async function GET(request: NextRequest) {
         code,
       }),
     });
+
+    console.log('토큰 응답 상태:', tokenResponse.status);
 
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.text();
@@ -88,18 +93,25 @@ export async function GET(request: NextRequest) {
     };
 
     // 4. clients 테이블에서 조회 또는 신규 생성
+    console.log('authenticateKakaoClient 호출...');
     const clientUser = await authenticateKakaoClient(kakaoUserInfo);
+    console.log('clientUser:', clientUser?.id, clientUser?.username);
 
     // 5. 커스텀 세션 생성 (기존 시스템과 통합)
+    console.log('세션 생성 시작...');
     await createSession(clientUser);
+    console.log('세션 생성 완료');
 
     // 6. 온보딩 완료 여부에 따라 리다이렉트
+    console.log('onboarding_completed:', clientUser.onboarding_completed);
     if (clientUser.onboarding_completed === false) {
       // 온보딩 미완료 → 온보딩 페이지로
+      console.log('→ 온보딩 페이지로 리다이렉트');
       return NextResponse.redirect(`${origin}/onboarding`);
     }
 
     // 온보딩 완료 → 대시보드로
+    console.log('→ 대시보드로 리다이렉트');
     return NextResponse.redirect(`${origin}/dashboard/notifications`);
 
   } catch (err) {

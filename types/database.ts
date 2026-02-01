@@ -17,6 +17,7 @@ export type Client = {
   auth_provider: AuthProvider; // 인증 제공자
   client_type: ClientType | null; // 광고주/대행사
   onboarding_completed: boolean; // 온보딩 완료 여부
+  kakao_channel_added: boolean; // 카카오톡 채널 친구 추가 완료 여부
   referrer_id: string | null; // 추천인 클라이언트 ID
   // 마이페이지 - 사업자 정보
   business_license_url: string | null; // 사업자등록증 파일 URL

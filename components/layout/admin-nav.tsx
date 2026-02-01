@@ -26,6 +26,7 @@ import {
   Receipt,
   Bot,
   MapPin,
+  Wallet,
 } from 'lucide-react';
 
 const navigation = [
@@ -42,6 +43,7 @@ const navigation = [
   { name: '리워드 관리', href: '/admin/reward', icon: Gift },
   { name: '체험단 관리', href: '/admin/experience', icon: Sparkles },
   { name: '포인트 관리', href: '/admin/points', icon: DollarSign },
+  { name: '충전 요청', href: '/admin/charge-requests', icon: Wallet },
   { name: '세금계산서 요청', href: '/admin/tax-invoice-requests', icon: Receipt },
   { name: 'AS & 중단 요청', href: '/admin/as-requests', icon: Settings },
   { name: '공지사항 관리', href: '/admin/announcements', icon: Megaphone },

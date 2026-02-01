@@ -25,7 +25,8 @@ export async function GET() {
         profile_updated_at,
         created_at,
         onboarding_completed,
-        client_type
+        client_type,
+        kakao_channel_added
       `)
       .eq('id', user.id)
       .single();

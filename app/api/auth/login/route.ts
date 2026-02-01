@@ -21,9 +21,14 @@ export async function POST(request: NextRequest) {
     let user = null;
 
     if (userType === 'admin') {
+      // 관리자만 ID/PW 로그인 허용
       user = await authenticateAdmin(username, password);
     } else if (userType === 'client') {
-      user = await authenticateClient(username, password);
+      // 거래처 ID/PW 로그인 차단 - 카카오 로그인만 허용
+      return NextResponse.json(
+        { error: '거래처 로그인은 카카오 로그인만 가능합니다. 카카오로 시작하기를 이용해주세요.' },
+        { status: 403 }
+      );
     } else {
       return NextResponse.json(
         { error: '잘못된 사용자 유형입니다.' },
