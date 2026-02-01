@@ -83,14 +83,6 @@ export function KmapOptionsCard({ formData, onChange }: KmapOptionsCardProps) {
               </div>
             </div>
 
-            {/* 이미지 전송 안내 */}
-            <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg">
-              <p className="text-xs font-medium text-sky-700 mb-1">이미지 전송 안내</p>
-              <p className="text-sm font-bold text-sky-800">sense-ad@naver.com</p>
-              <p className="text-xs text-sky-600 mt-1">
-                이메일 제목에 업체명 또는 대행사명을 기재해 주세요
-              </p>
-            </div>
           </div>
         )}
 
@@ -140,6 +132,17 @@ export function KmapOptionsCard({ formData, onChange }: KmapOptionsCardProps) {
             className="border-gray-200 focus:border-amber-500 focus:ring-amber-500/20 text-sm min-h-[80px]"
           />
         </div>
+
+        {/* 이미지 전송 안내 (사진 포함 시에만 표시) */}
+        {formData.hasPhoto && (
+          <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg">
+            <p className="text-xs font-medium text-sky-700 mb-1">이미지 전송 안내</p>
+            <p className="text-sm font-bold text-sky-800">sense-ad@naver.com</p>
+            <p className="text-xs text-sky-600 mt-1">
+              이메일 제목에 업체명 또는 대행사명을 기재해 주세요
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
