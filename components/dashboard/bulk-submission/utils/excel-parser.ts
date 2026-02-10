@@ -87,6 +87,26 @@ export function validateDateFormat(dateStr: string): boolean {
 }
 
 /**
+ * 과거 날짜 검증
+ * allowToday=true: 오늘 허용 (영수증용)
+ * allowToday=false: 내일 이후만 허용 (블로그/트래픽용)
+ */
+export function validateNotPastDate(dateStr: string, allowToday: boolean = false): boolean {
+  if (!dateStr) return true;
+  if (!DATE_REGEX.test(dateStr)) return true; // format validation handles this
+  const inputDate = new Date(dateStr);
+  inputDate.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (allowToday) {
+    return inputDate >= today;
+  }
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return inputDate >= tomorrow;
+}
+
+/**
  * 플레이스 URL 검증 (네이버 + 카카오)
  */
 export function validatePlaceUrl(url: string): boolean {
@@ -169,6 +189,15 @@ function validateReceiptRow(
     !validateDateFormat(String(row['발행 시작 날짜 지정 (선택)']))
   ) {
     errors.push(ERROR_MESSAGES.INVALID_DATE_FORMAT);
+  }
+
+  // 과거 날짜 검증 (영수증: 오늘 허용, 과거 불가)
+  if (
+    row['발행 시작 날짜 지정 (선택)'] &&
+    validateDateFormat(String(row['발행 시작 날짜 지정 (선택)'])) &&
+    !validateNotPastDate(String(row['발행 시작 날짜 지정 (선택)']), true)
+  ) {
+    errors.push(ERROR_MESSAGES.PAST_DATE_RECEIPT);
   }
 
   return { isValid: errors.length === 0, errors };
@@ -264,6 +293,11 @@ function validateBlogRow(
     errors.push(ERROR_MESSAGES.INVALID_DATE_FORMAT);
   }
 
+  // 과거 날짜 검증 (블로그: 내일 이후만 허용)
+  if (row['시작날짜'] && validateDateFormat(String(row['시작날짜'])) && !validateNotPastDate(String(row['시작날짜']), false)) {
+    errors.push(ERROR_MESSAGES.PAST_DATE);
+  }
+
   // 플레이스 URL 검증
   if (row['플레이스링크'] && !validatePlaceUrl(row['플레이스링크'])) {
     errors.push(ERROR_MESSAGES.INVALID_PLACE_URL);
@@ -339,6 +373,11 @@ function validatePlaceRow(
   }
   if (row['종료일'] && !validateDateFormat(String(row['종료일']))) {
     errors.push(ERROR_MESSAGES.INVALID_DATE_FORMAT);
+  }
+
+  // 과거 날짜 검증 (트래픽/리워드: 내일 이후만 허용)
+  if (row['시작일'] && validateDateFormat(String(row['시작일'])) && !validateNotPastDate(String(row['시작일']), false)) {
+    errors.push(ERROR_MESSAGES.PAST_DATE);
   }
 
   return { isValid: errors.length === 0, errors };

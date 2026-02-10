@@ -49,14 +49,20 @@ export function EmailConfirmDialog({
             <div className="space-y-4">
               <p className="text-base text-gray-700 font-medium">이메일로 필수 서류는 보내셨나요?</p>
               <p className="text-sm text-gray-600">보내셔야 주문이 정상적으로 처리됩니다.</p>
-              <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                <p className="text-xs text-purple-700 mb-1">전송 이메일 주소</p>
+              <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg space-y-2">
+                <p className="text-xs text-purple-700">전송 이메일 주소</p>
                 <p className="text-sm font-bold text-purple-900">{SUPPORT_EMAIL}</p>
-                <p className="text-xs text-purple-600 mt-2">
-                  📌 이메일 제목은 <span className="font-semibold">업체명 or 대행사명</span>으로 작성해
-                  주세요.
+                <p className="text-xs text-purple-600">
+                  📌 이메일 제목에 대행사명과 업체명을 필수로 기재해 주셔야 하며, 파일명에 업체명으로 발송 부탁드립니다.
                 </p>
-                <p className="text-xs text-gray-600 mt-1">
+                <p className="text-xs text-rose-500">
+                  양식에 맞춰 접수하시지 않을 경우 작업이 지연될 수 있습니다.
+                </p>
+                <div className="text-xs text-purple-500 space-y-0.5">
+                  <p>( ex. 센스애드_대행사명 )</p>
+                  <p>( ex. 파일명 : 작업 업체명 )</p>
+                </div>
+                <p className="text-xs text-gray-600 pt-1 border-t border-purple-200">
                   📎 필수 서류: 사업자등록증 or 샘플 영수증 (둘 중 하나)
                 </p>
               </div>

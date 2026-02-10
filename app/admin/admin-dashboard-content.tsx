@@ -149,6 +149,11 @@ const getNotificationLink = (notification: AdminNotification): string => {
     case 'submission_created':
       return '/admin/submissions';
 
+    // 충전 요청 관련
+    case 'charge_request_created':
+    case 'charge_request_status_changed':
+      return '/admin/charge-requests';
+
     default:
       return '/admin';
   }
@@ -357,9 +362,10 @@ export function AdminDashboardContent({ stats, cards, recentNotifications, recen
             ) : (
               <div className="space-y-2 sm:space-y-3">
                 {recentChargeRequests.map((request) => (
-                  <div
+                  <Link
                     key={request.id}
-                    className="p-3 sm:p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors space-y-2"
+                    href="/admin/charge-requests"
+                    className="block p-3 sm:p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors space-y-2"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
@@ -379,11 +385,9 @@ export function AdminDashboardContent({ stats, cards, recentNotifications, recen
                         {CHARGE_STATUS_LABELS[request.status]}
                       </Badge>
                       {request.status === 'pending' && (
-                        <Link href="/admin/charge-requests">
-                          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                            처리
-                          </Button>
-                        </Link>
+                        <Badge variant="outline" className="text-[10px] sm:text-xs px-2 py-0.5 text-emerald-600 border-emerald-300">
+                          처리 필요
+                        </Badge>
                       )}
                     </div>
                     {request.description && (
@@ -399,7 +403,7 @@ export function AdminDashboardContent({ stats, cards, recentNotifications, recen
                         minute: '2-digit',
                       })}
                     </p>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

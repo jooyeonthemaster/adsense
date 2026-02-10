@@ -284,4 +284,8 @@ export const ERROR_MESSAGES = {
     `포인트 부족 (필요: ${required.toLocaleString()}P, 잔액: ${balance.toLocaleString()}P)`,
   MID_EXTRACTION_FAILED: 'MID 추출 불가',
   PRICE_NOT_CONFIGURED: '상품 가격 미설정',
+
+  // 과거 날짜 검증
+  PAST_DATE: '과거 날짜는 선택할 수 없습니다. 내일 이후 날짜를 입력해주세요.',
+  PAST_DATE_RECEIPT: '과거 날짜는 선택할 수 없습니다. 오늘 이후 날짜를 입력해주세요.',
 };

@@ -52,19 +52,40 @@ export function VisitorOptionsCard({ formData, onChange }: VisitorOptionsCardPro
           </CheckboxRadioGroup>
         </div>
 
-        {/* 가이드 및 요청사항 */}
-        <div className="space-y-1.5">
-          <Label htmlFor="guideline-visitor" className="text-xs font-medium text-gray-700">
-            가이드 및 요청사항
-          </Label>
-          <Textarea
-            id="guideline-visitor"
-            value={formData.guideline}
-            onChange={(e) => onChange((prev) => ({ ...prev, guideline: e.target.value }))}
-            placeholder="리뷰 작성 시 참고할 가이드나 요청사항을 입력하세요"
-            className="border-gray-200 focus:border-purple-500 focus:ring-purple-500/20 text-sm min-h-[100px]"
-          />
-        </div>
+        {/* 지정 원고 기재 (지정원고 선택 시에만) */}
+        {formData.scriptOption === 'custom' && (
+          <div className="space-y-1.5">
+            <Label htmlFor="guideline-visitor" className="text-xs font-medium text-gray-700">
+              지정 원고 기재 <span className="text-rose-500">*</span>
+            </Label>
+            <p className="text-xs text-purple-600">
+              원고 작성 시 필수로 줄바꿈으로 원고별로 구분하여 입력 부탁드립니다.
+            </p>
+            <Textarea
+              id="guideline-visitor"
+              value={formData.guideline}
+              onChange={(e) => onChange((prev) => ({ ...prev, guideline: e.target.value }))}
+              placeholder={'1. 친절하고 맛있어요!\n2. 매장 인테리어가 너무 예뻐서 취향저격 입니다!'}
+              className="border-gray-200 focus:border-purple-500 focus:ring-purple-500/20 text-sm min-h-[120px]"
+            />
+          </div>
+        )}
+
+        {/* 가이드 및 요청사항 (AI 제작 원고 선택 시에만) */}
+        {formData.scriptOption === 'ai' && (
+          <div className="space-y-1.5">
+            <Label htmlFor="guideline-visitor" className="text-xs font-medium text-gray-700">
+              가이드 및 요청사항
+            </Label>
+            <Textarea
+              id="guideline-visitor"
+              value={formData.guideline}
+              onChange={(e) => onChange((prev) => ({ ...prev, guideline: e.target.value }))}
+              placeholder="리뷰 작성 시 참고할 가이드나 요청사항을 입력하세요"
+              className="border-gray-200 focus:border-purple-500 focus:ring-purple-500/20 text-sm min-h-[100px]"
+            />
+          </div>
+        )}
 
         {/* 필수 서류 안내 */}
         <div className="space-y-3 p-4 bg-purple-50 border border-purple-200 rounded-lg">
@@ -90,9 +111,15 @@ export function VisitorOptionsCard({ formData, onChange }: VisitorOptionsCardPro
                   {SUPPORT_EMAIL}
                 </p>
                 <p className="text-xs text-purple-600 mt-2">
-                  📌 이메일 제목은 <span className="font-semibold">업체명 or 대행사명</span>으로 작성해
-                  주세요.
+                  📌 이메일 제목에 대행사명과 업체명을 필수로 기재해 주셔야 하며, 파일명에 업체명으로 발송 부탁드립니다.
                 </p>
+                <p className="text-xs text-rose-500 mt-1">
+                  양식에 맞춰 접수하시지 않을 경우 작업이 지연될 수 있습니다.
+                </p>
+                <div className="text-xs text-purple-500 mt-1 space-y-0.5">
+                  <p>( ex. 센스애드_대행사명 )</p>
+                  <p>( ex. 파일명 : 작업 업체명 )</p>
+                </div>
               </div>
             </div>
           </div>

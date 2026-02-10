@@ -114,8 +114,15 @@ export function ReporterSection({
                   sense-ad@naver.com
                 </p>
                 <p className="text-xs text-sky-600 mt-2">
-                  📌 이메일 제목은 <span className="font-semibold">업체명 or 대행사명</span>으로 작성해 주세요.
+                  📌 이메일 제목에 대행사명과 업체명을 필수로 기재해 주셔야 하며, 파일명에 업체명으로 발송 부탁드립니다.
                 </p>
+                <p className="text-xs text-rose-500 mt-1">
+                  양식에 맞춰 접수하시지 않을 경우 작업이 지연될 수 있습니다.
+                </p>
+                <div className="text-xs text-sky-500 mt-1 space-y-0.5">
+                  <p>( ex. 센스애드_대행사명 )</p>
+                  <p>( ex. 파일명 : 작업 업체명 )</p>
+                </div>
               </div>
             </div>
           </div>

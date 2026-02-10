@@ -32,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, ExternalLink, Loader2, Eye, List, Grid3x3, Building2, ChevronDown, CalendarIcon, X, Copy, Check, MoreVertical } from 'lucide-react';
+import { Search, ExternalLink, Loader2, Eye, List, Grid3x3, Building2, ChevronDown, CalendarIcon, X, Copy, Check, MoreVertical, Download } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
@@ -69,6 +69,7 @@ export default function RewardManagementPage() {
     copyToClipboard,
     toggleGroup,
     formatDate,
+    exportToExcel,
   } = useRewardManagement();
 
   // 매체 타입 표시 설정
@@ -90,11 +91,17 @@ export default function RewardManagementPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">리워드 관리</h1>
-        <p className="text-muted-foreground">
-          플레이스 유입(리워드) 캠페인을 관리하세요
-        </p>
+      <div className="flex items-start justify-between">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">리워드 관리</h1>
+          <p className="text-muted-foreground">
+            플레이스 유입(리워드) 캠페인을 관리하세요
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={exportToExcel}>
+          <Download className="h-4 w-4 mr-2" />
+          엑셀 다운로드
+        </Button>
       </div>
 
       {/* Stats Cards */}

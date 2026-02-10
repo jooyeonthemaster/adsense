@@ -2,20 +2,20 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2 } from 'lucide-react';
+import { Loader2, UserPlus } from 'lucide-react';
 import Image from 'next/image';
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
-  const [kakaoLoading, setKakaoLoading] = useState(false);
   const [error, setError] = useState('');
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [ripples, setRipples] = useState<Array<{ id: number; x: number; y: number }>>([]);
@@ -60,25 +60,13 @@ function LoginContent() {
     }
   };
 
-  // 카카오 로그인 핸들러
-  const handleKakaoLogin = () => {
-    setKakaoLoading(true);
-    setError('');
-    window.location.href = '/api/auth/kakao';
-  };
-
   // URL 에러 파라미터 처리
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const errorParam = urlParams.get('error');
     if (errorParam) {
       const errorMessages: Record<string, string> = {
-        kakao_init_failed: '카카오 로그인 초기화에 실패했습니다.',
-        kakao_cancelled: '카카오 로그인이 취소되었습니다.',
-        kakao_error: '카카오 로그인 중 오류가 발생했습니다.',
-        no_code: '인증 코드를 받지 못했습니다.',
         auth_failed: '인증에 실패했습니다.',
-        callback_failed: '로그인 처리 중 오류가 발생했습니다.',
       };
       setError(errorMessages[errorParam] || '로그인에 실패했습니다.');
       // URL에서 에러 파라미터 제거
@@ -317,7 +305,7 @@ function LoginContent() {
                     <Button
                       type="submit"
                       className="w-full h-11 gradient-primary hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 hover:scale-[1.02]"
-                      disabled={loading || kakaoLoading}
+                      disabled={loading}
                     >
                       {loading ? (
                         <>
@@ -388,50 +376,72 @@ function LoginContent() {
                 </TabsContent>
               </Tabs>
             ) : (
-              // 일반 모드: 카카오 로그인만 표시
+              // 일반 모드: 거래처 로그인만 표시 (탭 없음)
               <div className="space-y-4">
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20"
-                  >
-                    {error}
-                  </motion.div>
-                )}
-
-                {/* 안내 메시지 */}
-                <div className="text-center py-4">
-                  <p className="text-muted-foreground text-sm">
-                    카카오톡으로 간편하게 시작하세요
-                  </p>
-                </div>
-
-                {/* 카카오 로그인 버튼 */}
-                <Button
-                  type="button"
-                  onClick={handleKakaoLogin}
-                  disabled={kakaoLoading}
-                  className="w-full h-12 bg-[#FEE500] hover:bg-[#FDD835] text-[#191919] font-medium transition-all duration-300 hover:shadow-lg text-base"
-                >
-                  {kakaoLoading ? (
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  ) : (
-                    <svg
-                      className="mr-2 h-6 w-6"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
+                <form onSubmit={(e) => handleLogin(e, 'client')} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="client-username" className="text-sm font-medium">
+                      아이디
+                    </Label>
+                    <Input
+                      id="client-username"
+                      name="username"
+                      type="text"
+                      placeholder="아이디를 입력하세요"
+                      required
+                      disabled={loading}
+                      className="h-11 transition-all focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="client-password" className="text-sm font-medium">
+                      비밀번호
+                    </Label>
+                    <Input
+                      id="client-password"
+                      name="password"
+                      type="password"
+                      placeholder="비밀번호를 입력하세요"
+                      required
+                      disabled={loading}
+                      className="h-11 transition-all focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20"
                     >
-                      <path d="M12 3C6.48 3 2 6.48 2 10.8c0 2.76 1.8 5.16 4.5 6.54-.2.72-.72 2.64-.84 3.06-.12.54.2.54.42.42.18-.06 2.82-1.92 3.96-2.7.6.06 1.26.12 1.92.12 5.52 0 10-3.48 10-7.8S17.52 3 12 3z" />
-                    </svg>
+                      {error}
+                    </motion.div>
                   )}
-                  카카오로 시작하기
-                </Button>
+                  <Button
+                    type="submit"
+                    className="w-full h-11 gradient-primary hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 hover:scale-[1.02]"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        로그인 중...
+                      </>
+                    ) : (
+                      '로그인'
+                    )}
+                  </Button>
+                </form>
 
-                {/* 하단 안내 */}
-                <p className="text-xs text-center text-muted-foreground pt-2">
-                  카카오 계정으로 간편하게 가입하고 로그인할 수 있습니다
-                </p>
+                {/* 회원가입 링크 */}
+                <div className="mt-4 text-center">
+                  <Link
+                    href="/register"
+                    className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <UserPlus className="mr-1 h-4 w-4" />
+                    계정이 없으신가요? 회원가입
+                  </Link>
+                </div>
               </div>
             )}
 

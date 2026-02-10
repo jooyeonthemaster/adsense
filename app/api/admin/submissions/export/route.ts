@@ -19,6 +19,24 @@ interface ExportFilters {
 }
 
 /**
+ * 상태 라벨 한글 매핑
+ */
+const STATUS_LABELS_KR: Record<string, string> = {
+  pending: '확인중',
+  in_progress: '구동중',
+  completed: '완료',
+  cancelled: '취소',
+  waiting_content: '콘텐츠 대기',
+  review: '검토중',
+  revision_requested: '수정 요청',
+  approved: '승인됨',
+  script_writing: '원고 작성중',
+  script_completed: '원고 완료',
+  as_in_progress: 'AS 진행 중',
+  cancellation_requested: '중단요청',
+};
+
+/**
  * 날짜 형식 변환 (YYYY-MM-DD)
  */
 function formatDate(date: string | null): string {
@@ -75,7 +93,7 @@ async function exportReceiptSubmissions(
     // 관리용 추가 컬럼
     '광고주 아이디': sub.clients?.username || '',
     접수번호: sub.submission_number,
-    상태: sub.status,
+    상태: STATUS_LABELS_KR[sub.status] || sub.status,
     접수일: formatDate(sub.created_at),
   }));
 }
@@ -128,7 +146,7 @@ async function exportBlogSubmissions(
     일수: sub.total_days,
     // 관리용 추가 컬럼
     접수번호: sub.submission_number,
-    상태: sub.status,
+    상태: STATUS_LABELS_KR[sub.status] || sub.status,
     접수일: formatDate(sub.created_at),
   }));
 }
@@ -165,7 +183,7 @@ async function exportPlaceSubmissions(
     '일 수량': sub.daily_count,
     // 관리용 추가 컬럼
     접수번호: sub.submission_number,
-    상태: sub.status,
+    상태: STATUS_LABELS_KR[sub.status] || sub.status,
     접수일: formatDate(sub.created_at),
   }));
 }

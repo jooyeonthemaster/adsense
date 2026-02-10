@@ -119,28 +119,56 @@ export function KmapOptionsCard({ formData, onChange }: KmapOptionsCardProps) {
           </CheckboxRadioGroup>
         </div>
 
-        {/* 가이드 및 요청사항 */}
-        <div className="space-y-1.5">
-          <Label htmlFor="guideline-kmap" className="text-xs font-medium text-gray-700">
-            가이드 및 요청사항
-          </Label>
-          <Textarea
-            id="guideline-kmap"
-            value={formData.guideline}
-            onChange={(e) => onChange((prev) => ({ ...prev, guideline: e.target.value }))}
-            placeholder="리뷰 작성 시 참고할 가이드나 요청사항을 입력하세요"
-            className="border-gray-200 focus:border-amber-500 focus:ring-amber-500/20 text-sm min-h-[80px]"
-          />
-        </div>
+        {/* 지정 원고 기재 (지정원고 선택 시에만) */}
+        {formData.scriptOption === 'custom' && (
+          <div className="space-y-1.5">
+            <Label htmlFor="guideline-kmap" className="text-xs font-medium text-gray-700">
+              지정 원고 기재 <span className="text-rose-500">*</span>
+            </Label>
+            <p className="text-xs text-amber-600">
+              원고 작성 시 필수로 줄바꿈으로 원고별로 구분하여 입력 부탁드립니다.
+            </p>
+            <Textarea
+              id="guideline-kmap"
+              value={formData.guideline}
+              onChange={(e) => onChange((prev) => ({ ...prev, guideline: e.target.value }))}
+              placeholder={'1. 친절하고 맛있어요!\n2. 매장 인테리어가 너무 예뻐서 취향저격 입니다!'}
+              className="border-gray-200 focus:border-amber-500 focus:ring-amber-500/20 text-sm min-h-[120px]"
+            />
+          </div>
+        )}
+
+        {/* 가이드 및 요청사항 (AI 제작 원고 선택 시에만) */}
+        {formData.scriptOption === 'ai' && (
+          <div className="space-y-1.5">
+            <Label htmlFor="guideline-kmap" className="text-xs font-medium text-gray-700">
+              가이드 및 요청사항
+            </Label>
+            <Textarea
+              id="guideline-kmap"
+              value={formData.guideline}
+              onChange={(e) => onChange((prev) => ({ ...prev, guideline: e.target.value }))}
+              placeholder="리뷰 작성 시 참고할 가이드나 요청사항을 입력하세요"
+              className="border-gray-200 focus:border-amber-500 focus:ring-amber-500/20 text-sm min-h-[80px]"
+            />
+          </div>
+        )}
 
         {/* 이미지 전송 안내 (사진 포함 시에만 표시) */}
         {formData.hasPhoto && (
-          <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg">
-            <p className="text-xs font-medium text-sky-700 mb-1">이미지 전송 안내</p>
+          <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg space-y-1.5">
+            <p className="text-xs font-medium text-sky-700">이미지 전송 안내</p>
             <p className="text-sm font-bold text-sky-800">sense-ad@naver.com</p>
-            <p className="text-xs text-sky-600 mt-1">
-              이메일 제목에 업체명 또는 대행사명을 기재해 주세요
+            <p className="text-xs text-sky-600">
+              이메일 제목에 대행사명과 업체명을 필수로 기재해 주셔야 하며, 파일명에 업체명으로 발송 부탁드립니다.
             </p>
+            <p className="text-xs text-rose-500">
+              양식에 맞춰 접수하시지 않을 경우 작업이 지연될 수 있습니다.
+            </p>
+            <div className="text-xs text-sky-500 space-y-0.5 pt-1 border-t border-sky-200">
+              <p>( ex. 센스애드_대행사명 )</p>
+              <p>( ex. 파일명 : 작업 업체명 )</p>
+            </div>
           </div>
         )}
       </CardContent>

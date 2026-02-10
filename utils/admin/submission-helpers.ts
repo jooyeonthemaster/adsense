@@ -24,9 +24,16 @@ export const getSubmissionDetails = (submission: UnifiedSubmission): string => {
       return `총 ${submission.total_count || 0}타 (${photoText})`;
 
     case 'kakaomap':
-      const starText = submission.star_rating ? `${submission.star_rating}점` : '-';
-      const photoRatioText = submission.photo_ratio ? `${submission.photo_ratio}%` : '-';
-      return `총 ${submission.total_count || 0}타 (별점 ${starText}, 사진 ${photoRatioText})`;
+      const starRatingLabels: Record<string, string> = {
+        mixed: '4~5점 혼합',
+        five: '5점대만',
+        four: '4점대만',
+      };
+      const starText = submission.star_rating
+        ? (starRatingLabels[submission.star_rating] || submission.star_rating)
+        : '-';
+      const photoRatioText = submission.photo_ratio ? `사진 ${submission.photo_ratio}%` : '사진 X';
+      return `총 ${submission.total_count || 0}타 (별점 ${starText}, ${photoRatioText})`;
 
     case 'blog':
       const distributionTypeLabel =

@@ -539,8 +539,15 @@ export default function BlogDistributionPage() {
                 <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg space-y-2">
                   <p className="text-sm font-bold text-sky-900">sense-ad@naver.com</p>
                   <p className="text-xs text-sky-600">
-                    이메일 제목은 <span className="font-semibold">업체명 or 대행사명</span>으로 작성
+                    이메일 제목에 대행사명과 업체명을 필수로 기재해 주셔야 하며, 파일명에 업체명으로 발송 부탁드립니다.
                   </p>
+                  <p className="text-xs text-rose-500">
+                    양식에 맞춰 접수하시지 않을 경우 작업이 지연될 수 있습니다.
+                  </p>
+                  <div className="text-xs text-sky-500 space-y-0.5">
+                    <p>( ex. 센스애드_대행사명 )</p>
+                    <p>( ex. 파일명 : 작업 업체명 )</p>
+                  </div>
                   <p className="text-xs font-medium text-sky-700 pt-1 border-t border-sky-200">
                     사진 100장 이상 전달 필수
                   </p>

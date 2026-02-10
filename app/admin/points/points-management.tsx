@@ -20,7 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, RefreshCw, Wallet, Building2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { TrendingUp, TrendingDown, RefreshCw, Wallet, Building2, CalendarIcon, X } from 'lucide-react';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 
 interface Client {
   id: string;
@@ -77,7 +82,34 @@ export function PointsManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
+  const [startDatePicker, setStartDatePicker] = useState<Date | undefined>(undefined);
+  const [endDatePicker, setEndDatePicker] = useState<Date | undefined>(undefined);
   const [sortBy, setSortBy] = useState<string>('date-desc');
+
+  // 프리셋 날짜 필터 변경 시 캘린더 날짜 초기화
+  const handleDateFilterChange = (value: string) => {
+    setDateFilter(value);
+    if (value !== 'all') {
+      setStartDatePicker(undefined);
+      setEndDatePicker(undefined);
+    }
+  };
+
+  // 시작일 캘린더 선택 시 프리셋 필터 초기화
+  const handleStartDateChange = (date: Date | undefined) => {
+    setStartDatePicker(date);
+    if (date) {
+      setDateFilter('all');
+    }
+  };
+
+  // 종료일 캘린더 선택 시 프리셋 필터 초기화
+  const handleEndDateChange = (date: Date | undefined) => {
+    setEndDatePicker(date);
+    if (date) {
+      setDateFilter('all');
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -158,6 +190,22 @@ export function PointsManagement() {
       });
     }
 
+    // 캘린더 날짜 범위 필터
+    if (startDatePicker || endDatePicker) {
+      filtered = filtered.filter((t) => {
+        const transactionDate = new Date(t.created_at);
+        if (startDatePicker) {
+          const startOfDay = new Date(startDatePicker.getFullYear(), startDatePicker.getMonth(), startDatePicker.getDate());
+          if (transactionDate < startOfDay) return false;
+        }
+        if (endDatePicker) {
+          const endOfDay = new Date(endDatePicker.getFullYear(), endDatePicker.getMonth(), endDatePicker.getDate(), 23, 59, 59, 999);
+          if (transactionDate > endOfDay) return false;
+        }
+        return true;
+      });
+    }
+
     // 정렬
     filtered.sort((a, b) => {
       switch (sortBy) {
@@ -175,7 +223,7 @@ export function PointsManagement() {
     });
 
     return filtered;
-  }, [selectedClientId, searchTerm, typeFilter, dateFilter, sortBy, transactions]);
+  }, [selectedClientId, searchTerm, typeFilter, dateFilter, startDatePicker, endDatePicker, sortBy, transactions]);
 
   // 통계 계산
   const statistics = useMemo((): Statistics => {
@@ -225,6 +273,13 @@ export function PointsManagement() {
   };
 
   const getDateFilterLabel = () => {
+    if (startDatePicker || endDatePicker) {
+      const startLabel = startDatePicker ? format(startDatePicker, 'yyyy.MM.dd', { locale: ko }) : '';
+      const endLabel = endDatePicker ? format(endDatePicker, 'yyyy.MM.dd', { locale: ko }) : '';
+      if (startLabel && endLabel) return `${startLabel} ~ ${endLabel}`;
+      if (startLabel) return `${startLabel} ~`;
+      if (endLabel) return `~ ${endLabel}`;
+    }
     switch (dateFilter) {
       case 'today': return '오늘';
       case 'week': return '최근 7일';
@@ -372,7 +427,7 @@ export function PointsManagement() {
           </CardTitle>
           {/* 필터 영역 */}
           <div className="mt-3 sm:mt-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-            <div className="flex gap-3 overflow-x-auto pb-2 sm:pb-0 sm:grid sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="flex gap-3 overflow-x-auto pb-2 sm:pb-0 sm:grid sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               {/* 거래처 검색 (전체 선택 시만) */}
               {selectedClientId === 'all' && (
                 <div className="grid gap-1.5 sm:gap-2 min-w-[180px] sm:min-w-0">
@@ -402,7 +457,7 @@ export function PointsManagement() {
               </div>
               <div className="grid gap-1.5 sm:gap-2 min-w-[120px] sm:min-w-0">
                 <Label htmlFor="date-filter" className="text-xs sm:text-sm whitespace-nowrap">기간</Label>
-                <Select value={dateFilter} onValueChange={setDateFilter}>
+                <Select value={dateFilter} onValueChange={handleDateFilterChange}>
                   <SelectTrigger id="date-filter" className="h-8 sm:h-9 text-xs sm:text-sm">
                     <SelectValue placeholder="전체" />
                   </SelectTrigger>
@@ -414,6 +469,66 @@ export function PointsManagement() {
                     <SelectItem value="3months" className="text-xs sm:text-sm">최근 3개월</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              {/* 시작일 캘린더 필터 */}
+              <div className="grid gap-1.5 sm:gap-2 min-w-[140px] sm:min-w-0">
+                <Label className="text-xs sm:text-sm whitespace-nowrap">시작일</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="h-8 sm:h-9 w-full justify-start text-left font-normal text-xs sm:text-sm">
+                      <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                      {startDatePicker ? format(startDatePicker, 'yyyy.MM.dd', { locale: ko }) : '시작일'}
+                      {startDatePicker && (
+                        <X
+                          className="ml-auto h-3.5 w-3.5 hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setStartDatePicker(undefined);
+                          }}
+                        />
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={startDatePicker}
+                      onSelect={handleStartDateChange}
+                      locale={ko}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              {/* 종료일 캘린더 필터 */}
+              <div className="grid gap-1.5 sm:gap-2 min-w-[140px] sm:min-w-0">
+                <Label className="text-xs sm:text-sm whitespace-nowrap">종료일</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="h-8 sm:h-9 w-full justify-start text-left font-normal text-xs sm:text-sm">
+                      <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                      {endDatePicker ? format(endDatePicker, 'yyyy.MM.dd', { locale: ko }) : '종료일'}
+                      {endDatePicker && (
+                        <X
+                          className="ml-auto h-3.5 w-3.5 hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEndDatePicker(undefined);
+                          }}
+                        />
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={endDatePicker}
+                      onSelect={handleEndDateChange}
+                      locale={ko}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="grid gap-1.5 sm:gap-2 min-w-[120px] sm:min-w-0">
                 <Label htmlFor="sort-by" className="text-xs sm:text-sm whitespace-nowrap">정렬</Label>
