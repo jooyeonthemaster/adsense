@@ -387,22 +387,19 @@ export default function CafeMarketingPage() {
                     className={`
                       relative w-full p-3 rounded-lg border-2 text-left transition-all duration-200
                       ${formData.serviceType === 'cafe'
-                        ? 'border-amber-500 bg-amber-50 shadow-md'
-                        : 'border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50/50'
+                        ? 'border-sky-500 bg-sky-50 shadow-md'
+                        : 'border-gray-200 bg-white hover:border-sky-300 hover:bg-sky-50/50'
                       }
                     `}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-amber-500">
-                        <Coffee className="h-5 w-5 text-white" />
-                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className={`font-semibold text-sm ${formData.serviceType === 'cafe' ? 'text-amber-700' : 'text-gray-900'}`}>
+                          <span className={`font-semibold text-sm ${formData.serviceType === 'cafe' ? 'text-sky-700' : 'text-gray-900'}`}>
                             카페 침투
                           </span>
                           {formData.serviceType === 'cafe' && (
-                            <Badge variant="secondary" className="bg-amber-500 text-white text-xs px-2 py-0">
+                            <Badge variant="secondary" className="bg-sky-500 text-white text-xs px-2 py-0">
                               선택됨
                             </Badge>
                           )}
@@ -420,22 +417,19 @@ export default function CafeMarketingPage() {
                     className={`
                       relative w-full p-3 rounded-lg border-2 text-left transition-all duration-200
                       ${formData.serviceType === 'community'
-                        ? 'border-purple-500 bg-purple-50 shadow-md'
-                        : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/50'
+                        ? 'border-sky-500 bg-sky-50 shadow-md'
+                        : 'border-gray-200 bg-white hover:border-sky-300 hover:bg-sky-50/50'
                       }
                     `}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-purple-500">
-                        <MessageSquare className="h-5 w-5 text-white" />
-                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className={`font-semibold text-sm ${formData.serviceType === 'community' ? 'text-purple-700' : 'text-gray-900'}`}>
+                          <span className={`font-semibold text-sm ${formData.serviceType === 'community' ? 'text-sky-700' : 'text-gray-900'}`}>
                             커뮤니티 마케팅
                           </span>
                           {formData.serviceType === 'community' && (
-                            <Badge variant="secondary" className="bg-purple-500 text-white text-xs px-2 py-0">
+                            <Badge variant="secondary" className="bg-sky-500 text-white text-xs px-2 py-0">
                               선택됨
                             </Badge>
                           )}

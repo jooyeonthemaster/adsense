@@ -21,7 +21,6 @@ export function ServiceTypeSelector({
       </CardHeader>
       <CardContent className="grid grid-cols-1 gap-2 pt-0">
         {services.map((service) => {
-          const Icon = service.icon;
           const isSelected = selectedType === service.id;
           const isAvailable = service.available;
 
@@ -46,9 +45,6 @@ export function ServiceTypeSelector({
               `}
             >
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${service.color} ${!isAvailable && 'opacity-50'}`}>
-                  <Icon className="h-5 w-5 text-white" />
-                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className={`font-semibold text-sm ${isSelected ? 'text-sky-700' : 'text-gray-900'}`}>

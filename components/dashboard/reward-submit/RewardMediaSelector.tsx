@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
 import type { RewardMediaType, RewardMediaConfig } from './types';
 
 interface RewardMediaSelectorProps {
@@ -50,8 +51,12 @@ export function RewardMediaSelector({
               `}
             >
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${media.color} ${!isAvailable && 'opacity-50'}`}>
-                  <span className="text-2xl">{media.icon}</span>
+                <div className={`flex items-center justify-center rounded-lg flex-shrink-0 relative overflow-hidden ${media.color} ${!isAvailable && 'opacity-50'} ${media.icon.endsWith('.svg') ? 'w-12 h-12 shadow-sm' : 'p-2'}`}>
+                  {typeof media.icon === 'string' && media.icon.endsWith('.svg') ? (
+                    <Image src={media.icon} alt={media.name} fill className="object-cover" />
+                  ) : (
+                    <span className="text-2xl">{media.icon}</span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">

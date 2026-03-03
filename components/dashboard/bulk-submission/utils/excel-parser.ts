@@ -25,6 +25,57 @@ import {
 } from '../constants';
 
 /**
+ * 날짜 값을 YYYY-MM-DD 형식 문자열로 정규화
+ * Excel에서 날짜 입력 시 시리얼 넘버나 Date 객체로 저장될 수 있으므로 변환 처리
+ */
+export function normalizeDateValue(value: unknown): string {
+  if (!value && value !== 0) return '';
+
+  // 이미 YYYY-MM-DD 형식 문자열인 경우 그대로 반환
+  if (typeof value === 'string') {
+    if (DATE_REGEX.test(value)) return value;
+
+    // 다른 날짜 문자열 형식 시도 (예: "2/26/2025", "02-26-2025" 등)
+    const parsed = new Date(value);
+    if (!isNaN(parsed.getTime()) && parsed.getFullYear() > 1900) {
+      return formatDateToISO(parsed);
+    }
+    return value;
+  }
+
+  // JavaScript Date 객체 (cellDates: true 옵션 사용 시)
+  if (value instanceof Date) {
+    if (!isNaN(value.getTime())) {
+      return formatDateToISO(value);
+    }
+    return '';
+  }
+
+  // 숫자 - Excel 시리얼 넘버 (cellDates 옵션 없을 때 fallback)
+  if (typeof value === 'number' && value > 0) {
+    // Excel 시리얼 넘버를 UTC 날짜로 변환 (소수점 제거하여 타임존 무관하게 처리)
+    const days = Math.floor(value);
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+    const date = new Date(excelEpoch.getTime() + days * 86400000);
+    if (!isNaN(date.getTime()) && date.getUTCFullYear() > 1900) {
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  }
+
+  return String(value);
+}
+
+function formatDateToISO(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * 엑셀 파일 파싱
  */
 export async function parseExcelFile(file: File): Promise<{
@@ -37,7 +88,7 @@ export async function parseExcelFile(file: File): Promise<{
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
 
         const sheets: Record<string, unknown[]> = {};
         const sheetNames = workbook.SheetNames.filter((name) => name !== '사용법');
@@ -183,20 +234,14 @@ function validateReceiptRow(
     errors.push(ERROR_MESSAGES.INVALID_PLACE_URL);
   }
 
-  // 날짜 형식 검증
-  if (
-    row['발행 시작 날짜 지정 (선택)'] &&
-    !validateDateFormat(String(row['발행 시작 날짜 지정 (선택)']))
-  ) {
+  // 날짜 형식 정규화 및 검증
+  const receiptDate = normalizeDateValue(row['발행 시작 날짜 지정 (선택)']);
+  if (receiptDate && !validateDateFormat(receiptDate)) {
     errors.push(ERROR_MESSAGES.INVALID_DATE_FORMAT);
   }
 
   // 과거 날짜 검증 (영수증: 오늘 허용, 과거 불가)
-  if (
-    row['발행 시작 날짜 지정 (선택)'] &&
-    validateDateFormat(String(row['발행 시작 날짜 지정 (선택)'])) &&
-    !validateNotPastDate(String(row['발행 시작 날짜 지정 (선택)']), true)
-  ) {
+  if (receiptDate && validateDateFormat(receiptDate) && !validateNotPastDate(receiptDate, true)) {
     errors.push(ERROR_MESSAGES.PAST_DATE_RECEIPT);
   }
 
@@ -285,16 +330,18 @@ function validateBlogRow(
     }
   }
 
-  // 날짜 형식 검증
-  if (row['시작날짜'] && !validateDateFormat(String(row['시작날짜']))) {
+  // 날짜 형식 정규화 및 검증
+  const blogStartDate = normalizeDateValue(row['시작날짜']);
+  const blogEndDate = normalizeDateValue(row['종료날짜']);
+  if (blogStartDate && !validateDateFormat(blogStartDate)) {
     errors.push(ERROR_MESSAGES.INVALID_DATE_FORMAT);
   }
-  if (row['종료날짜'] && !validateDateFormat(String(row['종료날짜']))) {
+  if (blogEndDate && !validateDateFormat(blogEndDate)) {
     errors.push(ERROR_MESSAGES.INVALID_DATE_FORMAT);
   }
 
   // 과거 날짜 검증 (블로그: 내일 이후만 허용)
-  if (row['시작날짜'] && validateDateFormat(String(row['시작날짜'])) && !validateNotPastDate(String(row['시작날짜']), false)) {
+  if (blogStartDate && validateDateFormat(blogStartDate) && !validateNotPastDate(blogStartDate, false)) {
     errors.push(ERROR_MESSAGES.PAST_DATE);
   }
 
@@ -367,16 +414,18 @@ function validatePlaceRow(
     errors.push(ERROR_MESSAGES.INVALID_MOBILE_URL);
   }
 
-  // 날짜 형식 검증
-  if (row['시작일'] && !validateDateFormat(String(row['시작일']))) {
+  // 날짜 형식 정규화 및 검증
+  const placeStartDate = normalizeDateValue(row['시작일']);
+  const placeEndDate = normalizeDateValue(row['종료일']);
+  if (placeStartDate && !validateDateFormat(placeStartDate)) {
     errors.push(ERROR_MESSAGES.INVALID_DATE_FORMAT);
   }
-  if (row['종료일'] && !validateDateFormat(String(row['종료일']))) {
+  if (placeEndDate && !validateDateFormat(placeEndDate)) {
     errors.push(ERROR_MESSAGES.INVALID_DATE_FORMAT);
   }
 
   // 과거 날짜 검증 (트래픽/리워드: 내일 이후만 허용)
-  if (row['시작일'] && validateDateFormat(String(row['시작일'])) && !validateNotPastDate(String(row['시작일']), false)) {
+  if (placeStartDate && validateDateFormat(placeStartDate) && !validateNotPastDate(placeStartDate, false)) {
     errors.push(ERROR_MESSAGES.PAST_DATE);
   }
 
@@ -429,10 +478,25 @@ export async function parseBulkSubmissionFile(
       continue;
     }
 
+    // 날짜 필드명 목록
+    const dateFields = [
+      '발행 시작 날짜 지정 (선택)',
+      '시작날짜', '종료날짜',
+      '시작일', '종료일',
+    ];
+
     rows.forEach((row, index) => {
       // 빈 행 건너뛰기
       if (Object.values(row).every((v) => v === '' || v === undefined || v === null)) {
         return;
+      }
+
+      // 날짜 필드 정규화 (Excel Date 객체/시리얼 넘버 → YYYY-MM-DD 문자열)
+      const rowAny = row as unknown as Record<string, unknown>;
+      for (const field of dateFields) {
+        if (field in rowAny && rowAny[field]) {
+          rowAny[field] = normalizeDateValue(rowAny[field]);
+        }
       }
 
       const rowNumber = index + 2; // 헤더 행 + 0-indexed

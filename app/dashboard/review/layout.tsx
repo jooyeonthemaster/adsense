@@ -11,14 +11,14 @@ const tabs = [
     icon: MessageSquare,
   },
   {
+    name: '네이버 영수증 대량 접수',
+    href: '/dashboard/review/bulk',
+    icon: FileSpreadsheet,
+  },
+  {
     name: '카카오맵',
     href: '/dashboard/review/kmap',
     icon: MapPin,
-  },
-  {
-    name: '대량 접수',
-    href: '/dashboard/review/bulk',
-    icon: FileSpreadsheet,
   },
 ];
 

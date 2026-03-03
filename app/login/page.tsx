@@ -229,8 +229,8 @@ function LoginContent() {
                 <Image
                   src="/logo.png"
                   alt="마자무 로고"
-                  width={120}
-                  height={120}
+                  width={168}
+                  height={168}
                   className="object-contain"
                   priority
                 />
@@ -239,8 +239,11 @@ function LoginContent() {
                 마자무
               </CardTitle>
               <CardDescription className="text-base">
-                마케팅 상품 접수 시스템
+                마케팅 자율 무역협회
               </CardDescription>
+              <span className="inline-block mx-auto px-3 py-1 text-xs font-medium text-sky-700 bg-sky-100 rounded-full">
+                마케팅 상품 접수 시스템
+              </span>
             </motion.div>
           </CardHeader>
 
