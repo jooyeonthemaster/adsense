@@ -74,7 +74,7 @@ export default function RewardManagementPage() {
 
   // 매체 타입 표시 설정
   const mediaTypeConfig = {
-    twoople: { label: '투플', icon: '📱', color: 'bg-sky-100 text-sky-700 border-sky-200' },
+    twoople: { label: '투플', icon: '📱', color: 'bg-blue-100 text-blue-800 border-blue-200' },
     eureka: { label: '블루', icon: '💙', color: 'bg-blue-100 text-blue-700 border-blue-200' },
   };
 

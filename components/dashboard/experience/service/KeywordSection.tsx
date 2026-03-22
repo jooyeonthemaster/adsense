@@ -44,7 +44,7 @@ export function KeywordSection({
           value={formData.guideline}
           onChange={(e) => onFormChange({ guideline: e.target.value })}
           placeholder="블로거가 참고할 가이드라인을 입력하세요"
-          className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 text-sm min-h-[80px]"
+          className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 text-sm min-h-[80px]"
         />
       </div>
 
@@ -59,7 +59,7 @@ export function KeywordSection({
             value={keywordInput.main}
             onChange={(e) => setKeywordInput(prev => ({ ...prev, main: e.target.value }))}
             disabled={formData.keywords.length >= 5}
-            className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-8 text-xs sm:text-sm"
+            className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-8 text-xs sm:text-sm"
           />
           <div className="flex gap-1.5">
             <Input
@@ -68,13 +68,13 @@ export function KeywordSection({
               onChange={(e) => setKeywordInput(prev => ({ ...prev, sub: e.target.value }))}
               onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addKeyword())}
               disabled={formData.keywords.length >= 5}
-              className="flex-1 border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-8 text-xs sm:text-sm"
+              className="flex-1 border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-8 text-xs sm:text-sm"
             />
             <Button
               type="button"
               onClick={addKeyword}
               disabled={formData.keywords.length >= 5 || !keywordInput.main.trim() || !keywordInput.sub.trim()}
-              className="h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white text-xs"
+              className="h-8 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs"
             >
               추가
             </Button>
@@ -85,15 +85,15 @@ export function KeywordSection({
             {formData.keywords.map((keyword, index) => (
               <div
                 key={index}
-                className="flex items-center gap-1.5 px-2.5 py-1 bg-sky-100 text-sky-700 rounded-md text-xs border border-sky-200"
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-800 rounded-md text-xs border border-blue-200"
               >
                 <span className="font-medium">{keyword.main}</span>
-                <span className="text-sky-400">/</span>
+                <span className="text-blue-400">/</span>
                 <span>{keyword.sub}</span>
                 <button
                   type="button"
                   onClick={() => removeKeyword(index)}
-                  className="ml-0.5 hover:bg-sky-200 rounded-full p-0.5 transition-colors"
+                  className="ml-0.5 hover:bg-blue-200 rounded-full p-0.5 transition-colors"
                 >
                   <X className="h-2.5 w-2.5" />
                 </button>

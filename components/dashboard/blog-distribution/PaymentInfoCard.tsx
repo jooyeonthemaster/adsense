@@ -37,7 +37,7 @@ export function PaymentInfoCard({
         </div>
 
         {/* 예상 비용 */}
-        <div className="p-3 rounded-lg bg-sky-500 shadow-md">
+        <div className="p-3 rounded-lg bg-blue-600 shadow-md">
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-white">예상 비용</span>

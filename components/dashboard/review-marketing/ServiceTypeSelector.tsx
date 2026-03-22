@@ -37,9 +37,9 @@ export function ServiceTypeSelector({
               className={`
                 relative w-full p-3 rounded-lg border-2 text-left transition-all duration-200
                 ${isSelected
-                  ? 'border-sky-500 bg-sky-50 shadow-md'
+                  ? 'border-blue-600 bg-blue-50 shadow-md'
                   : isAvailable
-                    ? 'border-gray-200 bg-white hover:border-sky-300 hover:bg-sky-50/50'
+                    ? 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/50'
                     : 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-60'
                 }
               `}
@@ -47,11 +47,11 @@ export function ServiceTypeSelector({
               <div className="flex items-center gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className={`font-semibold text-sm ${isSelected ? 'text-sky-700' : 'text-gray-900'}`}>
+                    <span className={`font-semibold text-sm ${isSelected ? 'text-blue-800' : 'text-gray-900'}`}>
                       {service.name}
                     </span>
                     {isSelected && (
-                      <Badge variant="secondary" className="bg-sky-500 text-white text-xs px-2 py-0">
+                      <Badge variant="secondary" className="bg-blue-600 text-white text-xs px-2 py-0">
                         선택됨
                       </Badge>
                     )}

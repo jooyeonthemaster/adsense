@@ -49,7 +49,7 @@ export function GroupView({
               <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors p-3 sm:p-4 lg:p-6">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-sky-500 flex-shrink-0" />
+                    <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-sm sm:text-base lg:text-lg truncate">
                         {group.name}
@@ -61,7 +61,7 @@ export function GroupView({
                   </div>
                   <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                     <div className="text-right">
-                      <p className="text-sm sm:text-lg lg:text-xl font-bold text-sky-600">
+                      <p className="text-sm sm:text-lg lg:text-xl font-bold text-blue-700">
                         {group.totalCount.toLocaleString()}건
                       </p>
                       <p className="text-[10px] sm:text-xs text-gray-500 hidden sm:block">

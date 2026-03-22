@@ -34,8 +34,8 @@ export function VisitInfoSection({
               onClick={() => onToggleDay(day)}
               className={`px-1.5 py-1.5 rounded-md border text-xs font-medium transition-all duration-200 ${
                 formData.availableDays.includes(day)
-                  ? 'bg-sky-500 text-white border-sky-500 shadow-md scale-105'
-                  : 'bg-white text-gray-700 border-gray-300 hover:border-sky-400 hover:bg-sky-50'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-md scale-105'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:bg-blue-50'
               }`}
             >
               {day}
@@ -57,7 +57,7 @@ export function VisitInfoSection({
               type="time"
               value={formData.availableTimeStart}
               onChange={(e) => onFormChange({ availableTimeStart: e.target.value })}
-              className="pl-10 border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+              className="pl-10 border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-9 text-sm"
             />
           </div>
         </div>
@@ -72,7 +72,7 @@ export function VisitInfoSection({
               type="time"
               value={formData.availableTimeEnd}
               onChange={(e) => onFormChange({ availableTimeEnd: e.target.value })}
-              className="pl-10 border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+              className="pl-10 border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-9 text-sm"
             />
           </div>
         </div>

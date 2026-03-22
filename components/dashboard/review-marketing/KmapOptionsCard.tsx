@@ -156,16 +156,16 @@ export function KmapOptionsCard({ formData, onChange }: KmapOptionsCardProps) {
 
         {/* 이미지 전송 안내 (사진 포함 시에만 표시) */}
         {formData.hasPhoto && (
-          <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg space-y-1.5">
-            <p className="text-xs font-medium text-sky-700">이미지 전송 안내</p>
-            <p className="text-sm font-bold text-sky-800">sense-ad@naver.com</p>
-            <p className="text-xs text-sky-600">
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-1.5">
+            <p className="text-xs font-medium text-blue-800">이미지 전송 안내</p>
+            <p className="text-sm font-bold text-blue-900">sense-ad@naver.com</p>
+            <p className="text-xs text-blue-700">
               이메일 제목에 대행사명과 업체명을 필수로 기재해 주셔야 하며, 파일명에 업체명으로 발송 부탁드립니다.
             </p>
             <p className="text-xs text-rose-500">
               양식에 맞춰 접수하시지 않을 경우 작업이 지연될 수 있습니다.
             </p>
-            <div className="text-xs text-sky-500 space-y-0.5 pt-1 border-t border-sky-200">
+            <div className="text-xs text-blue-600 space-y-0.5 pt-1 border-t border-blue-200">
               <p>( ex. 센스애드_대행사명 )</p>
               <p>( ex. 파일명 : 작업 업체명 )</p>
             </div>

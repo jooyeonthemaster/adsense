@@ -97,7 +97,7 @@ export function SubmissionInfoCard({
           <Label htmlFor="businessName" className="text-xs font-medium text-gray-700 flex items-center gap-2">
             업체명 <span className="text-rose-500">*</span>
             {loadingBusinessName && (
-              <span className="flex items-center gap-1 text-sky-600">
+              <span className="flex items-center gap-1 text-blue-700">
                 <Loader2 className="h-3 w-3 animate-spin" />
                 <span className="text-xs">불러오는 중...</span>
               </span>

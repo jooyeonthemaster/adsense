@@ -13,31 +13,35 @@ import { ProductType, SubmissionStatus } from '@/types/submission';
 
 // 대분류 카테고리 구조
 export const categoryStructure = {
-  all: { label: '전체', icon: ClipboardList, bgColor: 'bg-gray-100', textColor: 'text-gray-600' },
-  reward: { label: '리워드', icon: Gift, bgColor: 'bg-sky-100', textColor: 'text-sky-600' },
+  all: { label: '전체', icon: ClipboardList, svgIcon: null, bgColor: 'bg-gray-100', textColor: 'text-gray-600' },
+  reward: { label: '리워드', icon: Gift, svgIcon: '/icon/place.svg', bgColor: 'bg-blue-100', textColor: 'text-blue-600' },
   review: {
     label: '리뷰 마케팅',
     icon: Camera,
-    bgColor: 'bg-purple-100',
-    textColor: 'text-purple-600',
+    svgIcon: '/icon/review.svg',
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-600',
   },
   experience: {
     label: '체험단 마케팅',
     icon: Users,
-    bgColor: 'bg-violet-100',
-    textColor: 'text-violet-600',
+    svgIcon: '/icon/experience.svg',
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-600',
   },
   blog: {
     label: '블로그 배포',
     icon: FileText,
-    bgColor: 'bg-emerald-100',
-    textColor: 'text-emerald-600',
+    svgIcon: '/icon/blog.svg',
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-600',
   },
   infiltration: {
     label: '침투 마케팅',
     icon: Target,
-    bgColor: 'bg-orange-100',
-    textColor: 'text-orange-600',
+    svgIcon: '/icon/caffe.svg',
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-600',
   },
 };
 
@@ -46,8 +50,8 @@ export const productConfig = {
   place: {
     label: '리워드',
     icon: Gift,
-    bgColor: 'bg-sky-100',
-    textColor: 'text-sky-600',
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-700',
     detailPath: '/dashboard/reward/status',
     productType: 'place' as const,
     category: 'reward',
@@ -55,8 +59,8 @@ export const productConfig = {
   'reward-twoople': {
     label: '투플',
     icon: Gift,
-    bgColor: 'bg-sky-100',
-    textColor: 'text-sky-600',
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-700',
     detailPath: '/dashboard/reward/status',
     productType: 'place' as const,
     mediaType: 'twoople' as const,

@@ -69,22 +69,22 @@ export function PaymentInfoCard({
           </div>
 
           {/* 예상 비용 */}
-          <div className="p-3 rounded-lg bg-sky-50 border border-sky-200">
+          <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-sky-700">예상 비용</span>
+                <span className="text-xs font-medium text-blue-800">예상 비용</span>
                 <Badge
                   variant="secondary"
-                  className="bg-sky-100 text-sky-700 border-0 text-xs px-2 py-0"
+                  className="bg-blue-100 text-blue-800 border-0 text-xs px-2 py-0"
                 >
                   {totalCount}건
                 </Badge>
               </div>
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-sky-900">{totalCost.toLocaleString()}</span>
-                <span className="text-sm text-sky-700">P</span>
+                <span className="text-2xl font-bold text-blue-950">{totalCost.toLocaleString()}</span>
+                <span className="text-sm text-blue-800">P</span>
               </div>
-              <div className="text-xs text-sky-600">
+              <div className="text-xs text-blue-700">
                 일 {dailyCount}건 × {totalDays}일
               </div>
             </div>

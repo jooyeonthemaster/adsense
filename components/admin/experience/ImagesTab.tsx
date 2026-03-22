@@ -61,7 +61,7 @@ export function ImagesTab({ submission, downloadingImages, onDownloadAllImages }
                   <img
                     src={url}
                     alt={`첨부 이미지 ${index + 1}`}
-                    className="w-full h-48 object-cover rounded-lg border border-gray-200 hover:border-sky-500 transition-colors cursor-pointer"
+                    className="w-full h-48 object-cover rounded-lg border border-gray-200 hover:border-blue-600 transition-colors cursor-pointer"
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity rounded-lg flex items-center justify-center">
                     <span className="text-white opacity-0 group-hover:opacity-100 font-medium text-sm">

@@ -53,7 +53,7 @@ export function DatePickerMultiple({
           <Button
             variant="outline"
             className={cn(
-              "justify-start text-left font-normal h-8 border-gray-200 hover:border-sky-500 hover:bg-sky-50",
+              "justify-start text-left font-normal h-8 border-gray-200 hover:border-blue-600 hover:bg-blue-50",
               !value.length && "text-muted-foreground"
             )}
           >
@@ -96,18 +96,18 @@ export function DatePickerMultiple({
             className="rounded-md"
             classNames={{
               day_button: cn(
-                "hover:bg-sky-100 focus:bg-sky-100",
-                "data-[selected-single=true]:bg-sky-500 data-[selected-single=true]:hover:bg-sky-600",
+                "hover:bg-blue-100 focus:bg-blue-100",
+                "data-[selected-single=true]:bg-blue-600 data-[selected-single=true]:hover:bg-blue-700",
                 "data-[selected-single=true]:text-white"
               ),
-              today: "bg-sky-50 text-sky-900 font-semibold",
+              today: "bg-blue-50 text-blue-950 font-semibold",
             }}
             disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
           />
           <div className="p-3 border-t border-gray-100">
             <Button
               onClick={() => setOpen(false)}
-              className="w-full h-8 bg-sky-500 hover:bg-sky-600 text-white text-sm"
+              className="w-full h-8 bg-blue-600 hover:bg-blue-700 text-white text-sm"
             >
               완료
             </Button>
@@ -122,14 +122,14 @@ export function DatePickerMultiple({
             <Badge
               key={index}
               variant="secondary"
-              className="px-2.5 py-1 bg-sky-100 text-sky-700 border border-sky-200 hover:bg-sky-200 text-xs font-medium"
+              className="px-2.5 py-1 bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200 text-xs font-medium"
             >
               <CalendarIcon className="h-2.5 w-2.5 mr-1" />
               {format(date, "yyyy-MM-dd (E)", { locale: ko })}
               <button
                 type="button"
                 onClick={() => removeDate(date)}
-                className="ml-1.5 hover:bg-sky-300 rounded-full p-0.5 transition-colors"
+                className="ml-1.5 hover:bg-blue-300 rounded-full p-0.5 transition-colors"
               >
                 <X className="h-2.5 w-2.5" />
               </button>

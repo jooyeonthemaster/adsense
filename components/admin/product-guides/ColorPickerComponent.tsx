@@ -13,7 +13,7 @@ interface ColorPreset {
 
 const COLOR_PRESETS: ColorPreset[] = [
   { name: '기본', bg: '', text: '', preview: 'bg-white border-2' },
-  { name: '하늘색', bg: 'bg-sky-50', text: 'text-sky-900', preview: 'bg-sky-50 border-sky-200' },
+  { name: '하늘색', bg: 'bg-blue-50', text: 'text-blue-950', preview: 'bg-blue-50 border-blue-200' },
   { name: '파란색', bg: 'bg-blue-50', text: 'text-blue-900', preview: 'bg-blue-50 border-blue-200' },
   { name: '보라색', bg: 'bg-purple-50', text: 'text-purple-900', preview: 'bg-purple-50 border-purple-200' },
   { name: '초록색', bg: 'bg-green-50', text: 'text-green-900', preview: 'bg-green-50 border-green-200' },

@@ -18,15 +18,15 @@ export function StatsCards({ stats }: StatsCardsProps) {
         </div>
       </div>
 
-      <div className="p-4 rounded-lg border border-sky-200 bg-sky-50 shadow-sm">
+      <div className="p-4 rounded-lg border border-blue-200 bg-blue-50 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs text-sky-600 mb-1">진행중</p>
-            <p className="text-2xl font-bold text-sky-900">
+            <p className="text-xs text-blue-700 mb-1">진행중</p>
+            <p className="text-2xl font-bold text-blue-950">
               {stats.pending + stats.in_progress}
             </p>
           </div>
-          <Calendar className="h-8 w-8 text-sky-400" />
+          <Calendar className="h-8 w-8 text-blue-400" />
         </div>
       </div>
 

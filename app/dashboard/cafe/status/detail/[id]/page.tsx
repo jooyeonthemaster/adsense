@@ -80,7 +80,7 @@ const statusColors: Record<string, string> = {
   approved: 'bg-blue-100 text-blue-800',
   script_writing: 'bg-purple-100 text-purple-800',
   script_completed: 'bg-teal-100 text-teal-800',
-  in_progress: 'bg-sky-100 text-sky-800',
+  in_progress: 'bg-blue-100 text-blue-900',
   completed: 'bg-green-100 text-green-800',
   cancelled: 'bg-red-100 text-red-800',
 };

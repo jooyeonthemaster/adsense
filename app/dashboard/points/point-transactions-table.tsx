@@ -258,7 +258,7 @@ export function PointTransactionsTable() {
                   <div key={transaction.id} className="rounded-lg border bg-card p-3 sm:p-4 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-muted-foreground font-mono">
+                        <p className="text-xs text-muted-foreground tabular-nums">
                           {formatDate(transaction.created_at)}
                         </p>
                       </div>
@@ -277,7 +277,7 @@ export function PointTransactionsTable() {
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">거래 후 잔액</p>
-                        <p className="text-sm font-mono font-semibold">
+                        <p className="text-sm tabular-nums font-semibold">
                           {transaction.balance_after.toLocaleString()} P
                         </p>
                       </div>
@@ -347,7 +347,7 @@ export function PointTransactionsTable() {
 
                     return (
                       <TableRow key={transaction.id}>
-                        <TableCell className="font-mono text-xs lg:text-sm whitespace-nowrap">
+                        <TableCell className="tabular-nums text-xs lg:text-sm whitespace-nowrap">
                           {formatDate(transaction.created_at)}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">

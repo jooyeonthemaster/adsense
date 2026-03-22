@@ -176,7 +176,7 @@ export default function RewardDetailPage({ params }: { params: Promise<{ id: str
                 <Calendar className="h-3 w-3" />
                 일자 기준 진행률
               </CardDescription>
-              <CardTitle className="text-3xl text-sky-600">
+              <CardTitle className="text-3xl text-blue-700">
                 {(() => {
                   const progress = calculateAutoProgress(submission.start_date, submission.total_days);
                   return `${progress.progressPercent}%`;
@@ -288,7 +288,7 @@ export default function RewardDetailPage({ params }: { params: Promise<{ id: str
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-sky-600" />
+                  <TrendingUp className="h-5 w-5 text-blue-700" />
                   일자별 진행 현황
                 </CardTitle>
                 <CardDescription>
@@ -315,7 +315,7 @@ export default function RewardDetailPage({ params }: { params: Promise<{ id: str
                     <>
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-muted-foreground">진행률</span>
-                        <span className="font-bold text-sky-600">{progress.progressPercent}%</span>
+                        <span className="font-bold text-blue-700">{progress.progressPercent}%</span>
                       </div>
                       <Progress value={progress.progressPercent} className="h-3" />
                       <div className="grid grid-cols-2 gap-4 pt-2">
@@ -327,9 +327,9 @@ export default function RewardDetailPage({ params }: { params: Promise<{ id: str
                           <p className="text-xs text-muted-foreground">예상 종료일</p>
                           <p className="font-medium">{endDate.toLocaleDateString('ko-KR')}</p>
                         </div>
-                        <div className="p-3 bg-sky-50 rounded-lg">
-                          <p className="text-xs text-sky-600">현재 진행</p>
-                          <p className="font-bold text-sky-700">{progress.currentDay}일차 / {submission.total_days}일</p>
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <p className="text-xs text-blue-700">현재 진행</p>
+                          <p className="font-bold text-blue-800">{progress.currentDay}일차 / {submission.total_days}일</p>
                         </div>
                         <div className="p-3 bg-emerald-50 rounded-lg">
                           <p className="text-xs text-emerald-600">상태</p>

@@ -165,7 +165,7 @@ export function DailyRecordCalendar({
 
   const modifiersStyles = {
     autoRecorded: {
-      backgroundColor: '#e0f2fe', // sky-100
+      backgroundColor: '#e0f2fe', // blue-100
       fontWeight: 'bold',
     },
     manualRecorded: {
@@ -218,7 +218,7 @@ export function DailyRecordCalendar({
         <div className="flex flex-col items-center justify-center h-full">
           <span className="text-sm">{props.day.date.getDate()}</span>
           {record && (
-            <span className={`text-xs font-bold mt-0.5 ${isAutoRecord ? 'text-sky-600' : 'text-blue-600'}`}>
+            <span className={`text-xs font-bold mt-0.5 ${isAutoRecord ? 'text-blue-700' : 'text-blue-600'}`}>
               {record.actual_count}건
             </span>
           )}
@@ -281,7 +281,7 @@ export function DailyRecordCalendar({
           <span className="text-sm">마감일</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-sky-600">N건</span>
+          <span className="text-sm font-bold text-blue-700">N건</span>
           <span className="text-sm">자동 계산</span>
         </div>
         <div className="flex items-center gap-2">
@@ -303,12 +303,12 @@ export function DailyRecordCalendar({
                   <div>
                     <p className="font-medium">{new Date(record.date + 'T00:00:00').toLocaleDateString('ko-KR')}</p>
                     {record.isAuto ? (
-                      <p className="text-xs text-sky-600">자동 계산</p>
+                      <p className="text-xs text-blue-700">자동 계산</p>
                     ) : record.notes && (
                       <p className="text-sm text-muted-foreground">{record.notes}</p>
                     )}
                   </div>
-                  <Badge variant={record.isAuto ? 'outline' : 'secondary'} className={record.isAuto ? 'text-sky-600 border-sky-300' : ''}>
+                  <Badge variant={record.isAuto ? 'outline' : 'secondary'} className={record.isAuto ? 'text-blue-700 border-blue-300' : ''}>
                     {record.actual_count}건
                   </Badge>
                 </div>

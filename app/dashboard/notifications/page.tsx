@@ -46,8 +46,7 @@ export default function NotificationsPage() {
       !profile.company_name?.trim() ||
       !profile.phone?.trim() ||
       !profile.email?.trim() ||
-      !profile.tax_email?.trim() ||
-      !profile.business_license_url
+      !profile.tax_email?.trim()
     );
   }, [profile]);
 

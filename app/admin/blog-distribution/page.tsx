@@ -62,7 +62,7 @@ export default function AdminBlogDistributionPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -71,12 +71,12 @@ export default function AdminBlogDistributionPage() {
     <div className="p-3 sm:p-4 lg:p-6">
       <div className="space-y-3 sm:space-y-4">
         {/* Header */}
-        <div className="bg-gradient-to-r from-sky-500 to-blue-600 rounded-lg p-3 sm:p-4 lg:p-6 text-white">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-600 rounded-lg p-3 sm:p-4 lg:p-6 text-white">
           <div className="flex items-center gap-2 mb-1">
             <FileText className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
             <h1 className="text-base sm:text-xl lg:text-2xl font-bold truncate">블로그 배포 관리</h1>
           </div>
-          <p className="text-[11px] sm:text-sm text-sky-100 truncate">영상/자동화/리뷰어 배포 접수 관리</p>
+          <p className="text-[11px] sm:text-sm text-blue-100 truncate">영상/자동화/리뷰어 배포 접수 관리</p>
         </div>
 
         {/* Stats Cards */}

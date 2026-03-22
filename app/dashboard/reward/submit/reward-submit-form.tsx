@@ -90,7 +90,7 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
                       />
                       {loadingBusinessName && (
                         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                          <div className="h-4 w-4 border-2 border-sky-500/30 border-t-sky-500 rounded-full animate-spin" />
+                          <div className="h-4 w-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
                         </div>
                       )}
                     </div>
@@ -108,7 +108,7 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
                         value={formData.placeUrl}
                         onChange={handlePlaceUrlChange}
                         placeholder="https://m.place.naver.com/place/..."
-                        className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+                        className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-9 text-sm"
                       />
                       {formData.placeMid && (
                         <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200">
@@ -142,7 +142,7 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
                     step="100"
                     value={formData.dailyVolume}
                     onChange={(e) => setFormData(prev => ({ ...prev, dailyVolume: Number(e.target.value) }))}
-                    className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+                    className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-9 text-sm"
                   />
                   <span className="text-xs text-gray-500">100단위로 입력 (100, 200, 300...)</span>
                 </div>
@@ -205,7 +205,7 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
                     max="7"
                     value={formData.operationDays}
                     onChange={(e) => setFormData(prev => ({ ...prev, operationDays: Number(e.target.value) }))}
-                    className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+                    className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-9 text-sm"
                   />
                   <span className="text-xs text-gray-500">
                     최소 3일 ~ 최대 7일 입력 가능
@@ -220,10 +220,10 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
 
                 {/* 구동일수 표시 */}
                 {operationDays > 0 && (
-                  <div className="p-3 rounded-lg bg-sky-50 border border-sky-200">
+                  <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-sky-800">총 구동일수</span>
-                      <span className="text-lg font-bold text-sky-600">{operationDays}일</span>
+                      <span className="text-sm font-medium text-blue-900">총 구동일수</span>
+                      <span className="text-lg font-bold text-blue-700">{operationDays}일</span>
                     </div>
                   </div>
                 )}
@@ -240,7 +240,7 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
             <CardContent className="space-y-3 pt-0">
               <div className="grid grid-cols-1 gap-3">
                 {/* 예상 비용 */}
-                <div className="p-3 rounded-lg bg-sky-500 shadow-md">
+                <div className="p-3 rounded-lg bg-blue-600 shadow-md">
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-white">예상 비용</span>
@@ -275,7 +275,7 @@ export default function RewardSubmitForm({ initialPoints }: RewardSubmitFormProp
               <Button
                 type="submit"
                 disabled={isSubmitting || !isPriceConfigured || loadingPrice}
-                className="w-full h-11 text-sm font-semibold bg-sky-500 hover:bg-sky-600 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-11 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <div className="flex items-center gap-2">

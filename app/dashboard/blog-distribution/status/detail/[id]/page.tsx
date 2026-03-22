@@ -115,7 +115,7 @@ export default function BlogDistributionDetailPage({
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto"></div>
           <p className="mt-4 text-gray-600">로딩중...</p>
         </div>
       </div>
@@ -171,7 +171,7 @@ export default function BlogDistributionDetailPage({
             <CardContent>
               <div className="flex items-center justify-between">
                 <span className="text-lg sm:text-2xl font-bold">{submission.charge_count}건</span>
-                <Zap className="h-6 w-6 sm:h-8 sm:w-8 text-sky-600" />
+                <Zap className="h-6 w-6 sm:h-8 sm:w-8 text-blue-700" />
               </div>
             </CardContent>
           </Card>

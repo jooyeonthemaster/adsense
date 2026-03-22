@@ -6,7 +6,7 @@ export const REWARD_MEDIA_CONFIG: RewardMediaConfig[] = [
     id: 'twoople',
     name: '투플 (Twoople)',
     icon: '/reward logo/twoppl.svg',
-    color: 'bg-white border border-sky-100',
+    color: 'bg-white border border-blue-100',
     description: '검색기 미션, 저장하기 미션 등 여러 경로의 미션이 다원화 된 리워드입니다.',
     subDescription: '유입 키워드는 자체 분할 셋팅 됩니다.',
     pricingSlug: 'twoople-reward',

@@ -12,7 +12,6 @@ const REQUIRED_FIELDS = {
   phone: '연락처',
   email: '이메일',
   tax_email: '세금계산서 이메일',
-  business_license_url: '사업자등록증',
 };
 
 export async function checkProfileCompleteness(
@@ -22,7 +21,7 @@ export async function checkProfileCompleteness(
 
   const { data: client, error } = await supabase
     .from('clients')
-    .select('contact_person, company_name, phone, email, tax_email, business_license_url')
+    .select('contact_person, company_name, phone, email, tax_email')
     .eq('id', clientId)
     .single();
 

@@ -42,7 +42,7 @@ export function ReporterSection({
           value={formData.progressKeyword}
           onChange={(e) => onFormChange({ progressKeyword: e.target.value })}
           placeholder="예) 강남 맛집, 서울 카페"
-          className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+          className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-9 text-sm"
         />
       </div>
 
@@ -56,7 +56,7 @@ export function ReporterSection({
           value={formData.guideline}
           onChange={(e) => onFormChange({ guideline: e.target.value })}
           placeholder="기자단이 참고할 가이드를 입력하세요"
-          className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 text-sm min-h-[100px]"
+          className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 text-sm min-h-[100px]"
         />
       </div>
 
@@ -71,10 +71,10 @@ export function ReporterSection({
             role="checkbox"
             aria-checked={formData.hasImage}
             onClick={() => onFormChange({ hasImage: !formData.hasImage })}
-            className={`relative flex items-center justify-center h-6 w-6 rounded border-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 ${
+            className={`relative flex items-center justify-center h-6 w-6 rounded border-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
               formData.hasImage
-                ? 'bg-sky-500 border-sky-500 shadow-lg'
-                : 'bg-white border-gray-300 hover:border-sky-400'
+                ? 'bg-blue-600 border-blue-600 shadow-lg'
+                : 'bg-white border-gray-300 hover:border-blue-400'
             }`}
           >
             {formData.hasImage && (
@@ -94,32 +94,32 @@ export function ReporterSection({
 
       {/* 이미지 첨부 시 이메일 안내 */}
       {formData.hasImage && (
-        <div className="space-y-3 p-4 bg-sky-50 border border-sky-200 rounded-lg">
+        <div className="space-y-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="space-y-2">
             <div className="flex items-start gap-2">
-              <div className="bg-sky-100 p-2 rounded-full shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-sky-600" viewBox="0 0 20 20" fill="currentColor">
+              <div className="bg-blue-100 p-2 rounded-full shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-700" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                   <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-medium text-sky-800">
+                <p className="text-sm font-medium text-blue-900">
                   이미지는 이메일로 보내주세요
                 </p>
-                <p className="text-xs text-sky-700 mt-1">
+                <p className="text-xs text-blue-800 mt-1">
                   아래 이메일 주소로 이미지 파일을 전송해 주세요.
                 </p>
-                <p className="text-sm font-bold text-sky-900 mt-2 bg-white px-3 py-1.5 rounded border border-sky-200 inline-block">
+                <p className="text-sm font-bold text-blue-950 mt-2 bg-white px-3 py-1.5 rounded border border-blue-200 inline-block">
                   sense-ad@naver.com
                 </p>
-                <p className="text-xs text-sky-600 mt-2">
+                <p className="text-xs text-blue-700 mt-2">
                   📌 이메일 제목에 대행사명과 업체명을 필수로 기재해 주셔야 하며, 파일명에 업체명으로 발송 부탁드립니다.
                 </p>
                 <p className="text-xs text-rose-500 mt-1">
                   양식에 맞춰 접수하시지 않을 경우 작업이 지연될 수 있습니다.
                 </p>
-                <div className="text-xs text-sky-500 mt-1 space-y-0.5">
+                <div className="text-xs text-blue-600 mt-1 space-y-0.5">
                   <p>( ex. 센스애드_대행사명 )</p>
                   <p>( ex. 파일명 : 작업 업체명 )</p>
                 </div>
@@ -128,16 +128,16 @@ export function ReporterSection({
           </div>
 
           {/* 이메일 전송 확인 체크박스 (필수) */}
-          <div className="flex items-center gap-2 pt-3 border-t border-sky-200">
+          <div className="flex items-center gap-2 pt-3 border-t border-blue-200">
             <button
               type="button"
               role="checkbox"
               aria-checked={formData.emailImageConfirmed}
               onClick={() => onFormChange({ emailImageConfirmed: !formData.emailImageConfirmed })}
-              className={`relative flex items-center justify-center h-6 w-6 rounded border-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 ${
+              className={`relative flex items-center justify-center h-6 w-6 rounded border-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
                 formData.emailImageConfirmed
-                  ? 'bg-sky-500 border-sky-500 shadow-lg'
-                  : 'bg-white border-gray-300 hover:border-sky-400'
+                  ? 'bg-blue-600 border-blue-600 shadow-lg'
+                  : 'bg-white border-gray-300 hover:border-blue-400'
               }`}
             >
               {formData.emailImageConfirmed && (
@@ -148,7 +148,7 @@ export function ReporterSection({
             </button>
             <label
               onClick={() => onFormChange({ emailImageConfirmed: !formData.emailImageConfirmed })}
-              className="text-sm font-medium cursor-pointer select-none text-sky-800"
+              className="text-sm font-medium cursor-pointer select-none text-blue-900"
             >
               위 이메일 주소로 이미지를 전송했습니다 <span className="text-rose-500">*</span>
             </label>

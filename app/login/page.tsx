@@ -241,7 +241,7 @@ function LoginContent() {
               <CardDescription className="text-base">
                 마케팅 자율 무역협회
               </CardDescription>
-              <span className="inline-block mx-auto px-3 py-1 text-xs font-medium text-sky-700 bg-sky-100 rounded-full">
+              <span className="inline-block mx-auto px-4 py-1.5 text-xs font-medium text-white bg-[#2BB5E6] rounded-full">
                 마케팅 상품 접수 시스템
               </span>
             </motion.div>

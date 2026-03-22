@@ -95,7 +95,7 @@ export function RatioSlider({
             {assignedCount}/{totalCount}개 할당
           </span>
           {!isValid && (
-            <span className="text-xs font-medium px-2 py-1 rounded-full bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400">
+            <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400">
               {remainingCount}개 남음
             </span>
           )}

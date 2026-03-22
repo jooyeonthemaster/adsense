@@ -63,7 +63,6 @@ export function MyPageTab({
   if (!profile?.phone?.trim()) missingFields.push('연락처');
   if (!profile?.email?.trim()) missingFields.push('이메일');
   if (!profile?.tax_email?.trim()) missingFields.push('세금계산서 이메일');
-  if (!profile?.business_license_url) missingFields.push('사업자등록증');
 
   const isProfileIncomplete = missingFields.length > 0;
 

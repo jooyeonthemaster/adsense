@@ -236,30 +236,29 @@ export default function OnboardingPage() {
     if (!formData.tax_email.trim()) {
       return;
     }
-    if (!businessLicense) {
-      return;
-    }
-
     setSubmitting(true);
     try {
-      // First upload business license
-      const uploadFormData = new FormData();
-      uploadFormData.append('file', businessLicense);
+      // 사업자등록증이 있으면 먼저 업로드
+      let businessLicenseUrl: string | null = null;
+      if (businessLicense) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', businessLicense);
 
-      const uploadRes = await fetch('/api/client/upload-license', {
-        method: 'POST',
-        body: uploadFormData,
-      });
+        const uploadRes = await fetch('/api/client/upload-license', {
+          method: 'POST',
+          body: uploadFormData,
+        });
 
-      if (!uploadRes.ok) {
-        const uploadError = await uploadRes.json();
-        throw new Error(uploadError.error || '파일 업로드에 실패했습니다.');
+        if (!uploadRes.ok) {
+          const uploadError = await uploadRes.json();
+          throw new Error(uploadError.error || '파일 업로드에 실패했습니다.');
+        }
+
+        const uploadData = await uploadRes.json();
+        businessLicenseUrl = uploadData.url;
       }
 
-      const uploadData = await uploadRes.json();
-      const businessLicenseUrl = uploadData.url;
-
-      // Then submit onboarding with all data
+      // 온보딩 데이터 제출
       const response = await fetch('/api/client/onboarding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -547,7 +546,7 @@ export default function OnboardingPage() {
                     <div className="grid gap-2">
                       <Label htmlFor="business_license" className="flex items-center gap-2">
                         <Upload className="h-4 w-4 text-primary" />
-                        사업자등록증 <span className="text-red-500">*</span>
+                        사업자등록증 <span className="text-xs text-gray-400 font-normal">(선택)</span>
                       </Label>
                       <Input
                         id="business_license"
@@ -561,6 +560,9 @@ export default function OnboardingPage() {
                           선택된 파일: {businessLicense.name}
                         </p>
                       )}
+                      <p className="text-xs text-gray-400">
+                        로그인 후 마이페이지에서도 등록할 수 있습니다.
+                      </p>
                     </div>
 
                     <div className="grid gap-2">
@@ -579,7 +581,7 @@ export default function OnboardingPage() {
 
                     <Button
                       onClick={handleSubmit}
-                      disabled={submitting || !formData.contact_person || !formData.company_name || !formData.phone || !formData.email || !formData.tax_email || !businessLicense}
+                      disabled={submitting || !formData.contact_person || !formData.company_name || !formData.phone || !formData.email || !formData.tax_email}
                       className="w-full h-12 gradient-primary hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 text-base"
                     >
                       {submitting ? (

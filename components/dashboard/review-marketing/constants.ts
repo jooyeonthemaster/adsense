@@ -8,7 +8,7 @@ export function createServices(pricing: Record<string, number>): ReviewServiceCo
       id: 'visitor',
       name: '네이버 영수증',
       icon: Camera,
-      color: 'bg-sky-500',
+      color: 'bg-blue-600',
       available: !!pricing['receipt-review'],
       pricePerUnit: pricing['receipt-review'] || 0,
       description: '영수증 인증 리뷰로 높은 신뢰도',

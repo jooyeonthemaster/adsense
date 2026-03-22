@@ -28,10 +28,10 @@ export function CafeMarketingStats({ total, pending, in_progress, completed }: S
       </Card>
       <Card>
         <CardHeader className="pb-2 p-2.5 sm:p-3">
-          <CardTitle className="text-[10px] sm:text-xs text-sky-600">구동중</CardTitle>
+          <CardTitle className="text-[10px] sm:text-xs text-blue-700">구동중</CardTitle>
         </CardHeader>
         <CardContent className="p-2.5 sm:p-3 pt-0">
-          <p className="text-lg sm:text-xl font-bold text-sky-600">{in_progress}</p>
+          <p className="text-lg sm:text-xl font-bold text-blue-700">{in_progress}</p>
         </CardContent>
       </Card>
       <Card>

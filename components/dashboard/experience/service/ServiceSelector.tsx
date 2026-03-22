@@ -36,18 +36,18 @@ export function ServiceSelector({
               disabled={!isAvailable}
               className={`relative p-4 rounded-lg border-2 transition-all duration-200 ${
                 isSelected
-                  ? 'border-sky-500 bg-sky-50 shadow-md'
+                  ? 'border-blue-600 bg-blue-50 shadow-md'
                   : isAvailable
-                  ? 'border-gray-200 bg-white hover:border-sky-300 hover:bg-sky-50/50'
+                  ? 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/50'
                   : 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed'
               }`}
             >
               <div className="flex flex-col items-center gap-2">
-                <span className={`text-sm font-medium ${isSelected ? 'text-sky-700' : 'text-gray-700'}`}>
+                <span className={`text-sm font-medium ${isSelected ? 'text-blue-800' : 'text-gray-700'}`}>
                   {service.name}
                 </span>
                 {isSelected && (
-                  <Badge variant="secondary" className="bg-sky-500 text-white text-xs px-2 py-0">
+                  <Badge variant="secondary" className="bg-blue-600 text-white text-xs px-2 py-0">
                     선택됨
                   </Badge>
                 )}

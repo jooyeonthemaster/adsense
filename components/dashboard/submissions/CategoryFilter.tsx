@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { categoryStructure, productConfig, categoryProducts } from '@/config/submission-products';
 
 interface CategoryFilterProps {
@@ -28,12 +29,23 @@ export function CategoryFilter({
                 flex flex-col items-center justify-center gap-2 py-4 px-3 text-xs font-medium rounded-lg border-2 transition-all
                 ${
                   isActive
-                    ? 'bg-blue-500 text-white border-blue-600 shadow-md'
+                    ? 'bg-blue-600 text-white border-blue-700 shadow-md'
                     : 'bg-gray-50 border-transparent hover:bg-gray-100'
                 }
               `}
             >
-              <Icon className="h-5 w-5" />
+              {category.svgIcon ? (
+                <div className="relative w-5 h-5">
+                  <Image
+                    src={category.svgIcon}
+                    alt={category.label}
+                    fill
+                    className={`object-contain ${isActive ? 'brightness-0 invert' : ''}`}
+                  />
+                </div>
+              ) : (
+                <Icon className="h-5 w-5" />
+              )}
               <span className="font-semibold">{category.label}</span>
             </button>
           );
@@ -73,4 +85,3 @@ export function CategoryFilter({
     </div>
   );
 }
-

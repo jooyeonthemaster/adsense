@@ -39,6 +39,7 @@ const navigationSections = [
     id: 'reward',
     title: '리워드',
     icon: '/icon/place.svg',
+    badge: 'HOT',
     pathPrefix: '/dashboard/reward',
     children: [
       { name: '리워드 접수', href: '/dashboard/reward/submit' },
@@ -170,14 +171,15 @@ function NavContent({
           <>
             {/* 로고 - 클릭 시 공지사항 페이지로 이동 */}
             <Link href="/dashboard/notifications" onClick={() => onClose?.()} className="block">
-              <div className="flex justify-center mb-3 cursor-pointer hover:opacity-80 transition-opacity">
-                <div className="relative w-32 h-32">
+              <div className="flex justify-center mb-5 cursor-pointer hover:opacity-80 transition-opacity">
+                <div className="relative w-40 h-40">
                   <Image
                     src="/logo.png"
                     alt="마스코트"
-                    width={128}
-                    height={128}
+                    width={160}
+                    height={160}
                     className="object-contain"
+                    priority
                   />
                 </div>
               </div>
@@ -349,12 +351,7 @@ function NavContent({
                       src={section.icon}
                       alt={section.title}
                       fill
-                      className={cn(
-                        "object-contain",
-                        isSectionActive
-                          ? "[filter:invert(28%)_sepia(97%)_saturate(3516%)_hue-rotate(216deg)_brightness(102%)_contrast(102%)]"
-                          : "hover:[filter:invert(28%)_sepia(97%)_saturate(3516%)_hue-rotate(216deg)_brightness(102%)_contrast(102%)]"
-                      )}
+                      className="object-contain"
                     />
                   </div>
                 </Link>
@@ -390,8 +387,8 @@ function NavContent({
                     className={cn(
                       'flex items-center gap-2.5 w-full px-3 py-2.5 text-sm transition-colors rounded-lg group',
                       isSectionActive
-                        ? 'text-blue-600 font-bold'
-                        : 'text-gray-700 hover:text-blue-600 hover:font-bold'
+                        ? 'text-blue-600 font-bold bg-blue-50'
+                        : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50 hover:font-bold'
                     )}
                   >
                     <div className="w-5 h-5 flex-shrink-0 relative">
@@ -399,16 +396,16 @@ function NavContent({
                         src={section.icon}
                         alt={section.title}
                         fill
-                        className={cn(
-                          "object-contain",
-                          isSectionActive
-                            ? "[filter:invert(28%)_sepia(97%)_saturate(3516%)_hue-rotate(216deg)_brightness(102%)_contrast(102%)]"
-                            : "group-hover:[filter:invert(28%)_sepia(97%)_saturate(3516%)_hue-rotate(216deg)_brightness(102%)_contrast(102%)]"
-                        )}
+                        className="object-contain"
                       />
                     </div>
-                    <span className={cn("flex-1 text-left", isSectionActive ? "font-bold" : "font-medium group-hover:font-bold")}>
+                    <span className={cn("flex-1 text-left flex items-center gap-1.5", isSectionActive ? "font-bold" : "font-medium group-hover:font-bold")}>
                       {section.title}
+                      {(section as any).badge && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white leading-none">
+                          {(section as any).badge}
+                        </span>
+                      )}
                     </span>
                     <ChevronDown
                       className={cn(
@@ -422,7 +419,7 @@ function NavContent({
 
                 {/* 하위 탭 목록 - 토글 펼침 시 표시 */}
                 {isExpanded && !isDisabled && (
-                  <div className="ml-7 pl-3 border-l border-gray-200 space-y-0.5 pb-1">
+                  <div className="ml-2 mr-1 mt-1 bg-gray-100 rounded-lg py-1.5 px-2 space-y-0.5">
                     {section.children.map((child) => {
                       const childPath = child.href.split('?')[0];
                       const isChildActive = pathname === childPath || pathname?.startsWith(childPath + '/');
@@ -435,8 +432,8 @@ function NavContent({
                           className={cn(
                             'block px-3 py-1.5 text-[13px] rounded-md transition-colors',
                             isChildActive
-                              ? 'text-blue-600 font-bold'
-                              : 'text-gray-500 hover:text-blue-600 hover:font-bold'
+                              ? 'text-blue-600 font-bold bg-white'
+                              : 'text-gray-500 hover:text-blue-600 hover:font-bold hover:bg-white'
                           )}
                         >
                           {child.name}
@@ -456,7 +453,7 @@ function NavContent({
         {!isCollapsed ? (
           <Button
             variant="ghost"
-            className="w-full justify-start text-xs text-gray-700 hover:bg-gray-100 h-8"
+            className="w-full justify-start text-xs text-gray-700 hover:bg-gray-50 hover:text-blue-600 h-8"
             onClick={handleLogout}
           >
             <LogOut className="mr-1.5 h-3.5 w-3.5" />
@@ -468,7 +465,7 @@ function NavContent({
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="w-full justify-center text-xs text-gray-700 hover:bg-gray-100 h-8 px-2"
+                  className="w-full justify-center text-xs text-gray-700 hover:bg-gray-50 hover:text-blue-600 h-8 px-2"
                   onClick={handleLogout}
                 >
                   <LogOut className="h-3.5 w-3.5" />

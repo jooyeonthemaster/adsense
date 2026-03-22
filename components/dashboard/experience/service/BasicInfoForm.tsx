@@ -49,7 +49,7 @@ export function BasicInfoForm({
           value={formData.placeUrl}
           onChange={onPlaceUrlChange}
           placeholder="https://m.place.naver.com/place/..."
-          className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+          className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-9 text-sm"
           disabled={loadingBusinessName}
         />
         {formData.placeMid && (
@@ -75,7 +75,7 @@ export function BasicInfoForm({
             value={formData.providedItems}
             onChange={(e) => onFormChange({ providedItems: e.target.value })}
             placeholder="예) 2인 식사권, 제품 1개 등"
-            className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+            className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-9 text-sm"
           />
         </div>
       )}
@@ -92,7 +92,7 @@ export function BasicInfoForm({
           max={selectedService === 'influencer' ? 10 : undefined}
           value={formData.teamCount}
           onChange={(e) => onFormChange({ teamCount: Number(e.target.value) })}
-          className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+          className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-9 text-sm"
         />
         <span className="text-xs text-gray-500">
           {selectedService === 'influencer' ? '최대 10팀까지 가능합니다' : '체험단 팀 수를 입력하세요'}

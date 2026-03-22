@@ -45,7 +45,7 @@ export default function AllSubmissionsPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">로딩 중...</p>
         </div>
       </div>
@@ -56,9 +56,9 @@ export default function AllSubmissionsPage() {
     <div className="container mx-auto p-3 sm:p-4 lg:p-6">
       <div className="space-y-6">
         {/* 헤더 */}
-        <div className="bg-gradient-to-r from-sky-500 to-blue-600 rounded-lg p-6 text-white">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-600 rounded-lg p-6 text-white">
           <h1 className="text-2xl font-bold mb-2">통합 접수 현황</h1>
-          <p className="text-sky-100">모든 마케팅 상품의 접수 현황을 한눈에 확인하세요</p>
+          <p className="text-blue-100">모든 마케팅 상품의 접수 현황을 한눈에 확인하세요</p>
         </div>
 
         {/* 통계 카드 */}

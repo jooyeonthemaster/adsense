@@ -39,7 +39,7 @@ export function PaymentInfo({
           </div>
 
           {/* 예상 비용 */}
-          <div className="p-3 rounded-lg bg-sky-500 shadow-md">
+          <div className="p-3 rounded-lg bg-blue-600 shadow-md">
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-white">예상 비용</span>
@@ -94,7 +94,7 @@ export function PaymentInfo({
         <Button
           type="submit"
           disabled={isSubmitting || !isPriceConfigured || loadingPrice}
-          className="w-full h-11 text-sm font-semibold bg-sky-500 hover:bg-sky-600 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-11 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? (
             <div className="flex items-center gap-2">

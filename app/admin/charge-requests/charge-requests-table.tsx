@@ -288,10 +288,10 @@ export function ChargeRequestsTable() {
             </p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-sky-50 to-sky-100 border-sky-200">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <CardContent className="p-3 sm:p-4">
-            <p className="text-xs sm:text-sm text-sky-700 font-medium">총 충전 요청</p>
-            <p className="text-lg sm:text-2xl font-bold text-sky-800">
+            <p className="text-xs sm:text-sm text-blue-800 font-medium">총 충전 요청</p>
+            <p className="text-lg sm:text-2xl font-bold text-blue-900">
               {formatPrice(stats.totalAll)}원
             </p>
           </CardContent>

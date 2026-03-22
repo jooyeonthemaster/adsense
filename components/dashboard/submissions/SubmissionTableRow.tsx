@@ -82,7 +82,7 @@ export function SubmissionTableRow({
               href={submission.place_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sky-500 hover:text-sky-600"
+              className="text-blue-600 hover:text-blue-700"
             >
               <ExternalLink className="h-3.5 w-3.5" />
             </a>
@@ -111,7 +111,7 @@ export function SubmissionTableRow({
               </div>
               <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-sky-500 transition-all"
+                  className="h-full bg-blue-600 transition-all"
                   style={{ width: `${progress}%` }}
                 />
               </div>

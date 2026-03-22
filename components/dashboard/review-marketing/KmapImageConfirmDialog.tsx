@@ -40,7 +40,7 @@ export function KmapImageConfirmDialog({
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2 text-sky-700">
+          <AlertDialogTitle className="flex items-center gap-2 text-blue-800">
             <Mail className="h-5 w-5" />
             이미지 전송 확인
           </AlertDialogTitle>
@@ -49,19 +49,19 @@ export function KmapImageConfirmDialog({
               <p className="text-base text-gray-700 font-medium">
                 이메일로 이미지를 보내셨나요?
               </p>
-              <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg space-y-2">
-                <p className="text-sm font-bold text-sky-900">sense-ad@naver.com</p>
-                <p className="text-xs text-sky-600">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+                <p className="text-sm font-bold text-blue-950">sense-ad@naver.com</p>
+                <p className="text-xs text-blue-700">
                   이메일 제목에 대행사명과 업체명을 필수로 기재해 주셔야 하며, 파일명에 업체명으로 발송 부탁드립니다.
                 </p>
                 <p className="text-xs text-rose-500">
                   양식에 맞춰 접수하시지 않을 경우 작업이 지연될 수 있습니다.
                 </p>
-                <div className="text-xs text-sky-500 space-y-0.5">
+                <div className="text-xs text-blue-600 space-y-0.5">
                   <p>( ex. 센스애드_대행사명 )</p>
                   <p>( ex. 파일명 : 작업 업체명 )</p>
                 </div>
-                <p className="text-xs font-medium text-sky-700 pt-1 border-t border-sky-200">
+                <p className="text-xs font-medium text-blue-800 pt-1 border-t border-blue-200">
                   사진 100장 이상 전달 필수
                 </p>
               </div>
@@ -71,10 +71,10 @@ export function KmapImageConfirmDialog({
                   role="checkbox"
                   aria-checked={imageConfirmed}
                   onClick={() => setImageConfirmed(!imageConfirmed)}
-                  className={`relative flex items-center justify-center h-6 w-6 rounded border-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 ${
+                  className={`relative flex items-center justify-center h-6 w-6 rounded border-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
                     imageConfirmed
-                      ? 'bg-sky-500 border-sky-500 shadow-lg'
-                      : 'bg-white border-gray-300 hover:border-sky-400'
+                      ? 'bg-blue-600 border-blue-600 shadow-lg'
+                      : 'bg-white border-gray-300 hover:border-blue-400'
                   }`}
                 >
                   {imageConfirmed && (
@@ -109,7 +109,7 @@ export function KmapImageConfirmDialog({
           <Button
             onClick={onConfirm}
             disabled={!imageConfirmed || isSubmitting}
-            className="flex-1 bg-sky-500 hover:bg-sky-600 text-white"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
           >
             {isSubmitting ? '접수 중...' : '접수하기'}
           </Button>

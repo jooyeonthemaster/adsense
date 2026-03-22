@@ -81,7 +81,7 @@ export function SubmissionCard({
                 href={submission.place_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sky-500"
+                className="text-blue-600"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
               </a>
@@ -106,7 +106,7 @@ export function SubmissionCard({
             </span>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-sky-500 transition-all" style={{ width: `${progress}%` }} />
+            <div className="h-full bg-blue-600 transition-all" style={{ width: `${progress}%` }} />
           </div>
         </div>
       )}
@@ -127,7 +127,7 @@ export function SubmissionCard({
         </div>
         <div className="col-span-2 text-right">
           <p className="text-xs text-gray-500">총 비용</p>
-          <p className="text-sm font-semibold text-sky-600">
+          <p className="text-sm font-semibold text-blue-700">
             {submission.total_points.toLocaleString()}P
           </p>
         </div>

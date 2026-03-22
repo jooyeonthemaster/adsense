@@ -347,14 +347,14 @@ export default function CafeMarketingPage() {
                     className={`
                       group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors
                       ${isActive
-                        ? 'border-sky-500 text-sky-600'
+                        ? 'border-blue-600 text-blue-700'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                       }
                     `}
                   >
                     <Icon className={`
                       mr-2 h-5 w-5
-                      ${isActive ? 'text-sky-500' : 'text-gray-400 group-hover:text-gray-500'}
+                      ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'}
                     `} />
                     {tab.name}
                   </button>
@@ -387,19 +387,19 @@ export default function CafeMarketingPage() {
                     className={`
                       relative w-full p-3 rounded-lg border-2 text-left transition-all duration-200
                       ${formData.serviceType === 'cafe'
-                        ? 'border-sky-500 bg-sky-50 shadow-md'
-                        : 'border-gray-200 bg-white hover:border-sky-300 hover:bg-sky-50/50'
+                        ? 'border-blue-600 bg-blue-50 shadow-md'
+                        : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/50'
                       }
                     `}
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className={`font-semibold text-sm ${formData.serviceType === 'cafe' ? 'text-sky-700' : 'text-gray-900'}`}>
+                          <span className={`font-semibold text-sm ${formData.serviceType === 'cafe' ? 'text-blue-800' : 'text-gray-900'}`}>
                             카페 침투
                           </span>
                           {formData.serviceType === 'cafe' && (
-                            <Badge variant="secondary" className="bg-sky-500 text-white text-xs px-2 py-0">
+                            <Badge variant="secondary" className="bg-blue-600 text-white text-xs px-2 py-0">
                               선택됨
                             </Badge>
                           )}
@@ -417,19 +417,19 @@ export default function CafeMarketingPage() {
                     className={`
                       relative w-full p-3 rounded-lg border-2 text-left transition-all duration-200
                       ${formData.serviceType === 'community'
-                        ? 'border-sky-500 bg-sky-50 shadow-md'
-                        : 'border-gray-200 bg-white hover:border-sky-300 hover:bg-sky-50/50'
+                        ? 'border-blue-600 bg-blue-50 shadow-md'
+                        : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/50'
                       }
                     `}
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className={`font-semibold text-sm ${formData.serviceType === 'community' ? 'text-sky-700' : 'text-gray-900'}`}>
+                          <span className={`font-semibold text-sm ${formData.serviceType === 'community' ? 'text-blue-800' : 'text-gray-900'}`}>
                             커뮤니티 마케팅
                           </span>
                           {formData.serviceType === 'community' && (
-                            <Badge variant="secondary" className="bg-sky-500 text-white text-xs px-2 py-0">
+                            <Badge variant="secondary" className="bg-blue-600 text-white text-xs px-2 py-0">
                               선택됨
                             </Badge>
                           )}
@@ -471,11 +471,11 @@ export default function CafeMarketingPage() {
                     value={formData.placeUrl}
                     onChange={(e) => handlePlaceUrlChange(e.target.value)}
                     placeholder="https://m.place.naver.com/place/..."
-                    className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm pr-10"
+                    className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-9 text-sm pr-10"
                   />
                   {isExtractingMid && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <Loader2 className="h-4 w-4 animate-spin text-sky-500" />
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                     </div>
                   )}
                 </div>
@@ -523,7 +523,7 @@ export default function CafeMarketingPage() {
                   value={formData.region}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, region: value, cafeDetails: [] }))}
                 >
-                  <SelectTrigger className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm">
+                  <SelectTrigger className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-9 text-sm">
                     <SelectValue placeholder="지역을 선택하세요" />
                   </SelectTrigger>
                   <SelectContent>
@@ -571,7 +571,7 @@ export default function CafeMarketingPage() {
                                 min="1"
                                 value={cafeDetail.count}
                                 onChange={(e) => updateCafeCount(cafe, Number(e.target.value))}
-                                className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-8 text-sm w-20"
+                                className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-8 text-sm w-20"
                               />
                               <span className="text-xs text-gray-600">건</span>
                             </div>
@@ -583,7 +583,7 @@ export default function CafeMarketingPage() {
                   <p className="text-xs text-gray-600">
                     선택된 카페: <span className="font-semibold text-amber-700">{formData.cafeDetails.length}개</span>
                     {' | '}
-                    총 발행 건수: <span className="font-semibold text-sky-700">{calculateTotalCount()}건</span>
+                    총 발행 건수: <span className="font-semibold text-blue-800">{calculateTotalCount()}건</span>
                   </p>
                 </div>
               )}
@@ -598,7 +598,7 @@ export default function CafeMarketingPage() {
                   value={formData.guideline}
                   onChange={(e) => setFormData(prev => ({ ...prev, guideline: e.target.value }))}
                   placeholder="게시물 작성 시 참고할 가이드나 요청사항을 입력하세요"
-                  className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 text-sm min-h-[100px]"
+                  className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 text-sm min-h-[100px]"
                 />
               </div>
 
@@ -643,7 +643,7 @@ export default function CafeMarketingPage() {
                 </div>
 
                 {/* 예상 비용 */}
-                <div className="p-3 rounded-lg bg-sky-500 shadow-md">
+                <div className="p-3 rounded-lg bg-blue-600 shadow-md">
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-white">예상 비용</span>
@@ -688,7 +688,7 @@ export default function CafeMarketingPage() {
               <Button
                 type="submit"
                 disabled={isSubmitting || !isPriceConfigured || loadingPrice}
-                className="w-full h-11 text-sm font-semibold bg-sky-500 hover:bg-sky-600 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-11 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <div className="flex items-center gap-2">

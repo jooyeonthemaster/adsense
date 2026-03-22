@@ -85,7 +85,7 @@ export function CafeMarketingTableRow({
               type="button"
               disabled={updatingStatusId === submission.id}
               className={cn(
-                'inline-flex items-center gap-1 rounded-full border border-transparent px-3 py-1 text-xs font-medium shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-sky-500 disabled:cursor-not-allowed disabled:opacity-70',
+                'inline-flex items-center gap-1 rounded-full border border-transparent px-3 py-1 text-xs font-medium shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-70',
                 statusInfo?.color || 'bg-gray-100 text-gray-800'
               )}
             >
@@ -99,7 +99,7 @@ export function CafeMarketingTableRow({
                 key={option.value}
                 className={cn(
                   'text-xs',
-                  option.value === submission.status && 'bg-sky-50 text-sky-600'
+                  option.value === submission.status && 'bg-blue-50 text-blue-700'
                 )}
                 onSelect={() => onStatusSelect(submission, option.value)}
               >

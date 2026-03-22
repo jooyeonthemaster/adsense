@@ -98,7 +98,7 @@ export function FilterSection({
               variant={filters.createdDateFilter ? 'default' : 'outline'}
               size="sm"
               className={`h-8 text-xs sm:text-sm ${
-                filters.createdDateFilter ? 'bg-sky-500 hover:bg-sky-600 text-white' : ''
+                filters.createdDateFilter ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''
               }`}
             >
               <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />

@@ -57,12 +57,12 @@ export function BlogDistributionForm({
                 }
               }}
               disabled={!isApprovedForAutoDistribution}
-              className={`relative flex items-center justify-center h-6 w-6 rounded border-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 ${
+              className={`relative flex items-center justify-center h-6 w-6 rounded border-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
                 !isApprovedForAutoDistribution
                   ? 'bg-gray-100 border-gray-300 cursor-not-allowed'
                   : formData.useExternalAccount
-                    ? 'bg-sky-500 border-sky-500 shadow-lg'
-                    : 'bg-white border-gray-300 hover:border-sky-400 cursor-pointer'
+                    ? 'bg-blue-600 border-blue-600 shadow-lg'
+                    : 'bg-white border-gray-300 hover:border-blue-400 cursor-pointer'
               }`}
             >
               {formData.useExternalAccount && (
@@ -99,7 +99,7 @@ export function BlogDistributionForm({
                   value={formData.externalAccountId}
                   onChange={(e) => onFormChange({ externalAccountId: e.target.value })}
                   placeholder="외부 계정 ID"
-                  className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+                  className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-9 text-sm"
                 />
               </div>
               <div className="space-y-2">
@@ -113,7 +113,7 @@ export function BlogDistributionForm({
                   value={formData.chargeCount}
                   onChange={(e) => onFormChange({ chargeCount: Number(e.target.value) })}
                   placeholder="충전할 건수"
-                  className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+                  className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-9 text-sm"
                 />
               </div>
             </div>
@@ -185,7 +185,7 @@ export function BlogDistributionForm({
                   ? "https://m.place.naver.com/place/..." 
                   : "https://example.com/product/..."
               }
-              className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+              className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-9 text-sm"
               disabled={loadingBusinessName}
             />
             {formData.linkType === 'place' && formData.placeMid && (
@@ -239,7 +239,7 @@ export function BlogDistributionForm({
               min="3"
               value={formData.dailyCount}
               onChange={(e) => onDailyCountChange(Number(e.target.value))}
-              className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+              className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-9 text-sm"
             />
           </div>
 
@@ -294,7 +294,7 @@ export function BlogDistributionForm({
                 onChange={(e) => onOperationDaysChange(Number(e.target.value))}
                 placeholder="10~30"
                 disabled={!formData.startDate}
-                className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+                className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-9 text-sm"
               />
               {calculatedEndDate && formData.operationDays >= 10 && (
                 <div className="flex items-center gap-1.5 text-xs text-emerald-600">
@@ -310,15 +310,15 @@ export function BlogDistributionForm({
           <div className={`p-2.5 rounded-lg border ${
             totalCount < 30
               ? 'bg-rose-50 border-rose-200'
-              : 'bg-sky-50 border-sky-200'
+              : 'bg-blue-50 border-blue-200'
           }`}>
-            <span className={`text-xs ${totalCount < 30 ? 'text-rose-700' : 'text-sky-700'}`}>
+            <span className={`text-xs ${totalCount < 30 ? 'text-rose-700' : 'text-blue-800'}`}>
               총 작업수량:{' '}
             </span>
-            <span className={`text-base font-bold ${totalCount < 30 ? 'text-rose-900' : 'text-sky-900'}`}>
+            <span className={`text-base font-bold ${totalCount < 30 ? 'text-rose-900' : 'text-blue-950'}`}>
               {totalCount}건
             </span>
-            <span className={`text-xs ml-1 ${totalCount < 30 ? 'text-rose-600' : 'text-sky-600'}`}>
+            <span className={`text-xs ml-1 ${totalCount < 30 ? 'text-rose-600' : 'text-blue-700'}`}>
               (일 {formData.dailyCount}건 × {formData.operationDays || 0}일)
             </span>
             {totalCount < 30 && (
@@ -340,7 +340,7 @@ export function BlogDistributionForm({
                 value={formData.keywords}
                 onChange={(e) => onFormChange({ keywords: e.target.value })}
                 placeholder="키워드를 입력하세요 (쉼표로 구분)"
-                className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 h-9 text-sm"
+                className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 h-9 text-sm"
               />
               <span className="text-xs text-gray-500">여러 키워드는 쉼표(,)로 구분하여 입력하세요</span>
             </div>
@@ -357,17 +357,17 @@ export function BlogDistributionForm({
                 value={formData.guideline}
                 onChange={(e) => onFormChange({ guideline: e.target.value })}
                 placeholder="작성 가이드라인을 입력하세요"
-                className="border-gray-200 focus:border-sky-500 focus:ring-sky-500/20 text-sm min-h-[100px]"
+                className="border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 text-sm min-h-[100px]"
               />
             </div>
           )}
 
           {/* 리뷰어 배포 전용: 이미지 이메일 안내 */}
           {selectedType === 'reviewer' && (
-            <div className="p-4 bg-sky-50 border border-sky-200 rounded-lg">
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-start gap-3">
-                <div className="bg-sky-100 p-2 rounded-lg shrink-0">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-sky-600" viewBox="0 0 20 20" fill="currentColor">
+                <div className="bg-blue-100 p-2 rounded-lg shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-700" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                     <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                   </svg>
@@ -376,13 +376,13 @@ export function BlogDistributionForm({
                   <p className="text-sm font-medium text-gray-900">
                     이미지는 이메일로 보내주세요
                   </p>
-                  <p className="text-sm font-bold text-sky-700 bg-white px-3 py-1.5 rounded border border-sky-200 inline-block">
+                  <p className="text-sm font-bold text-blue-800 bg-white px-3 py-1.5 rounded border border-blue-200 inline-block">
                     sense-ad@naver.com
                   </p>
                   <p className="text-xs text-gray-600">
                     이메일 제목은 <span className="font-semibold">업체명 or 대행사명</span>으로 작성
                   </p>
-                  <p className="text-xs font-medium text-sky-700 p-2 bg-sky-100 rounded">
+                  <p className="text-xs font-medium text-blue-800 p-2 bg-blue-100 rounded">
                     사진 100장 이상 전달 필수
                   </p>
                 </div>

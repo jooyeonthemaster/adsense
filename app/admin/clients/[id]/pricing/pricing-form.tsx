@@ -111,7 +111,7 @@ export function PricingForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* 가격 설정 개요 - 접기/펼치기 가능 */}
-      <Card className="border-sky-200 bg-sky-50/50">
+      <Card className="border-blue-200 bg-blue-50/50">
         <CardHeader className="pb-3">
           <button
             type="button"
@@ -288,7 +288,7 @@ export function PricingForm({
 
       {/* 저장/취소 버튼 - 하단 고정 */}
       <div className="sticky bottom-0 z-10 mt-8">
-        <Card className="border-gray-200 bg-gradient-to-r from-sky-50 to-white shadow-lg">
+        <Card className="border-gray-200 bg-gradient-to-r from-blue-50 to-white shadow-lg">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <p className="text-sm text-gray-600">
@@ -307,7 +307,7 @@ export function PricingForm({
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="min-w-[120px] bg-sky-500 hover:bg-sky-600 text-white shadow-md"
+                  className="min-w-[120px] bg-blue-600 hover:bg-blue-700 text-white shadow-md"
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">

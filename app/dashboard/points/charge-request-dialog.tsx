@@ -123,23 +123,23 @@ export function ChargeRequestDialog({
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto p-0">
           {/* 헤더 영역 - 그라데이션 배경 */}
-          <div className="bg-gradient-to-br from-sky-500 to-sky-600 px-6 py-5 text-white">
+          <div className="bg-gradient-to-br from-blue-600 to-blue-700 px-6 py-5 text-white">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
                 <Check className="h-6 w-6" />
               </div>
               <div>
                 <h3 className="text-lg font-bold">충전 요청 완료</h3>
-                <p className="text-sky-100 text-sm">아래 계좌로 입금해주세요</p>
+                <p className="text-blue-100 text-sm">아래 계좌로 입금해주세요</p>
               </div>
             </div>
             <div className="mt-4 p-3 bg-white/10 rounded-xl backdrop-blur-sm space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sky-100 text-sm">요청 금액</span>
-                <span className="text-lg text-sky-100">{requestedAmount.toLocaleString()}원</span>
+                <span className="text-blue-100 text-sm">요청 금액</span>
+                <span className="text-lg text-blue-100">{requestedAmount.toLocaleString()}원</span>
               </div>
               <div className="flex items-center justify-between border-t border-white/20 pt-2">
-                <span className="text-sky-100 text-sm">VAT 포함 입금액</span>
+                <span className="text-blue-100 text-sm">VAT 포함 입금액</span>
                 <span className="text-2xl font-bold">{calculateWithVAT(requestedAmount).toLocaleString()}원</span>
               </div>
             </div>
@@ -152,7 +152,7 @@ export function ChargeRequestDialog({
             </p>
 
             {/* 입금 계좌 */}
-            <div className="group relative p-4 rounded-2xl border-2 border-sky-200 bg-gradient-to-br from-white to-sky-50 transition-all duration-300 shadow-sm">
+            <div className="group relative p-4 rounded-2xl border-2 border-blue-200 bg-gradient-to-br from-white to-blue-50 transition-all duration-300 shadow-sm">
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-gray-500">
                   <Building2 className="h-4 w-4" />
@@ -170,7 +170,7 @@ export function ChargeRequestDialog({
                     size="sm"
                     variant="outline"
                     onClick={() => copyToClipboard(BANK_ACCOUNT.account, 'main')}
-                    className="h-8 px-3 text-xs gap-1.5 hover:bg-sky-50 hover:text-sky-600 hover:border-sky-300"
+                    className="h-8 px-3 text-xs gap-1.5 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300"
                   >
                     {copiedAccount === 'main' ? (
                       <>
@@ -194,11 +194,11 @@ export function ChargeRequestDialog({
             </div>
 
             {/* 안내 문구 */}
-            <div className="p-3 bg-sky-50 rounded-xl border border-sky-100">
+            <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
               <p className="text-xs text-gray-600 leading-relaxed text-center">
-                <span className="font-semibold text-sky-700">VAT 포함 금액</span>으로 입금해주세요.
+                <span className="font-semibold text-blue-800">VAT 포함 금액</span>으로 입금해주세요.
                 <br />
-                입금 확인 후 <span className="font-semibold text-sky-600">영업일 기준 1일 이내</span>로 포인트가 충전됩니다.
+                입금 확인 후 <span className="font-semibold text-blue-700">영업일 기준 1일 이내</span>로 포인트가 충전됩니다.
                 <br />
                 입금자명은 <span className="font-semibold">회사명 또는 본인 성함</span>으로 해주세요.
               </p>
@@ -209,7 +209,7 @@ export function ChargeRequestDialog({
           <div className="px-6 pb-6">
             <Button
               onClick={handleClose}
-              className="w-full h-11 bg-sky-500 hover:bg-sky-600 text-white font-medium rounded-xl transition-all duration-300"
+              className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-300"
             >
               확인
             </Button>

@@ -53,13 +53,6 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!business_license_url) {
-      return NextResponse.json(
-        { error: '사업자등록증을 업로드해주세요.' },
-        { status: 400 }
-      );
-    }
-
     // 이메일 형식 검증
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -97,20 +90,26 @@ export async function POST(request: Request) {
     }
 
     // 온보딩 데이터 저장
+    const updateData: Record<string, any> = {
+      contact_person: contact_person.trim(),
+      company_name: company_name.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+      tax_email: tax_email.trim(),
+      referrer_id,
+      onboarding_completed: true,
+      profile_updated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    // 사업자등록증이 제출된 경우에만 업데이트 (기존 값 보호)
+    if (business_license_url) {
+      updateData.business_license_url = business_license_url;
+    }
+
     const { data: updatedClient, error } = await supabase
       .from('clients')
-      .update({
-        contact_person: contact_person.trim(),
-        company_name: company_name.trim(),
-        phone: phone.trim(),
-        email: email.trim(),
-        tax_email: tax_email.trim(),
-        business_license_url,
-        referrer_id,
-        onboarding_completed: true,
-        profile_updated_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', user.id)
       .select()
       .single();
