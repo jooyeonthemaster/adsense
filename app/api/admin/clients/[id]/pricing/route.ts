@@ -54,8 +54,6 @@ export async function POST(
         is_visible: p.is_visible,
       }));
 
-    console.log('[DEBUG] Price records to insert:', JSON.stringify(priceRecords, null, 2));
-
     if (priceRecords.length > 0) {
       const { error } = await supabase
         .from('client_product_prices')

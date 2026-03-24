@@ -100,11 +100,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ========================================
-    // 외부 계정 충전 요청 (External Account Charge Request)
-    // - account_id와 charge_count만 있으면 됨
-    // - 포인트 차감 없이 충전 요청만 기록
-    // ========================================
     const isExternalAccountRequest = account_id && charge_count && distribution_type === 'automation';
 
     if (isExternalAccountRequest) {
@@ -229,10 +224,6 @@ export async function POST(request: NextRequest) {
         message: '외부 계정 충전 요청이 접수되었습니다.',
       });
     }
-
-    // ========================================
-    // 일반 블로그 배포 접수 (Regular Blog Distribution Submission)
-    // ========================================
 
     // Validation
     if (!company_name || !distribution_type || !content_type || daily_count === undefined) {

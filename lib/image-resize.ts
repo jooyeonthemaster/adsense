@@ -29,21 +29,15 @@ export async function resizeImage(
   try {
     // 이미지 파일이 아니면 원본 반환
     if (!file.type.startsWith('image/')) {
-      console.warn('Not an image file:', file.name);
       return file;
     }
 
     // 이미 작은 파일이면 리사이징 건너뛰기
     if (file.size <= (mergedOptions.maxSizeMB! * 1024 * 1024)) {
-      console.log('File already small enough:', file.name);
       return file;
     }
 
-    console.log('Resizing image:', file.name, 'Original size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
-
     const compressedFile = await imageCompression(file, mergedOptions);
-
-    console.log('Resized image:', compressedFile.name, 'New size:', (compressedFile.size / 1024 / 1024).toFixed(2), 'MB');
 
     return compressedFile;
   } catch (error) {

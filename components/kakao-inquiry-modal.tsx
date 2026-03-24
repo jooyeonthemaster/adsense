@@ -24,8 +24,7 @@ interface KakaoInquiryModalProps {
   description?: string;
 }
 
-// TODO: 실제 카카오톡 채널 URL로 교체 필요
-const KAKAO_CHANNEL_URL = 'https://pf.kakao.com/_xxxxxxxxxxx/chat';
+const KAKAO_CHANNEL_URL = 'https://pf.kakao.com/_TdxoYn/chat';
 
 export function KakaoInquiryModal({
   open,

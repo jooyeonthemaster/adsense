@@ -1,8 +1,13 @@
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ifhrrtlhcrekybmaijad.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmaHJydGxoY3Jla3libWFpamFkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTk4MDIwMywiZXhwIjoyMDc3NTU2MjAzfQ.tGmpqjTSW_y_K3zQs6B_qn434b-IyLDFOD_aC7tRHXk';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('환경변수가 설정되지 않았습니다: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY');
+  process.exit(1);
+}
 
 const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {

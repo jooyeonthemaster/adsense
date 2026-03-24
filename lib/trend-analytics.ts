@@ -157,6 +157,49 @@ async function getSubmissionsInRange(startDate: Date, endDate: Date): Promise<nu
 }
 
 /**
+ * 날짜 범위에서 가장 접수가 많은 상품 이름 반환
+ */
+async function getTopProductInRange(startDate: Date, endDate: Date): Promise<string> {
+  const supabase = await createClient();
+
+  const startStr = startDate.toISOString();
+  const endStr = endDate.toISOString();
+
+  const [placeRes, receiptRes, kakaomapRes, blogRes] = await Promise.all([
+    supabase
+      .from('place_submissions')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', startStr)
+      .lte('created_at', endStr),
+    supabase
+      .from('receipt_review_submissions')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', startStr)
+      .lte('created_at', endStr),
+    supabase
+      .from('kakaomap_review_submissions')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', startStr)
+      .lte('created_at', endStr),
+    supabase
+      .from('blog_distribution_submissions')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', startStr)
+      .lte('created_at', endStr),
+  ]);
+
+  const products = [
+    { name: '플레이스 유입', count: placeRes.count || 0 },
+    { name: '영수증 리뷰', count: receiptRes.count || 0 },
+    { name: '카카오맵 리뷰', count: kakaomapRes.count || 0 },
+    { name: '블로그 배포', count: blogRes.count || 0 },
+  ];
+
+  const top = products.reduce((max, p) => (p.count > max.count ? p : max), products[0]);
+  return top.count > 0 ? top.name : '없음';
+}
+
+/**
  * 날짜 범위의 포인트 사용량 계산
  */
 async function getPointsUsedInRange(startDate: Date, endDate: Date): Promise<number> {
@@ -262,13 +305,17 @@ export async function calculateWeeklyComparison(): Promise<WeeklyComparison> {
   const lastWeekEnd = new Date(thisWeekStart);
   lastWeekEnd.setMilliseconds(-1);
 
-  const [thisWeekSubmissions, thisWeekPoints, lastWeekSubmissions, lastWeekPoints] =
-    await Promise.all([
-      getSubmissionsInRange(thisWeekStart, thisWeekEnd),
-      getPointsUsedInRange(thisWeekStart, thisWeekEnd),
-      getSubmissionsInRange(lastWeekStart, lastWeekEnd),
-      getPointsUsedInRange(lastWeekStart, lastWeekEnd),
-    ]);
+  const [
+    thisWeekSubmissions, thisWeekPoints, thisWeekTopProduct,
+    lastWeekSubmissions, lastWeekPoints, lastWeekTopProduct,
+  ] = await Promise.all([
+    getSubmissionsInRange(thisWeekStart, thisWeekEnd),
+    getPointsUsedInRange(thisWeekStart, thisWeekEnd),
+    getTopProductInRange(thisWeekStart, thisWeekEnd),
+    getSubmissionsInRange(lastWeekStart, lastWeekEnd),
+    getPointsUsedInRange(lastWeekStart, lastWeekEnd),
+    getTopProductInRange(lastWeekStart, lastWeekEnd),
+  ]);
 
   const thisWeekDays = Math.ceil(
     (thisWeekEnd.getTime() - thisWeekStart.getTime()) / (1000 * 60 * 60 * 24)
@@ -283,13 +330,13 @@ export async function calculateWeeklyComparison(): Promise<WeeklyComparison> {
       submissions: thisWeekSubmissions,
       pointsUsed: thisWeekPoints,
       avgPerDay: Math.round(thisWeekAvg * 10) / 10,
-      topProduct: '플레이스 유입', // TODO: 실제 계산
+      topProduct: thisWeekTopProduct,
     },
     lastWeek: {
       submissions: lastWeekSubmissions,
       pointsUsed: lastWeekPoints,
       avgPerDay: Math.round(lastWeekAvg * 10) / 10,
-      topProduct: '플레이스 유입',
+      topProduct: lastWeekTopProduct,
     },
     trends: {
       submissions: calculateTrend(thisWeekSubmissions, lastWeekSubmissions),
@@ -317,21 +364,21 @@ export async function calculateMonthlyComparison(): Promise<MonthlyComparison> {
     thisMonthSubmissions,
     thisMonthPoints,
     thisMonthClients,
+    thisMonthCompletionRate,
     lastMonthSubmissions,
     lastMonthPoints,
     lastMonthClients,
+    lastMonthCompletionRate,
   ] = await Promise.all([
     getSubmissionsInRange(thisMonthStart, thisMonthEnd),
     getPointsUsedInRange(thisMonthStart, thisMonthEnd),
     getNewClientsInRange(thisMonthStart, thisMonthEnd),
+    getCompletionRateInRange(thisMonthStart, thisMonthEnd),
     getSubmissionsInRange(lastMonthStart, lastMonthEnd),
     getPointsUsedInRange(lastMonthStart, lastMonthEnd),
     getNewClientsInRange(lastMonthStart, lastMonthEnd),
+    getCompletionRateInRange(lastMonthStart, lastMonthEnd),
   ]);
-
-  // 완료율 계산 (TODO: 실제 데이터로)
-  const thisMonthCompletionRate = 85;
-  const lastMonthCompletionRate = 82;
 
   return {
     thisMonth: {
@@ -353,6 +400,48 @@ export async function calculateMonthlyComparison(): Promise<MonthlyComparison> {
       completionRate: calculateTrend(thisMonthCompletionRate, lastMonthCompletionRate),
     },
   };
+}
+
+/**
+ * 날짜 범위의 완료율 계산 (completed / total * 100)
+ */
+async function getCompletionRateInRange(startDate: Date, endDate: Date): Promise<number> {
+  const supabase = await createClient();
+
+  const startStr = startDate.toISOString();
+  const endStr = endDate.toISOString();
+
+  const tables = [
+    'place_submissions',
+    'receipt_review_submissions',
+    'kakaomap_review_submissions',
+    'blog_distribution_submissions',
+  ] as const;
+
+  const results = await Promise.all(
+    tables.flatMap((table) => [
+      supabase
+        .from(table)
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', startStr)
+        .lte('created_at', endStr),
+      supabase
+        .from(table)
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', startStr)
+        .lte('created_at', endStr)
+        .eq('status', 'completed'),
+    ])
+  );
+
+  let totalCount = 0;
+  let completedCount = 0;
+  for (let i = 0; i < results.length; i += 2) {
+    totalCount += results[i].count || 0;
+    completedCount += results[i + 1].count || 0;
+  }
+
+  return totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 }
 
 /**

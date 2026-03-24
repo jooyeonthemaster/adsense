@@ -1,3 +1,5 @@
+import type { LucideIcon } from 'lucide-react';
+
 export type DistributionType = 'video' | 'auto' | 'reviewer';
 
 export interface BlogDistributionFormData {
@@ -21,7 +23,7 @@ export interface BlogDistributionFormData {
 export interface ServiceConfig {
   id: DistributionType;
   name: string;
-  icon: any;
+  icon: LucideIcon;
   color: string;
   available: boolean;
   pricePerPost: number;

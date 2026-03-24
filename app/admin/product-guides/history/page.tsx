@@ -23,7 +23,7 @@ export default function ProductGuidesHistoryPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: API 구현 후 실제 데이터 가져오기
+    // 현재 가이드 수정 이력 API 미구현 - 향후 구현 시 여기에 fetch 로직 추가
     setLoading(false);
   }, []);
 
@@ -112,9 +112,6 @@ export default function ProductGuidesHistoryPage() {
     </div>
   );
 }
-
-
-
 
 
 

@@ -78,8 +78,6 @@ export async function PATCH(
           console.error('Error updating submission status:', submissionError);
           console.error('Table:', tableName, 'Submission ID:', asRequest.submission_id);
           // submission 업데이트 실패해도 AS 요청은 승인된 상태로 유지
-        } else {
-          console.log('Successfully updated submission status to as_in_progress');
         }
       }
 
@@ -101,8 +99,6 @@ export async function PATCH(
 
       if (notificationError) {
         console.error('Error creating notification:', notificationError);
-      } else {
-        console.log('Successfully created AS approval notification');
       }
     }
 

@@ -58,10 +58,6 @@ export async function POST(
       );
     }
 
-    console.log('[confirm-schedule] Experience type:', submission.experience_type);
-    console.log('[confirm-schedule] Has selection:', hasSelection);
-    console.log('[confirm-schedule] Submission ID:', id);
-
     // Mark all selected bloggers as client confirmed
     // For types with selection (blog-experience): only update selected bloggers
     // For types without selection (xiaohongshu, journalist, influencer): update all registered bloggers
@@ -79,8 +75,6 @@ export async function POST(
     }
 
     const { data: confirmData, error: confirmError } = await confirmQuery;
-
-    console.log('[confirm-schedule] Update result:', { confirmData, confirmError });
 
     if (confirmError) {
       console.error('[confirm-schedule] Error confirming schedule:', confirmError);

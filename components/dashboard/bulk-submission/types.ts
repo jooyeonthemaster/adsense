@@ -19,9 +19,7 @@ export type ContentType = 'review' | 'info';
 // 리워드 매체 타입
 export type RewardMediaType = 'twoople' | 'eureka';
 
-// ============================================
 // 영수증 리뷰 양식 데이터
-// ============================================
 export interface ReceiptBulkRow {
   순번: number;
   '총 수량': number;
@@ -38,9 +36,7 @@ export interface ReceiptBulkRow {
   '원고 + 사진 매칭 요청시 / 사진 파일명'?: string;
 }
 
-// ============================================
 // 블로그 배포 양식 데이터
-// ============================================
 export interface BlogBulkRow {
   '광고주 아이디'?: string;
   배포유형: string; // 리뷰어/247/자동화
@@ -53,9 +49,7 @@ export interface BlogBulkRow {
   일수: number;
 }
 
-// ============================================
 // 트래픽(리워드) 양식 데이터
-// ============================================
 export interface PlaceBulkRow {
   '광고주 아이디'?: string;
   상품명: string;
@@ -70,9 +64,7 @@ export interface PlaceBulkRow {
 // 모든 양식 타입 유니온
 export type BulkSubmissionRow = ReceiptBulkRow | BlogBulkRow | PlaceBulkRow;
 
-// ============================================
 // 파싱된 레코드 (검증 결과 포함)
-// ============================================
 export interface ParsedSubmissionRecord {
   row: number; // 엑셀 행 번호 (1-indexed)
   productType: BulkSubmissionProduct;
@@ -86,9 +78,7 @@ export interface ParsedSubmissionRecord {
   businessName?: string;
 }
 
-// ============================================
 // 검증 결과 (행별)
-// ============================================
 export interface BulkValidationResult {
   row: number;
   isValid: boolean;
@@ -113,9 +103,7 @@ export interface BulkValidationResponse {
   };
 }
 
-// ============================================
 // 제출 결과 (행별)
-// ============================================
 export interface BulkSubmitResult {
   row: number;
   success: boolean;
@@ -141,9 +129,7 @@ export interface BulkSubmitResponse {
   rolledBack?: boolean;
 }
 
-// ============================================
 // 상품별 설정
-// ============================================
 export interface ProductConfig {
   name: string;
   sheetName: string;
@@ -162,9 +148,7 @@ export interface ProductConfig {
   distributionType?: BlogDistributionType;
 }
 
-// ============================================
 // API 요청 타입
-// ============================================
 export interface BulkSubmissionRequest {
   productType: BulkSubmissionProduct;
   records: ParsedSubmissionRecord[];
@@ -175,9 +159,7 @@ export interface BulkValidationRequest {
   records: Omit<ParsedSubmissionRecord, 'calculatedPoints' | 'pricePerUnit' | 'placeMid'>[];
 }
 
-// ============================================
 // 업로드 상태
-// ============================================
 export type BulkUploadStatus =
   | 'idle' // 초기 상태
   | 'parsing' // 파일 파싱 중

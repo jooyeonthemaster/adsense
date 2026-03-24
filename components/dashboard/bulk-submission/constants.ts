@@ -1,12 +1,6 @@
-/**
- * 대량 접수(Bulk Submission) 상수 정의
- */
-
 import type { BulkSubmissionProduct, ProductConfig } from './types';
 
-// ============================================
 // 상품별 설정
-// ============================================
 export const BULK_PRODUCT_CONFIG: Record<BulkSubmissionProduct, ProductConfig> = {
   // 영수증 리뷰
   receipt: {
@@ -145,9 +139,7 @@ export const BULK_PRODUCT_CONFIG: Record<BulkSubmissionProduct, ProductConfig> =
   },
 };
 
-// ============================================
 // 시트명 -> 상품 타입 매핑
-// ============================================
 export const SHEET_TO_PRODUCT_MAP: Record<string, BulkSubmissionProduct> = {
   // 영수증 리뷰
   영수증리뷰: 'receipt',
@@ -172,9 +164,7 @@ export const SHEET_TO_PRODUCT_MAP: Record<string, BulkSubmissionProduct> = {
   트래픽: 'place',
 };
 
-// ============================================
 // 배포유형 한글 -> 영문 매핑
-// ============================================
 export const DISTRIBUTION_TYPE_MAP: Record<string, 'reviewer' | 'video' | 'automation'> = {
   리뷰어: 'reviewer',
   '리뷰어 배포': 'reviewer',
@@ -202,9 +192,7 @@ export const DISTRIBUTION_TO_PRODUCT_TYPE: Record<string, BulkSubmissionProduct>
   자동화배포: 'blog_automation',
 };
 
-// ============================================
 // 콘텐츠 유형 한글 -> 영문 매핑
-// ============================================
 export const CONTENT_TYPE_MAP: Record<string, 'review' | 'info'> = {
   후기성: 'review',
   후기: 'review',
@@ -213,9 +201,7 @@ export const CONTENT_TYPE_MAP: Record<string, 'review' | 'info'> = {
   정보: 'info',
 };
 
-// ============================================
 // 템플릿 파일명
-// ============================================
 export const TEMPLATE_FILE_NAMES: Record<BulkSubmissionProduct, string> = {
   receipt: '영수증_리뷰_대량접수_템플릿.xlsx',
   blog_reviewer: '블로그_배포_대량접수_템플릿.xlsx',
@@ -224,14 +210,10 @@ export const TEMPLATE_FILE_NAMES: Record<BulkSubmissionProduct, string> = {
   place: '트래픽_리워드_대량접수_템플릿.xlsx',
 };
 
-// ============================================
 // 날짜 형식 정규식
-// ============================================
 export const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
-// ============================================
 // 플레이스 URL 패턴
-// ============================================
 export const NAVER_PLACE_URL_PATTERNS = [
   // map.naver.com 형식 (PC 버전)
   /^https?:\/\/map\.naver\.com\/.*place\/(\d+)/,
@@ -256,9 +238,7 @@ export const KAKAO_PLACE_URL_PATTERNS = [
   /^https?:\/\/kko\.to\//,
 ];
 
-// ============================================
 // 에러 메시지
-// ============================================
 export const ERROR_MESSAGES = {
   // 필수 필드
   REQUIRED_FIELD: (field: string) => `${field} 필수`,

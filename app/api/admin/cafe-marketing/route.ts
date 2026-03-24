@@ -39,8 +39,6 @@ export async function GET() {
       console.error('Error fetching cafe content items:', contentError);
     }
 
-    console.log('[Cafe Marketing] Content items found:', allContentItems?.length || 0);
-
     // Create a map of submission_id to content item count
     const completedCountMap = new Map<string, number>();
     if (allContentItems) {

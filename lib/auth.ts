@@ -39,9 +39,6 @@ export async function authenticateAdmin(
   username: string,
   password: string
 ): Promise<AuthUser | null> {
-  console.log('🔍 [AUTH DEBUG] Starting authentication for username:', username);
-  console.log('🔍 [AUTH DEBUG] Input password:', password);
-
   const supabase = await createClient();
 
   const { data: admin, error } = await supabase
@@ -50,25 +47,15 @@ export async function authenticateAdmin(
     .eq('username', username)
     .single();
 
-  console.log('🔍 [AUTH DEBUG] Database query error:', error);
-  console.log('🔍 [AUTH DEBUG] Database query result:', admin);
-
   if (error || !admin) {
-    console.log('❌ [AUTH DEBUG] Admin not found or query error');
     return null;
   }
-
-  console.log('🔍 [AUTH DEBUG] Password hash from database:', admin.password);
 
   const isValid = await verifyPassword(password, admin.password);
-  console.log('🔍 [AUTH DEBUG] Password verification result:', isValid);
 
   if (!isValid) {
-    console.log('❌ [AUTH DEBUG] Password verification failed');
     return null;
   }
-
-  console.log('✅ [AUTH DEBUG] Authentication successful');
   return {
     id: admin.id,
     username: admin.username,
@@ -205,10 +192,6 @@ export async function requireCompleteProfile(): Promise<AuthUser> {
 
   return user;
 }
-
-// ============================================
-// 카카오 소셜 로그인 관련 함수
-// ============================================
 
 export interface KakaoUserInfo {
   kakaoId: string;

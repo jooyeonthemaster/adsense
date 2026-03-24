@@ -12,13 +12,9 @@ export async function POST(
     const supabase = await createClient();
     const { id: submissionId } = await context.params;
 
-    console.log('[Excel Upload] Submission ID:', submissionId);
-
     // FormData에서 파일 추출
     const formData = await request.formData();
     const file = formData.get('file') as File;
-
-    console.log('[Excel Upload] File:', file?.name, file?.size);
 
     if (!file) {
       return NextResponse.json({ error: '파일이 없습니다.' }, { status: 400 });
@@ -84,8 +80,6 @@ export async function POST(
       .from('kakaomap_content_items')
       .select('*', { count: 'exact', head: true })
       .eq('submission_id', submissionId);
-
-    console.log('[Excel Upload] Submission found:', { total_count: submission.total_count, current_count: currentCount });
 
     const totalCount = submission.total_count || 0;
     const remaining = totalCount - (currentCount || 0);

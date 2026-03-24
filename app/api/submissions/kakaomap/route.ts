@@ -211,28 +211,6 @@ export async function POST(request: NextRequest) {
     // guide_text 또는 script를 사용 (하위 호환성)
     const finalGuideText = guide_text || script || null;
 
-    console.log('[DEBUG] Creating kakaomap submission with data:', {
-      client_id: user.id,
-      submission_number: submissionNumberData,
-      company_name,
-      kakaomap_url,
-      daily_count: daily_count || 1,
-      total_count,
-      total_days: total_days || Math.ceil(total_count / (daily_count || 1)),
-      has_photo: hasPhoto,
-      text_review_count: text_review_count || 0,
-      photo_review_count: photo_review_count || 0,
-      guide_text: finalGuideText,
-      photo_urls,
-      script_urls,
-      photo_ratio,
-      star_rating,
-      script_type,
-      total_points,
-      notes,
-      status: 'pending',
-    });
-
     const { data: submission, error: submissionError } = await supabase
       .from('kakaomap_review_submissions')
       .insert({

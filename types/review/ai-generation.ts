@@ -1,8 +1,6 @@
 // AI 리뷰 생성 관련 타입 정의
 
-// ============================================
 // 비율 설정 타입
-// ============================================
 
 export interface RatioSetting {
   value: string;
@@ -38,9 +36,7 @@ export const EMOJI_OPTIONS: Record<EmojiOption, { label: string; description: st
   without: { label: '미포함', description: '텍스트만 사용' },
 };
 
-// ============================================
 // 매장 정보 타입
-// ============================================
 
 export interface StoreInfo {
   // 기본 정보
@@ -124,9 +120,7 @@ export const DEFAULT_STORE_INFO: StoreInfo = {
   additional_info: '',
 };
 
-// ============================================
 // 업종 타입
-// ============================================
 
 export type BusinessType =
   | 'restaurant'      // 음식점
@@ -155,9 +149,7 @@ export const BUSINESS_TYPE_OPTIONS: Record<BusinessType, { label: string; icon: 
   general: { label: '일반 업종', icon: '🏢' },
 };
 
-// ============================================
 // AI 생성 요청/응답 타입
-// ============================================
 
 export interface AIReviewGenerateRequest {
   submission_id: string;
@@ -198,9 +190,7 @@ export interface AIReviewGenerateResponse {
   error?: string;
 }
 
-// ============================================
 // 프롬프트 관리 타입
-// ============================================
 
 export interface BusinessPrompt {
   id: string;
@@ -218,9 +208,7 @@ export interface PromptUpdateRequest {
   base_prompt: string;
 }
 
-// ============================================
 // UI 상태 타입
-// ============================================
 
 export interface RatioSliderConfig {
   id: string;
@@ -258,9 +246,7 @@ export interface GeneratorUIState {
   };
 }
 
-// ============================================
 // 기본값 설정
-// ============================================
 
 export const DEFAULT_LENGTH_RATIOS: RatioSliderConfig[] = [
   { id: 'tiny', value: 'tiny', label: '매우 짧은 (30-80자)', percentage: 20, count: 2, color: '#f43f5e' },

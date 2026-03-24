@@ -16,22 +16,11 @@ function calculateEndDate(startDate: string | null | undefined, totalDays: numbe
   }
 }
 
-/**
- * 전체 접수 내역 API - 완전 재작성 + 최대 성능 최적화 버전
- *
- * 성능 최적화:
- * 1. 일괄 조회 (Batch Query) - 개별 쿼리 제거
- * 2. 모든 쿼리 병렬 실행 (Promise.all) - 순차 실행 제거
- * 3. 최소 필드만 조회 - 불필요한 데이터 전송 최소화
- */
 export async function GET() {
   try {
     await requireAuth(['admin']);
     const supabase = await createClient();
 
-    // ===================================================================
-    // STEP 1: 모든 기본 submissions 조회 (병렬 실행)
-    // ===================================================================
     const [
       { data: placeSubmissions },
       { data: receiptSubmissions },
@@ -48,9 +37,6 @@ export async function GET() {
       supabase.from('experience_submissions').select('*, clients(company_name)').order('created_at', { ascending: false }),
     ]);
 
-    // ===================================================================
-    // STEP 2: 모든 daily_records와 관련 데이터 조회 (병렬 실행)
-    // ===================================================================
     const placeIds = placeSubmissions?.map(s => s.id) || [];
     const receiptIds = receiptSubmissions?.map(s => s.id) || [];
     const kakaomapIds = kakaomapSubmissions?.map(s => s.id) || [];
@@ -110,10 +96,6 @@ export async function GET() {
         ? supabase.from('cafe_marketing_daily_records').select('submission_id, completed_count').in('submission_id', cafeIds)
         : Promise.resolve({ data: [] }),
     ]);
-
-    // ===================================================================
-    // STEP 3: 데이터 매핑 (Map 생성)
-    // ===================================================================
 
     // Place
     const placeProgressMap = new Map<string, { completed: number; currentDay: number }>();
@@ -176,10 +158,6 @@ export async function GET() {
       const currentCount = cafeCompletedMap.get(record.submission_id) || 0;
       cafeCompletedMap.set(record.submission_id, currentCount + record.completed_count);
     });
-
-    // ===================================================================
-    // STEP 4: 진행률 계산 및 최종 데이터 생성
-    // ===================================================================
 
     const placeWithProgress = (placeSubmissions || []).map((sub) => {
       const progress = placeProgressMap.get(sub.id) || { completed: 0, currentDay: 0 };
@@ -284,9 +262,6 @@ export async function GET() {
       };
     });
 
-    // ===================================================================
-    // STEP 5: 통합 및 정렬
-    // ===================================================================
     const allSubmissions = [
       ...placeWithProgress,
       ...receiptWithDetails,
@@ -299,15 +274,6 @@ export async function GET() {
     allSubmissions.sort((a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
-
-    console.log('[전체 접수 API v4 최대 최적화] 총 submissions:', allSubmissions.length, {
-      place: placeWithProgress.length,
-      receipt: receiptWithDetails.length,
-      kakaomap: kakaomapWithDetails.length,
-      blog: blogWithProgress.length,
-      cafe: cafeWithProgress.length,
-      experience: experienceWithProgress.length,
-    });
 
     return NextResponse.json({ submissions: allSubmissions });
   } catch (error) {

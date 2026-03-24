@@ -150,8 +150,6 @@ export async function PATCH(
         }
       }
 
-      console.log(`Cancellation request ${id} approved. Refund: ${refundAmount}P`);
-
       return NextResponse.json({
         success: true,
         cancellationRequest: updatedRequest,
@@ -197,8 +195,6 @@ export async function PATCH(
           console.error('Error reverting submission status:', submissionError);
         }
       }
-
-      console.log(`Cancellation request ${id} rejected`);
 
       return NextResponse.json({
         success: true,

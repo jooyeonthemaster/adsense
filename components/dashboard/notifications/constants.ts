@@ -1,6 +1,6 @@
 // 알림/마이페이지 상수
 
-export const KAKAO_CHANNEL_URL = 'https://pf.kakao.com/_xnxkGxj';
+export const KAKAO_CHANNEL_URL = 'https://pf.kakao.com/_TdxoYn';
 
 export const PRIORITY_COLORS: Record<string, string> = {
   urgent: 'text-red-600 bg-red-50 border-red-200',

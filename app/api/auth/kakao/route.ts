@@ -18,13 +18,6 @@ export async function GET(request: NextRequest) {
   // 콜백 URL
   const redirectUri = `${origin}/api/auth/callback`;
 
-  // 디버깅용 로그
-  console.log('=== 카카오 로그인 시작 ===');
-  console.log('KAKAO_CLIENT_ID:', KAKAO_CLIENT_ID);
-  console.log('KAKAO_CLIENT_ID 길이:', KAKAO_CLIENT_ID.length);
-  console.log('Redirect URI:', redirectUri);
-  console.log('Origin:', origin);
-
   // 카카오 인증 URL 생성 (account_email 제외!)
   const kakaoAuthUrl = new URL('https://kauth.kakao.com/oauth/authorize');
   kakaoAuthUrl.searchParams.set('client_id', KAKAO_CLIENT_ID);
@@ -32,8 +25,6 @@ export async function GET(request: NextRequest) {
   kakaoAuthUrl.searchParams.set('response_type', 'code');
   // scope에 account_email 제외 - 닉네임과 프로필 이미지만 요청
   kakaoAuthUrl.searchParams.set('scope', 'profile_nickname profile_image');
-
-  console.log('카카오 인증 URL:', kakaoAuthUrl.toString());
 
   return NextResponse.redirect(kakaoAuthUrl.toString());
 }

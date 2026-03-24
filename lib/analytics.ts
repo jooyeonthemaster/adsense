@@ -24,7 +24,6 @@ export async function calculateKPIMetrics(): Promise<KPIMetrics> {
     receiptRes,
     kakaomapRes,
     blogRes,
-    // customRes, // [DISABLED 2025-11-02] 커스텀 상품 제거
     pointsRes,
     asRes,
   ] = await Promise.all([
@@ -46,9 +45,6 @@ export async function calculateKPIMetrics(): Promise<KPIMetrics> {
     // 블로그 접수
     supabase.from('blog_distribution_submissions').select('status, total_points'),
 
-    // [DISABLED 2025-11-02] 커스텀 상품 접수 (dynamic_submissions) - 사용 안 함
-    // supabase.from('dynamic_submissions').select('status, total_points'),
-
     // 포인트 발행 (총 충전)
     supabase.from('point_transactions').select('amount, transaction_type'),
 
@@ -62,7 +58,6 @@ export async function calculateKPIMetrics(): Promise<KPIMetrics> {
     ...(receiptRes.data || []),
     ...(kakaomapRes.data || []),
     ...(blogRes.data || []),
-    // ...(customRes.data || []), // [DISABLED 2025-11-02] 커스텀 상품 제거
   ];
 
   // 상태별 집계
@@ -106,14 +101,11 @@ export async function calculateProductStats(): Promise<ProductStats[]> {
     supabase.from('receipt_review_submissions').select('status, total_points'),
     supabase.from('kakaomap_review_submissions').select('status, total_points'),
     supabase.from('blog_distribution_submissions').select('status, total_points'),
-    // [DISABLED 2025-11-02] dynamic_submissions 제거
-    // supabase.from('dynamic_submissions').select('status, total_points, category_id'),
-    // supabase.from('product_categories').select('id, name, slug'),
   ]);
 
   const calculateTypeStats = (
     type: 'place' | 'receipt' | 'kakaomap' | 'blog',
-    data: any[]
+    data: { status: string; total_points: number | null }[]
   ): ProductStats => {
     const count = data.length;
     const totalPoints = data.reduce((sum, d) => sum + (d.total_points || 0), 0);
@@ -134,44 +126,6 @@ export async function calculateProductStats(): Promise<ProductStats[]> {
     calculateTypeStats('kakaomap', kakaomapRes.data || []),
     calculateTypeStats('blog', blogRes.data || []),
   ];
-
-  // [DISABLED 2025-11-02] 커스텀 상품별 통계 추가 - 4가지 고정 상품만 사용
-  // const customData = customRes.data || [];
-  // const categories = categoriesRes.data || [];
-  /*
-  console.log('📊 Custom Product Data:', {
-    customCount: customData.length,
-    customData: customData,
-    categories: categories,
-  });
-
-  // 카테고리별로 그룹핑
-  const customByCategory = new Map<string, any[]>();
-  customData.forEach((item) => {
-    const categoryId = item.category_id;
-    if (!customByCategory.has(categoryId)) {
-      customByCategory.set(categoryId, []);
-    }
-    customByCategory.get(categoryId)!.push(item);
-  });
-
-  console.log('📊 Custom Products Grouped by Category:', Array.from(customByCategory.entries()));
-
-  // 각 커스텀 카테고리에 대한 통계 생성
-  customByCategory.forEach((items, categoryId) => {
-    const category = categories.find((c) => c.id === categoryId);
-    console.log(`📊 Processing category ${categoryId}:`, { category, itemCount: items.length });
-    if (category) {
-      const customStats = calculateTypeStats(category.slug, items);
-      console.log(`📊 Generated stats for ${category.slug}:`, customStats);
-      stats.push(customStats);
-    } else {
-      console.warn(`⚠️ Category not found for ID: ${categoryId}`);
-    }
-  });
-
-  console.log('📊 Final Product Stats:', stats);
-  */
 
   return stats;
 }
@@ -207,12 +161,6 @@ export async function calculatePeriodStats(
       .select('created_at, total_points')
       .order('created_at', { ascending: false })
       .limit(1000),
-    // [DISABLED 2025-11-02] dynamic_submissions 제거
-    // supabase
-    //   .from('dynamic_submissions')
-    //   .select('created_at, total_points')
-    //   .order('created_at', { ascending: false })
-    //   .limit(1000),
   ]);
 
   const allData = [
@@ -220,15 +168,8 @@ export async function calculatePeriodStats(
     ...(receiptRes.data || []),
     ...(kakaomapRes.data || []),
     ...(blogRes.data || []),
-    // ...(customRes.data || []), // [DISABLED 2025-11-02]
   ];
 
-  console.log(`📊 Period Stats (${period}):`, {
-    totalRecords: allData.length,
-    sampleDates: allData.slice(0, 5).map(d => d.created_at),
-  });
-
-  // 날짜별로 그룹핑
   const grouped = new Map<string, { count: number; points: number }>();
 
   allData.forEach((item) => {
@@ -239,13 +180,8 @@ export async function calculatePeriodStats(
       key = date.toISOString().split('T')[0];
     } else if (period === 'weekly') {
       const weekStart = new Date(date);
-      const originalDate = date.toISOString().split('T')[0];
-      const dayOfWeek = date.getDay();
       weekStart.setDate(date.getDate() - date.getDay());
       key = weekStart.toISOString().split('T')[0];
-      if (period === 'weekly') {
-        console.log(`📅 Weekly grouping: ${originalDate} (day ${dayOfWeek}) → week start ${key}`);
-      }
     } else {
       // monthly
       key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -294,10 +230,6 @@ export async function calculateClientRankings(
     supabase
       .from('blog_distribution_submissions')
       .select('client_id, total_points, created_at'),
-    // [DISABLED 2025-11-02] dynamic_submissions 제거
-    // supabase
-    //   .from('dynamic_submissions')
-    //   .select('client_id, total_points, created_at'),
   ]);
 
   const allSubmissions = [
@@ -305,10 +237,8 @@ export async function calculateClientRankings(
     ...(receiptRes.data || []),
     ...(kakaomapRes.data || []),
     ...(blogRes.data || []),
-    // ...(customRes.data || []), // [DISABLED 2025-11-02]
   ];
 
-  // client_id별로 집계
   const clientMap = new Map<
     string,
     {
@@ -426,11 +356,6 @@ export async function calculateInsightMetrics(): Promise<InsightMetrics> {
       .from('blog_distribution_submissions')
       .select('created_at, updated_at, status')
       .eq('status', 'completed'),
-    // [DISABLED 2025-11-02] dynamic_submissions 제거
-    // supabase
-    //   .from('dynamic_submissions')
-    //   .select('created_at, updated_at, status')
-    //   .eq('status', 'completed'),
   ]);
 
   const allCompleted = [
@@ -438,7 +363,6 @@ export async function calculateInsightMetrics(): Promise<InsightMetrics> {
     ...(receiptRes.data || []),
     ...(kakaomapRes.data || []),
     ...(blogRes.data || []),
-    // ...(customRes.data || []), // [DISABLED 2025-11-02]
   ];
 
   let totalDays = 0;
@@ -459,13 +383,20 @@ export async function calculateInsightMetrics(): Promise<InsightMetrics> {
     rate: ps.completionRate,
   }));
 
-  // AS 발생률
-  const { data: allSubmissionsData } = await supabase
-    .from('place_submissions')
-    .select('id');
+  // AS 발생률 (모든 접수 테이블 합산)
+  const [placeCountRes, receiptCountRes, kakaomapCountRes, blogCountRes] = await Promise.all([
+    supabase.from('place_submissions').select('*', { count: 'exact', head: true }),
+    supabase.from('receipt_review_submissions').select('*', { count: 'exact', head: true }),
+    supabase.from('kakaomap_review_submissions').select('*', { count: 'exact', head: true }),
+    supabase.from('blog_distribution_submissions').select('*', { count: 'exact', head: true }),
+  ]);
   const { data: asData } = await supabase.from('as_requests').select('submission_id');
 
-  const totalSubmissions = (allSubmissionsData?.length || 0) + 0; // TODO: 다른 테이블도 합산
+  const totalSubmissions =
+    (placeCountRes.count || 0) +
+    (receiptCountRes.count || 0) +
+    (kakaomapCountRes.count || 0) +
+    (blogCountRes.count || 0);
   const uniqueASSubmissions = new Set(asData?.map((a) => a.submission_id) || []).size;
   const asRequestRate =
     totalSubmissions > 0 ? (uniqueASSubmissions / totalSubmissions) * 100 : 0;
@@ -503,8 +434,6 @@ export async function calculateHourlyPattern(): Promise<HourlyPattern[]> {
     supabase.from('receipt_review_submissions').select('created_at'),
     supabase.from('kakaomap_review_submissions').select('created_at'),
     supabase.from('blog_distribution_submissions').select('created_at'),
-    // [DISABLED 2025-11-02] dynamic_submissions 제거
-    // supabase.from('dynamic_submissions').select('created_at'),
   ]);
 
   const allData = [
@@ -512,10 +441,8 @@ export async function calculateHourlyPattern(): Promise<HourlyPattern[]> {
     ...(receiptRes.data || []),
     ...(kakaomapRes.data || []),
     ...(blogRes.data || []),
-    // ...(customRes.data || []), // [DISABLED 2025-11-02]
   ];
 
-  // 시간대별 집계
   const hourMap = new Map<number, number>();
   for (let i = 0; i < 24; i++) {
     hourMap.set(i, 0);
@@ -542,8 +469,6 @@ export async function calculateClientROI(limit: number = 10): Promise<ClientROI[
     supabase.from('receipt_review_submissions').select('client_id, total_points, status'),
     supabase.from('kakaomap_review_submissions').select('client_id, total_points, status'),
     supabase.from('blog_distribution_submissions').select('client_id, total_points, status'),
-    // [DISABLED 2025-11-02] dynamic_submissions 제거
-    // supabase.from('dynamic_submissions').select('client_id, total_points, status'),
   ]);
 
   const allSubmissions = [
@@ -551,10 +476,8 @@ export async function calculateClientROI(limit: number = 10): Promise<ClientROI[
     ...(receiptRes.data || []),
     ...(kakaomapRes.data || []),
     ...(blogRes.data || []),
-    // ...(customRes.data || []), // [DISABLED 2025-11-02]
   ];
 
-  // client_id별로 집계
   const clientMap = new Map<
     string,
     {

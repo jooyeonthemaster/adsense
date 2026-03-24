@@ -1,3 +1,5 @@
+import type { LucideIcon } from 'lucide-react';
+
 export type ServiceType = 'blog' | 'xiaohongshu' | 'reporter' | 'influencer';
 
 export interface KeywordPair {
@@ -8,7 +10,7 @@ export interface KeywordPair {
 export interface ServiceConfig {
   id: ServiceType;
   name: string;
-  icon: any; // LucideIcon type
+  icon: LucideIcon;
   color: string;
   available: boolean;
   pricePerTeam: number;

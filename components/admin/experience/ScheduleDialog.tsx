@@ -48,32 +48,23 @@ export function ScheduleDialog({
 
   useEffect(() => {
     if (open && selectedBloggers.length > 0) {
-      console.log('[useEffect] Initializing schedules for', selectedBloggers.length, 'bloggers');
       const initialSchedules = selectedBloggers.map((b) => ({
         blogger_id: b.id,
         visit_date: b.visit_date || '',
         visit_time: b.visit_time || '',
         visit_count: b.visit_count || 1,
       }));
-      console.log('[useEffect] Initial schedules:', initialSchedules);
       setSchedules(initialSchedules);
     }
   }, [open]);
 
   const handleAutoAssign = (type: string) => {
-    console.log('[Auto Assign] Type:', type);
-    console.log('[Auto Assign] Submission:', submission);
-    console.log('[Auto Assign] Available Days:', submission?.available_days);
-    console.log('[Auto Assign] Time:', submission?.available_time_start, submission?.available_time_end);
-    console.log('[Auto Assign] Current Schedules:', schedules);
-
     if (
       !submission?.available_days ||
       submission.available_days.length === 0 ||
       !submission.available_time_start ||
       !submission.available_time_end
     ) {
-      console.error('[Auto Assign] Missing required data');
       toast({
         title: '자동 배정 불가',
         description: '방문가능 정보가 등록되지 않았습니다.',
@@ -128,35 +119,13 @@ export function ScheduleDialog({
           successMessage = '14시 시간대로 배정되었습니다.';
           break;
         default:
-          console.error('[Auto Assign] Unknown type:', type);
           return;
       }
 
-      console.log('[Auto Assign] Updated schedules:', updated);
-      
-      // 각 스케줄의 실제 값 확인
-      updated.forEach((schedule, idx) => {
-        console.log(`[Auto Assign] Schedule ${idx}:`, {
-          blogger_id: schedule.blogger_id,
-          visit_date: schedule.visit_date,
-          visit_time: schedule.visit_time,
-          visit_count: schedule.visit_count
-        });
-      });
-      
       // 새로운 배열로 강제 리렌더
       const newSchedules = updated.map(s => ({...s}));
-      console.log('[Auto Assign] Setting new schedules (deep copy)');
       setSchedules(newSchedules);
-      
-      // State 업데이트 확인 (함수형)
-      setTimeout(() => {
-        setSchedules(prev => {
-          console.log('[Auto Assign] Current state:', prev);
-          return prev;
-        });
-      }, 100);
-      
+
       toast({ title: '자동 배정 완료', description: successMessage });
     } catch (error) {
       console.error('[Auto Assign] Error:', error);

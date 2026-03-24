@@ -14,7 +14,6 @@ import {
   FileText,
   Settings,
   LogOut,
-  BarChart3,
   Menu,
   Sparkles,
   Star,
@@ -31,9 +30,7 @@ import {
 
 const navigation = [
   { name: '대시보드', href: '/admin', icon: LayoutDashboard },
-  // { name: '데이터 분석', href: '/admin/analytics', icon: BarChart3 }, // 숨김 처리
   { name: '거래처 관리', href: '/admin/clients', icon: Users },
-  // { name: '상품 관리', href: '/admin/products', icon: Package }, // [DISABLED 2025-11-02] 4가지 고정 상품만 사용
   { name: '접수 내역', href: '/admin/submissions', icon: FileText },
   { name: '블로그 배포', href: '/admin/blog-distribution', icon: Newspaper },
   { name: '카페 침투', href: '/admin/cafe-marketing', icon: Coffee },
